@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server"
-import { authenticate } from "@/lib/auth"
+import { withAuth } from "@/lib/with-auth"
 
-// 受保护接口示例：需在请求头携带 Authorization: Bearer <token>
-// 每次访问都会刷新 token 的过期时间
-export async function GET(req: Request) {
-  const result = await authenticate(req)
-
-  if (!result) {
-    return NextResponse.json({ error: "未授权或登录已过期" }, { status: 401 })
-  }
-
+// 受保护接口示例：鉴权由 withAuth 统一处理。
+// proxy.ts 在边缘层预检 Bearer token；withAuth 校验 token 并刷新过期时间，再注入 user。
+export const GET = withAuth(async (_req, { user, expiresAt }) => {
   return NextResponse.json({
-    user: { id: result.user.id, email: result.user.email },
+    user: { id: user.id, email: user.email },
     // 返回刷新后的最新过期时间
-    expiresAt: result.expiresAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
   })
-}
+})
