@@ -1,0 +1,7 @@
+{
+  "setup": {
+    "nixPkgs": [
+      "nodejs-24_x"
+    ]
+  }
+}
