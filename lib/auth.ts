@@ -17,11 +17,11 @@ export function generateToken(): string {
 }
 
 // 创建会话
-export async function createSession(userId: string) {
+export async function createSession(userId: string, appInstanceID?: string) {
   const token = generateToken()
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS)
   await prisma.session.create({
-    data: { token, userId, expiresAt },
+    data: { token, userId, appInstanceID, expiresAt },
   })
   return { token, expiresAt }
 }

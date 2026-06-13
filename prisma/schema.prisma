@@ -8,14 +8,22 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
+  id                 String          @id @default(cuid())
+  email              String          @unique
+  userName           String?
+  shortName          String?
+  avatar             String?
+  appInstanceID      String?
+  deletedAt          DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  sessions           Session[]
+  ownedTeams         Team[]          @relation("TeamOwner")
+  teamMemberships    TeamMember[]
+  projectMemberships ProjectMember[]
+  photos             Photo[]
 }
 
-// 邮箱验证码
 model VerificationCode {
   id        String   @id @default(cuid())
   email     String
@@ -27,14 +35,250 @@ model VerificationCode {
   @@index([email])
 }
 
-// 登录会话 token
 model Session {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  token         String   @unique
+  userId        String
+  appInstanceID String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InviteLinkWay {
+  LINK
+  EMAIL
+}
+
+model Team {
+  groupID                String             @id @default(cuid())
+  groupName              String
+  ownerID                String
+  memberSubscriptionInfo Json?
+  accessControl          Json?
+  syncNum                Int                @default(0)
+  isNew                  Boolean            @default(true)
+  deletedAt              DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  owner                  User               @relation("TeamOwner", fields: [ownerID], references: [id], onDelete: Restrict)
+  members                TeamMember[]
+  projects               Project[]
+  inviteLinks            TeamInviteLink[]
+  emailInvites           TeamEmailInvite[]
+  pdfSetting             PhotoPdfSetting?
+  photos                 Photo[]
+  photoShares            PhotoShare[]
+  packageTasks           PhotoPackageTask[]
+
+  @@index([ownerID])
+  @@index([deletedAt])
+}
+
+model TeamMember {
+  id                      String          @id @default(cuid())
+  groupID                 String
+  userID                  String
+  role                    TeamRole        @default(MEMBER)
+  roleID                  Int             @default(3)
+  userSettings            Json?
+  photoCount              Int             @default(0)
+  latestPhotoTimeInterval Int?
+  latestPhotoTimestamp    BigInt?
+  latestPhotoSmallURL     String?
+  joinedAt                DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  team                    Team            @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  user                    User            @relation(fields: [userID], references: [id], onDelete: Cascade)
+  projectMemberships      ProjectMember[]
+
+  @@unique([groupID, userID])
+  @@index([userID])
+  @@index([groupID, role])
+}
+
+model TeamInviteLink {
+  id            String        @id @default(cuid())
+  groupID       String
+  uuID          String        @unique
+  role          TeamRole      @default(MEMBER)
+  roleID        Int           @default(3)
+  inviteLinkWay InviteLinkWay @default(LINK)
+  expiresAt     DateTime?
+  disabledAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  team          Team          @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@index([groupID])
+}
+
+model TeamEmailInvite {
+  id         String    @id @default(cuid())
+  groupID    String
+  email      String
+  role       TeamRole  @default(MEMBER)
+  roleID     Int       @default(3)
+  uuID       String?
+  acceptedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  team       Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@index([groupID])
+  @@index([email])
+}
+
+model PhotoPdfSetting {
+  id        String   @id @default(cuid())
+  groupID   String   @unique
+  title     String?
+  icon      String?
+  iconOpen  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+}
+
+model Project {
+  projectID            Int             @id @default(autoincrement())
+  groupID              String
+  projectName          String
+  photoCount           Int             @default(0)
+  latestPhotoTimestamp BigInt?
+  latestPhotoSmallURL  String?
+  lat                  Decimal?        @db.Decimal(10, 7)
+  lng                  Decimal?        @db.Decimal(10, 7)
+  address              String?
+  circle               Int?
+  distanceUnit         String?
+  removeAddress        Boolean         @default(false)
+  microBind            Json?
+  deletedAt            DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  team                 Team            @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  members              ProjectMember[]
+  photos               Photo[]
+
+  @@index([groupID])
+  @@index([groupID, deletedAt])
+}
+
+model ProjectMember {
+  id            String     @id @default(cuid())
+  projectID     Int
+  groupID       String
+  userID        String
+  role          TeamRole   @default(MEMBER)
+  roleID        Int        @default(3)
+  accessControl Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  project       Project    @relation(fields: [projectID], references: [projectID], onDelete: Cascade)
+  teamMember    TeamMember @relation(fields: [groupID, userID], references: [groupID, userID], onDelete: Cascade)
+  user          User       @relation(fields: [userID], references: [id], onDelete: Cascade)
+
+  @@unique([projectID, userID])
+  @@index([groupID, userID])
+  @@index([userID])
+}
+
+model Photo {
+  photoID             String    @id @default(cuid())
+  groupID             String
+  projectID           Int
+  userID              String
+  mediaType           Int       @default(0)
+  timestamp           BigInt
+  takePhotoFormatTime String
+  takePhotoTimezoneID String
+  duration            Int?
+  largeURL            String?
+  smallURL            String?
+  userName            String?
+  userShortName       String?
+  userAvatar          String?
+  projectName         String?
+  antiFakeCode        String?
+  ossFileName         String
+  localPhotoName      String?
+  location            String?
+  lat                 Decimal?  @db.Decimal(10, 7)
+  lng                 Decimal?  @db.Decimal(10, 7)
+  watermarkID         String?
+  watermarkBaseID     String?
+  saveToDevice        Int?
+  timeInfo            Json?
+  addressInfo         Json?
+  watermarkInfo       Json?
+  systemInfo          Json?
+  mediaInfo           Json?
+  attendanceInfo      Json?
+  searchText          String?   @db.Text
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  team                Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  project             Project   @relation(fields: [projectID], references: [projectID], onDelete: Restrict)
+  user                User      @relation(fields: [userID], references: [id], onDelete: Restrict)
+
+  @@index([groupID, timestamp])
+  @@index([projectID, timestamp])
+  @@index([userID, timestamp])
+  @@index([mediaType])
+  @@index([deletedAt])
+}
+
+model PhotoShare {
+  id                 String    @id @default(cuid())
+  groupID            String
+  shareKey           String    @unique
+  url                String
+  keepUpdate         Boolean   @default(false)
+  willExpire         Boolean   @default(false)
+  expiresAt          DateTime?
+  fromPlace          String?
+  customMsg          String?
+  rangeSelected      Json?
+  selectedPhotoIDs   Json?
+  unSelectedPhotoIDs Json?
+  filters            Json?
+  photoCount         Int       @default(0)
+  createdByUserID    String?
+  createdAt          DateTime  @default(now())
+  team               Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@index([groupID])
+}
+
+model PhotoPackageTask {
+  taskID             String    @id @default(cuid())
+  groupID            String
+  packageType        Int
+  packageStatus      Int       @default(0)
+  url                String?
+  progress           Int       @default(0)
+  title              String?
+  timeZone           String?
+  rangeSelected      Json?
+  selectedPhotoIDs   Json?
+  unSelectedPhotoIDs Json?
+  filters            Json?
+  eventParams        Json?
+  startedAt          DateTime  @default(now())
+  finishedAt         DateTime?
+  canceledAt         DateTime?
+  team               Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@index([groupID, packageType])
+  @@index([packageStatus])
 }
