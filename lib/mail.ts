@@ -1,5 +1,12 @@
 import nodemailer from "nodemailer"
 
+type SendMailResult = {
+  ok: boolean
+  skipped?: boolean
+  reason?: string
+  messageId?: string
+}
+
 // SMTP 配置从环境变量读取
 // SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
 function getTransporter() {
@@ -20,19 +27,76 @@ function getTransporter() {
   })
 }
 
-export async function sendVerificationEmail(email: string, code: string) {
+function errorMessage(err: unknown) {
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
+function inviteLink(groupID: string, uuID: string) {
+  const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
+  if (!baseURL) return ""
+  const url = new URL("/invite", baseURL)
+  url.searchParams.set("groupID", groupID)
+  url.searchParams.set("uuID", uuID)
+  url.searchParams.set("inviteLinkWay", "EMAIL")
+  return url.toString()
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+async function sendLoggedMail({
+  to,
+  subject,
+  text,
+  html,
+  scene,
+}: {
+  to: string
+  subject: string
+  text: string
+  html: string
+  scene: string
+}): Promise<SendMailResult> {
   const transporter = getTransporter()
-
-  // 未配置 SMTP 时，回退到控制台打印，方便开发调试
-  if (!transporter) {
-    console.log(`[v0] SMTP 未配置，验证码邮件未真实发送。收件人: ${email}，验证码: ${code}`)
-    return
-  }
-
+  const host = process.env.SMTP_HOST
+  const port = process.env.SMTP_PORT || "465"
   const from = process.env.SMTP_FROM || process.env.SMTP_USER
 
-  await transporter.sendMail({
-    from,
+  if (!transporter) {
+    const reason = "SMTP 未配置，邮件未真实发送"
+    console.warn(`[mail:${scene}] ${reason}`, { to, subject })
+    return { ok: false, skipped: true, reason }
+  }
+
+  console.log(`[mail:${scene}] 开始发送邮件`, { to, subject, from, host, port })
+
+  try {
+    const info = await transporter.sendMail({ from, to, subject, text, html })
+    console.log(`[mail:${scene}] 邮件发送成功`, {
+      to,
+      subject,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    })
+    return { ok: true, messageId: info.messageId }
+  } catch (err) {
+    const reason = errorMessage(err)
+    console.error(`[mail:${scene}] 邮件发送失败`, { to, subject, reason, err })
+    return { ok: false, reason }
+  }
+}
+
+export async function sendVerificationEmail(email: string, code: string) {
+  return sendLoggedMail({
     to: email,
     subject: "您的登录验证码",
     text: `您的登录验证码是 ${code}，5 分钟内有效。如非本人操作请忽略此邮件。`,
@@ -46,5 +110,48 @@ export async function sendVerificationEmail(email: string, code: string) {
         <p style="color: #999; font-size: 12px;">验证码 5 分钟内有效。如非本人操作，请忽略此邮件。</p>
       </div>
     `,
+    scene: "verification",
+  })
+}
+
+export async function sendTeamInviteEmail({
+  email,
+  groupID,
+  groupName,
+  uuID,
+  expiresAt,
+}: {
+  email: string
+  groupID: string
+  groupName: string
+  uuID: string
+  expiresAt: Date
+}) {
+  const link = inviteLink(groupID, uuID)
+  const escapedGroupName = escapeHtml(groupName)
+  const inviteText = link
+    ? `请点击以下链接加入团队：${link}`
+    : `请在 App 内使用以下邀请信息加入团队：groupID=${groupID}，uuID=${uuID}`
+
+  return sendLoggedMail({
+    to: email,
+    subject: `邀请你加入团队 ${groupName}`,
+    text: `你收到一个团队邀请。\n\n团队：${groupName}\n${inviteText}\n\n邀请 7 天内有效，过期时间：${expiresAt.toISOString()}。`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #111;">邀请你加入团队</h2>
+        <p style="color: #555; font-size: 14px;">你收到一个团队邀请：</p>
+        <div style="background: #f4f4f5; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; color: #111; font-size: 16px; font-weight: 600;">${escapedGroupName}</p>
+        </div>
+        ${
+          link
+            ? `<p><a href="${link}" style="display: inline-block; background: #111; color: #fff; text-decoration: none; padding: 10px 16px; border-radius: 6px;">加入团队</a></p>`
+            : `<p style="color: #555; font-size: 14px;">请在 App 内使用邀请信息加入团队。</p>`
+        }
+        <p style="color: #999; font-size: 12px;">邀请 7 天内有效，过期时间：${expiresAt.toISOString()}。</p>
+      </div>
+    `,
+    scene: "team-invite",
   })
 }
