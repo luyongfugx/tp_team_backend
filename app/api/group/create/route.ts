@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const body = await readBody(req)
     if (typeof body.groupName !== "string" || !body.groupName.trim()) return bad()
 
-    const team = await prisma.group.create({
+    const team = await prisma.team.create({
       data: {
         groupName: body.groupName.trim(),
         ownerID: user.id,
