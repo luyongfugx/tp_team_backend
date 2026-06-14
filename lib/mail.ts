@@ -32,14 +32,8 @@ function errorMessage(err: unknown) {
   return String(err)
 }
 
-function inviteLink(groupID: string, uuID: string) {
-  const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || ""
-  if (!baseURL) return ""
-  const url = new URL("/invite", baseURL)
-  url.searchParams.set("groupID", groupID)
-  url.searchParams.set("uuID", uuID)
-  url.searchParams.set("inviteLinkWay", "EMAIL")
-  return url.toString()
+function inviteLink() {
+  return "https://share.timeprint.net/invite"
 }
 
 function escapeHtml(value: string) {
@@ -116,40 +110,30 @@ export async function sendVerificationEmail(email: string, code: string) {
 
 export async function sendTeamInviteEmail({
   email,
-  groupID,
   groupName,
-  uuID,
-  expiresAt,
+  inviterName,
 }: {
   email: string
-  groupID: string
   groupName: string
-  uuID: string
-  expiresAt: Date
+  inviterName: string
 }) {
-  const link = inviteLink(groupID, uuID)
+  const link = inviteLink()
   const escapedGroupName = escapeHtml(groupName)
-  const inviteText = link
-    ? `请点击以下链接加入团队：${link}`
-    : `请在 App 内使用以下邀请信息加入团队：groupID=${groupID}，uuID=${uuID}`
+  const escapedInviterName = escapeHtml(inviterName)
+  const content = `您好，${inviterName}在timeprint上邀请您加入${groupName}团队，请您点击以下链接加入团队:${link}`
 
   return sendLoggedMail({
     to: email,
-    subject: `邀请你加入团队 ${groupName}`,
-    text: `你收到一个团队邀请。\n\n团队：${groupName}\n${inviteText}\n\n邀请 7 天内有效，过期时间：${expiresAt.toISOString()}。`,
+    subject: `邀请您加入${groupName}团队`,
+    text: content,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
-        <h2 style="color: #111;">邀请你加入团队</h2>
-        <p style="color: #555; font-size: 14px;">你收到一个团队邀请：</p>
-        <div style="background: #f4f4f5; padding: 16px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0; color: #111; font-size: 16px; font-weight: 600;">${escapedGroupName}</p>
-        </div>
-        ${
-          link
-            ? `<p><a href="${link}" style="display: inline-block; background: #111; color: #fff; text-decoration: none; padding: 10px 16px; border-radius: 6px;">加入团队</a></p>`
-            : `<p style="color: #555; font-size: 14px;">请在 App 内使用邀请信息加入团队。</p>`
-        }
-        <p style="color: #999; font-size: 12px;">邀请 7 天内有效，过期时间：${expiresAt.toISOString()}。</p>
+        <p style="color: #111; font-size: 16px; line-height: 1.7; margin: 0;">
+          您好，${escapedInviterName}在timeprint上邀请您加入${escapedGroupName}团队，请您点击以下链接加入团队:
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; margin: 16px 0 0;">
+          <a href="${link}" style="color: #2563eb;">${link}</a>
+        </p>
       </div>
     `,
     scene: "team-invite",

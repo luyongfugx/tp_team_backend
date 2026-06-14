@@ -52,10 +52,8 @@ export async function POST(req: Request) {
         email: invite.email,
         result: await sendTeamInviteEmail({
           email: invite.email,
-          groupID: invite.groupID,
           groupName: team.groupName,
-          uuID: invite.uuID,
-          expiresAt: invite.expiresAt,
+          inviterName: user.userName || user.shortName || user.email,
         }),
       })),
     )
