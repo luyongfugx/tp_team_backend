@@ -709,6 +709,49 @@ POST group/user/invite/email
 }
 ```
 
+### 查询当前用户收到的团队邀请
+
+```text
+POST group/user/invite/list
+```
+
+请求：
+
+```json
+{}
+```
+
+响应：
+
+```json
+{
+  "invites": [
+    {
+      "inviteID": "invite_xxx",
+      "groupID": "group_xxx",
+      "groupName": "团队名称",
+      "uuID": "invite-uuid",
+      "inviteLinkWay": "EMAIL",
+      "role": "普通成员",
+      "roleID": 3,
+      "email": "user@example.com",
+      "memberNum": 3,
+      "owner": {
+        "id": "user_xxx",
+        "userName": "Wayne",
+        "shortName": null,
+        "avatar": null,
+        "email": "owner@example.com"
+      },
+      "expiresAt": "2026-06-21T00:00:00.000Z",
+      "createdAt": "2026-06-14T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+仅返回当前登录用户邮箱对应、未过期、未接受、且当前用户尚未加入的团队邀请。点击加入时将列表中的 `groupID`、`uuID`、`inviteLinkWay` 传给 `group/user/join`。
+
 ## 6. 权限
 
 ### 查询权限

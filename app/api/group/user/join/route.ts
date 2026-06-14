@@ -8,9 +8,25 @@ export async function POST(req: Request) {
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     const uuID = typeof body.uuID === "string" ? body.uuID : ""
-    const invite = await prisma.teamInviteLink.findFirst({
-      where: { groupID, uuID, disabledAt: null },
-    })
+    const inviteLinkWay = body.inviteLinkWay === "EMAIL" ? "EMAIL" : "LINK"
+    const linkInvite =
+      inviteLinkWay === "LINK"
+        ? await prisma.teamInviteLink.findFirst({
+            where: { groupID, uuID, disabledAt: null, team: { deletedAt: null } },
+          })
+        : null
+    const emailInvite =
+      inviteLinkWay === "EMAIL"
+        ? await prisma.teamEmailInvite.findFirst({
+            where: {
+              groupID,
+              uuID,
+              acceptedAt: null,
+              team: { deletedAt: null },
+            },
+          })
+        : null
+    const invite = emailInvite ?? linkInvite
     if (!invite) return bad("邀请链接不存在或已失效")
     if (invite.expiresAt && invite.expiresAt.getTime() < Date.now()) return bad("邀请链接已过期")
 
@@ -40,12 +56,23 @@ export async function POST(req: Request) {
         },
       })
     }
+    if (emailInvite && emailInvite.email !== user.email) return bad("邀请邮箱与当前账号不匹配", 403)
 
-    await prisma.teamMember.upsert({
-      where: { groupID_userID: { groupID, userID: user.id } },
-      update: {},
-      create: { groupID, userID: user.id, role: invite.role, roleID: invite.roleID },
-    })
+    await prisma.$transaction([
+      prisma.teamMember.upsert({
+        where: { groupID_userID: { groupID, userID: user.id } },
+        update: {},
+        create: { groupID, userID: user.id, role: invite.role, roleID: invite.roleID },
+      }),
+      ...(emailInvite
+        ? [
+            prisma.teamEmailInvite.update({
+              where: { id: emailInvite.id },
+              data: { acceptedAt: new Date() },
+            }),
+          ]
+        : []),
+    ])
     const { token } = await createSession(
       user.id,
       typeof body.appInstanceID === "string" ? body.appInstanceID : undefined,
