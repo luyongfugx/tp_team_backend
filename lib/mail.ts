@@ -32,8 +32,10 @@ function errorMessage(err: unknown) {
   return String(err)
 }
 
-function inviteLink() {
-  return "https://share.timeprint.net/invite"
+function inviteLink(inviteCode: string) {
+  const url = new URL("https://share.timeprint.net/invite")
+  url.searchParams.set("code", inviteCode)
+  return url.toString()
 }
 
 function escapeHtml(value: string) {
@@ -112,12 +114,14 @@ export async function sendTeamInviteEmail({
   email,
   groupName,
   inviterName,
+  inviteCode,
 }: {
   email: string
   groupName: string
   inviterName: string
+  inviteCode: string
 }) {
-  const link = inviteLink()
+  const link = inviteLink(inviteCode)
   const escapedGroupName = escapeHtml(groupName)
   const escapedInviterName = escapeHtml(inviterName)
   const content = `您好，${inviterName}在timeprint上邀请您加入${groupName}团队，请您点击以下链接加入团队:${link}`

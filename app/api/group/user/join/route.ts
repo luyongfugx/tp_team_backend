@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
-    const uuID = typeof body.uuID === "string" ? body.uuID : ""
+    const uuID = typeof body.uuID === "string" ? body.uuID : typeof body.code === "string" ? body.code : ""
     const inviteLinkWay = body.inviteLinkWay === "EMAIL" ? "EMAIL" : "LINK"
     const linkInvite =
       inviteLinkWay === "LINK"
@@ -20,10 +20,10 @@ export async function POST(req: Request) {
         ? await prisma.teamEmailInvite.findFirst({
             where: {
               groupID,
-              uuID,
+              OR: [{ uuID }, { inviteCode: uuID }],
               acceptedAt: null,
               team: { deletedAt: null },
-            },
+            } as never,
           })
         : null
     const invite = emailInvite ?? linkInvite

@@ -1,8 +1,17 @@
-import { randomUUID } from "crypto"
+import { randomInt, randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendTeamInviteEmail } from "@/lib/mail"
 import { asStringArray, bad, EMAIL_RE, normalizeEmail, ok, readBody, requireTeamManager, requireUser, roleIDToRole } from "@/app/api/_utils/api"
+
+async function createInviteCode() {
+  for (let index = 0; index < 20; index += 1) {
+    const code = randomInt(100000, 1000000).toString()
+    const existingInvite = await prisma.teamEmailInvite.findFirst({ where: { inviteCode: code } as never })
+    if (!existingInvite) return code
+  }
+  throw new Error("生成邀请码失败")
+}
 
 export async function POST(req: Request) {
   try {
@@ -26,14 +35,18 @@ export async function POST(req: Request) {
     const role = roleIDToRole(body.roleID)
     const roleID = role === "ADMIN" ? 2 : 3
     const sendTargetEmails = validEmails.filter((email) => !alreadyMemberEmails.includes(email))
-    const inviteData = sendTargetEmails.map((email) => ({
-      groupID,
-      email,
-      role,
-      roleID,
-      uuID: randomUUID(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    }))
+    const inviteData = await Promise.all(
+      sendTargetEmails.map(async (email) => ({
+        groupID,
+        email,
+        inviterID: user.id,
+        role,
+        roleID,
+        uuID: randomUUID(),
+        inviteCode: await createInviteCode(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      })),
+    )
 
     if (inviteData.length > 0) {
       await prisma.$transaction([
@@ -54,6 +67,7 @@ export async function POST(req: Request) {
           email: invite.email,
           groupName: team.groupName,
           inviterName: user.userName || user.shortName || user.email,
+          inviteCode: invite.inviteCode,
         }),
       })),
     )

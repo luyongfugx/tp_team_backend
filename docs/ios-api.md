@@ -477,6 +477,7 @@ POST group/user/join
 {
   "groupID": "group_xxx",
   "uuID": "invite-uuid",
+  "code": "123456",
   "loginType": 3,
   "inviteLinkWay": "LINK",
   "email": "user@example.com",
@@ -486,6 +487,8 @@ POST group/user/join
   "appInstanceID": "ios-device-instance-id"
 }
 ```
+
+邮箱邀请加入时，`inviteLinkWay` 传 `EMAIL`，`code` 可替代 `uuID`。
 
 响应：
 
@@ -709,6 +712,74 @@ POST group/user/invite/email
 }
 ```
 
+邮件内容里的加入链接格式：
+
+```text
+https://share.timeprint.net/invite?code=123456
+```
+
+其中 `code` 为 6 位数字邀请码。
+
+### 根据邀请码查询邀请信息
+
+```text
+GET group/user/invite/code/query?code=123456
+POST group/user/invite/code/query
+```
+
+该接口不需要登录，支持跨域访问。POST 请求体：
+
+```json
+{
+  "code": "123456"
+}
+```
+
+响应：
+
+```json
+{
+  "invite": {
+    "inviteCode": "123456",
+    "inviteLinkWay": "EMAIL",
+    "role": "普通成员",
+    "roleID": 3,
+    "isExpired": false,
+    "isAccepted": false,
+    "canJoin": true,
+    "createdAt": "2026-06-14T00:00:00.000Z",
+    "expiresAt": "2026-06-21T00:00:00.000Z",
+    "acceptedAt": null,
+    "inviter": {
+      "id": "user_inviter",
+      "userName": "邀请人",
+      "shortName": null,
+      "avatar": null,
+      "email": "inviter@example.com"
+    },
+    "invitedUser": {
+      "id": "user_invited",
+      "userName": "被邀请人",
+      "shortName": null,
+      "avatar": null,
+      "email": "a@example.com"
+    },
+    "team": {
+      "groupID": "group_xxx",
+      "groupName": "团队名称",
+      "memberNum": 3,
+      "owner": {
+        "id": "user_owner",
+        "userName": "创建者",
+        "shortName": null,
+        "avatar": null,
+        "email": "owner@example.com"
+      }
+    }
+  }
+}
+```
+
 ### 查询当前用户收到的团队邀请
 
 ```text
@@ -730,7 +801,8 @@ POST group/user/invite/list
       "inviteID": "invite_xxx",
       "groupID": "group_xxx",
       "groupName": "团队名称",
-      "uuID": "invite-uuid",
+      "inviteCode": "123456",
+      "uuID": "123456",
       "inviteLinkWay": "EMAIL",
       "role": "普通成员",
       "roleID": 3,
@@ -750,7 +822,7 @@ POST group/user/invite/list
 }
 ```
 
-仅返回当前登录用户邮箱对应、未过期、未接受、且当前用户尚未加入的团队邀请。点击加入时将列表中的 `groupID`、`uuID`、`inviteLinkWay` 传给 `group/user/join`。
+仅返回当前登录用户邮箱对应、未过期、未接受、且当前用户尚未加入的团队邀请。点击加入时将列表中的 `groupID`、`inviteCode` 或 `uuID`、`inviteLinkWay` 传给 `group/user/join`。
 
 ## 6. 权限
 

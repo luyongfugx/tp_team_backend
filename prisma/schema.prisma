@@ -8,20 +8,21 @@ datasource db {
 }
 
 model User {
-  id                 String          @id @default(cuid())
-  email              String          @unique
-  userName           String?
-  shortName          String?
-  avatar             String?
-  appInstanceID      String?
-  deletedAt          DateTime?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  sessions           Session[]
-  ownedTeams         Team[]          @relation("TeamOwner")
-  teamMemberships    TeamMember[]
-  projectMemberships ProjectMember[]
-  photos             Photo[]
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  userName             String?
+  shortName            String?
+  avatar               String?
+  appInstanceID        String?
+  deletedAt            DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  sessions             Session[]
+  ownedTeams           Team[]            @relation("TeamOwner")
+  sentTeamEmailInvites TeamEmailInvite[] @relation("TeamEmailInviteInviter")
+  teamMemberships      TeamMember[]
+  projectMemberships   ProjectMember[]
+  photos               Photo[]
 }
 
 model VerificationCode {
@@ -125,16 +126,20 @@ model TeamEmailInvite {
   id         String    @id @default(cuid())
   groupID    String
   email      String
+  inviterID  String?
   role       TeamRole  @default(MEMBER)
   roleID     Int       @default(3)
   uuID       String?
+  inviteCode String?   @unique
   acceptedAt DateTime?
   expiresAt  DateTime?
   createdAt  DateTime  @default(now())
   team       Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  inviter    User?     @relation("TeamEmailInviteInviter", fields: [inviterID], references: [id], onDelete: SetNull)
 
   @@index([groupID])
   @@index([email])
+  @@index([inviterID])
 }
 
 model PhotoPdfSetting {

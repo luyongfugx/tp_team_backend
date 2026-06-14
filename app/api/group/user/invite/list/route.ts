@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server"
+import type { TeamRole } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, roleToID, roleToName, requireUser } from "@/app/api/_utils/api"
+
+type InviteWithTeam = {
+  id: string
+  groupID: string
+  email: string
+  role: TeamRole
+  roleID: number
+  uuID: string | null
+  inviteCode: string | null
+  expiresAt: Date | null
+  createdAt: Date
+  team: {
+    groupName: string
+    _count: { members: number }
+    owner: {
+      id: string
+      userName: string | null
+      shortName: string | null
+      avatar: string | null
+      email: string
+    }
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -8,10 +32,10 @@ export async function POST(req: Request) {
     if (!user) return bad("未授权或登录已过期", 401)
 
     const now = new Date()
-    const invites = await prisma.teamEmailInvite.findMany({
+    const invites = (await prisma.teamEmailInvite.findMany({
       where: {
         email: user.email,
-        uuID: { not: null },
+        inviteCode: { not: null },
         acceptedAt: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
         team: {
@@ -30,7 +54,7 @@ export async function POST(req: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
-    })
+    } as never)) as unknown as InviteWithTeam[]
 
     return ok({
       invites: jsonSafe(
@@ -38,6 +62,7 @@ export async function POST(req: Request) {
           inviteID: invite.id,
           groupID: invite.groupID,
           groupName: invite.team.groupName,
+          inviteCode: invite.inviteCode,
           uuID: invite.uuID,
           inviteLinkWay: "EMAIL",
           role: roleToName(invite.role),
