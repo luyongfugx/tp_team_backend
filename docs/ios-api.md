@@ -162,6 +162,71 @@ POST user/login/vericode
 }
 ```
 
+### Apple 账户登录
+
+```text
+POST user/login/apple
+```
+
+请求：
+
+```json
+{
+  "identityToken": "apple-jwt-identity-token",
+  "rawNonce": "optional-raw-nonce",
+  "nonce": "optional-sha256-nonce",
+  "email": "user@example.com",
+  "fullName": {
+    "givenName": "Wayne",
+    "familyName": "Lu"
+  },
+  "userName": "Wayne Lu",
+  "avatar": "https://example.com/avatar.png",
+  "appInstanceID": "ios-device-instance-id"
+}
+```
+
+字段说明：
+
+|字段|说明|
+|---|---|
+|`identityToken`|必填，iOS `ASAuthorizationAppleIDCredential.identityToken` 转成 UTF-8 字符串后传给后端|
+|`rawNonce`|可选，如果客户端发起 Apple 登录时设置了 raw nonce，传原始值；后端会 SHA256 后与 token 内 `nonce` 比对|
+|`nonce`|可选，如果客户端只保存了已 SHA256 的 nonce，可直接传该值|
+|`email`|可选兜底；Apple 通常只在首次授权返回邮箱，后端优先使用 identityToken 内的 email|
+|`fullName` / `userName`|可选；Apple 通常只在首次授权返回姓名|
+|`appInstanceID`|可选，设备实例 ID|
+
+响应：
+
+```json
+{
+  "userID": "user_xxx",
+  "userName": "Wayne Lu",
+  "avatar": null,
+  "shortName": null,
+  "ownerTeamCount": 1,
+  "token": "login-token",
+  "email": "user@example.com",
+  "isNewUser": false,
+  "groupID": "group_xxx"
+}
+```
+
+服务端会校验 Apple `identityToken` 的签名、`iss`、`aud`、过期时间和可选 nonce。首次 Apple 登录必须拿到邮箱；后续 Apple 可能不再返回邮箱，后端会通过 Apple `sub` 绑定的账号登录。
+
+服务端环境变量：
+
+```text
+APPLE_CLIENT_IDS=com.example.ios.bundle
+```
+
+如果有多个 Apple client id / bundle id，用英文逗号分隔：
+
+```text
+APPLE_CLIENT_IDS=com.example.ios.bundle,com.example.web.service
+```
+
 ### 刷新 token
 
 ```text
