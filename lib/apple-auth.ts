@@ -89,7 +89,8 @@ export async function verifyAppleIdentityToken({
   const header = parseJwtPart<AppleJwtHeader>(encodedHeader)
   const payload = parseJwtPart<AppleIdentityPayload>(encodedPayload)
 
-  if (header.alg !== "ES256" || !header.kid) throw new Error("Apple identityToken 算法不支持")
+  if (!header.kid) throw new Error("Apple identityToken 缺少 key id")
+  if (header.alg !== "RS256" && header.alg !== "ES256") throw new Error("Apple identityToken 算法不支持")
 
   const key = (await getAppleKeys()).find((item) => item.kid === header.kid)
   if (!key) throw new Error("Apple identityToken 公钥不存在")
@@ -98,7 +99,10 @@ export async function verifyAppleIdentityToken({
   verifier.update(`${encodedHeader}.${encodedPayload}`)
   verifier.end()
   const publicKey = createPublicKey({ key, format: "jwk" })
-  const isValid = verifier.verify({ key: publicKey, dsaEncoding: "ieee-p1363" }, base64UrlDecode(encodedSignature))
+  const isValid =
+    header.alg === "ES256"
+      ? verifier.verify({ key: publicKey, dsaEncoding: "ieee-p1363" }, base64UrlDecode(encodedSignature))
+      : verifier.verify(publicKey, base64UrlDecode(encodedSignature))
   if (!isValid) throw new Error("Apple identityToken 签名无效")
 
   if (payload.iss !== "https://appleid.apple.com") throw new Error("Apple token issuer 不正确")
