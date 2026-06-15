@@ -21,7 +21,6 @@ export async function POST(req: Request) {
     const body = await readBody(req)
     const identityToken = typeof body.identityToken === "string" ? body.identityToken.trim() : ""
     if (!identityToken) return bad("缺少 Apple identityToken")
-
     const applePayload = await verifyAppleIdentityToken({
       identityToken,
       nonce: typeof body.nonce === "string" ? body.nonce : undefined,
