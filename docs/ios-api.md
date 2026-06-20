@@ -729,6 +729,68 @@ POST group/invite/link/query
 }
 ```
 
+### 查询或生成团队码
+
+```text
+POST group/invite/code/query
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "roleID": 3
+}
+```
+
+响应：
+
+```json
+{
+  "teamCode": "123456",
+  "role": "普通成员",
+  "roleID": 3,
+  "expiresAt": null
+}
+```
+
+仅团队创建者或管理员可操作。若团队已有有效团队码，直接返回已有团队码；否则生成新的 6 位团队码。`roleID` 可选，默认普通成员。
+
+### 通过团队码加入团队
+
+```text
+POST group/user/join/code
+```
+
+请求：
+
+```json
+{
+  "teamCode": "123456",
+  "appInstanceID": "ios-device-instance-id"
+}
+```
+
+响应：
+
+```json
+{
+  "userID": "user_xxx",
+  "userName": "Wayne",
+  "avatar": null,
+  "shortName": null,
+  "token": "login-token",
+  "email": "user@example.com",
+  "groupID": "group_xxx",
+  "groupName": "团队名称",
+  "role": "普通成员",
+  "roleID": 3
+}
+```
+
+需要登录。用户输入团队码后即可加入对应团队；如果已经在团队内，接口保持幂等并返回成功。
+
 ### 查询可邀请角色
 
 ```text

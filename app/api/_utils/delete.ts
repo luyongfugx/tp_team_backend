@@ -1,6 +1,9 @@
 import type { Prisma, User } from "@prisma/client"
 
 type Tx = Prisma.TransactionClient
+type TxWithTeamInviteCode = Tx & {
+  teamInviteCode: { deleteMany: (args: unknown) => Promise<unknown> }
+}
 
 export async function deleteTeamData(tx: Tx, groupID: string) {
   await tx.photo.deleteMany({ where: { groupID } })
@@ -10,6 +13,7 @@ export async function deleteTeamData(tx: Tx, groupID: string) {
   await tx.photoPackageTask.deleteMany({ where: { groupID } })
   await tx.photoPdfSetting.deleteMany({ where: { groupID } })
   await tx.teamInviteLink.deleteMany({ where: { groupID } })
+  await (tx as TxWithTeamInviteCode).teamInviteCode.deleteMany({ where: { groupID } })
   await tx.teamEmailInvite.deleteMany({ where: { groupID } })
   await tx.teamMember.deleteMany({ where: { groupID } })
   await tx.team.delete({ where: { groupID } })

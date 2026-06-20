@@ -75,6 +75,7 @@ model Team {
   members                TeamMember[]
   projects               Project[]
   inviteLinks            TeamInviteLink[]
+  inviteCodes            TeamInviteCode[]
   emailInvites           TeamEmailInvite[]
   pdfSetting             PhotoPdfSetting?
   photos                 Photo[]
@@ -119,6 +120,21 @@ model TeamInviteLink {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   team          Team          @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@index([groupID])
+}
+
+model TeamInviteCode {
+  id         String    @id @default(cuid())
+  groupID    String
+  code       String    @unique
+  role       TeamRole  @default(MEMBER)
+  roleID     Int       @default(3)
+  expiresAt  DateTime?
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  team       Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
 
   @@index([groupID])
 }
