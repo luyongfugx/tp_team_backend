@@ -1,10 +1,18 @@
 import nodemailer from "nodemailer"
+import path from "path"
 
 type SendMailResult = {
   ok: boolean
   skipped?: boolean
   reason?: string
   messageId?: string
+}
+
+type MailAttachment = {
+  filename: string
+  path: string
+  cid: string
+  contentType?: string
 }
 
 // SMTP 配置从环境变量读取
@@ -38,6 +46,19 @@ function inviteLink(inviteCode: string) {
   return url.toString()
 }
 
+function verificationCopyLink(code: string) {
+  const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://teamspace.timeprint.net"
+  const url = new URL("/api/auth/verify-code/copy", baseURL)
+  url.searchParams.set("code", code)
+  return url.toString()
+}
+
+function verificationLoginLink(code: string) {
+  const url = new URL("https://www.timeprint.net/login")
+  url.searchParams.set("code", code)
+  return url.toString()
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -53,12 +74,14 @@ async function sendLoggedMail({
   text,
   html,
   scene,
+  attachments,
 }: {
   to: string
   subject: string
   text: string
   html: string
   scene: string
+  attachments?: MailAttachment[]
 }): Promise<SendMailResult> {
   const transporter = getTransporter()
   const host = process.env.SMTP_HOST
@@ -74,7 +97,7 @@ async function sendLoggedMail({
   console.log(`[mail:${scene}] 开始发送邮件`, { to, subject, from, host, port })
 
   try {
-    const info = await transporter.sendMail({ from, to, subject, text, html })
+    const info = await transporter.sendMail({ from, to, subject, text, html, attachments })
     console.log(`[mail:${scene}] 邮件发送成功`, {
       to,
       subject,
@@ -92,21 +115,57 @@ async function sendLoggedMail({
 }
 
 export async function sendVerificationEmail(email: string, code: string) {
+  const escapedCode = escapeHtml(code)
+  const copyLink = verificationCopyLink(code)
+  const loginLink = verificationLoginLink(code)
+
   return sendLoggedMail({
     to: email,
-    subject: "您的登录验证码",
-    text: `您的登录验证码是 ${code}，5 分钟内有效。如非本人操作请忽略此邮件。`,
+    subject: "Timeprint Verification Code",
+    text: `Your Timeprint verification code is ${code}. This code is valid for the next 5 minutes and can only be used once. Login now: ${loginLink} Copy code: ${copyLink}`,
     html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
-        <h2 style="color: #111;">登录验证码</h2>
-        <p style="color: #555; font-size: 14px;">您正在登录，请使用以下验证码完成验证：</p>
-        <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111; background: #f4f4f5; padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
-          ${code}
+      <div style="margin: 0; padding: 0; background: #f6f7f9;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 18px;">
+          <div style="background: #ffffff; border: 1px solid #edf0f3; border-radius: 18px; padding: 36px 32px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);">
+            <img src="cid:timeprint-app-icon" width="60" height="60" alt="Timeprint" style="display: block; width: 60px; height: 60px; border-radius: 14px; margin: 0 0 34px;" />
+            <div style="font-size: 48px; line-height: 1; font-weight: 800; letter-spacing: 8px; color: #050505; margin: 0 0 24px;">
+              ${escapedCode}
+            </div>
+            <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 0 0 18px;">
+              This code is valid for the next 5 minutes and can only be used once.
+            </p>
+            <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 0 0 28px;">
+              If you didn't request this code, please ignore this email.
+            </p>
+            <a href="${copyLink}" style="display: inline-block; background: #111111; color: #ffffff; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px;">
+              Copy verification code
+            </a>
+            <a href="${loginLink}" style="display: inline-block; background: #ffe700; color: #111111; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px; margin-left: 10px;">
+              现在登录
+            </a>
+            <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 34px 0 0;">
+              The Timeprint Team<br />
+              <a href="https://timeprint.net" style="color: #1683d8; text-decoration: none;">timeprint.net</a>
+            </p>
+          </div>
+          <div style="color: #9ca3af; font-size: 15px; line-height: 1.6; text-align: center; margin-top: 28px;">
+            © Timeprint 2026<br />
+            <a href="https://timeprint.net/privacy" style="color: #9ca3af; text-decoration: none;">Privacy</a>
+            <span style="padding: 0 12px;">|</span>
+            <a href="https://timeprint.net/terms" style="color: #9ca3af; text-decoration: none;">Terms</a>
+          </div>
         </div>
-        <p style="color: #999; font-size: 12px;">验证码 5 分钟内有效。如非本人操作，请忽略此邮件。</p>
       </div>
     `,
     scene: "verification",
+    attachments: [
+      {
+        filename: "timeprint-mail-icon.png",
+        path: path.join(process.cwd(), "public", "timeprint-mail-icon.png"),
+        cid: "timeprint-app-icon",
+        contentType: "image/png",
+      },
+    ],
   })
 }
 
@@ -115,31 +174,79 @@ export async function sendTeamInviteEmail({
   groupName,
   inviterName,
   inviteCode,
+  memberCount,
+  photoCount,
 }: {
   email: string
   groupName: string
   inviterName: string
   inviteCode: string
+  memberCount: number
+  photoCount: number
 }) {
   const link = inviteLink(inviteCode)
   const escapedGroupName = escapeHtml(groupName)
   const escapedInviterName = escapeHtml(inviterName)
-  const content = `您好，${inviterName}在timeprint上邀请您加入${groupName}团队，请您点击以下链接加入团队:${link}`
+  const inviterInitial = escapeHtml((inviterName.trim()[0] || "T").toUpperCase())
+  const content = `${inviterName} invited you to join ${groupName}. Accept now: ${link}`
 
   return sendLoggedMail({
     to: email,
-    subject: `邀请您加入${groupName}团队`,
+    subject: `${inviterName} invited you to join ${groupName}`,
     text: content,
     html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
-        <p style="color: #111; font-size: 16px; line-height: 1.7; margin: 0;">
-          您好，${escapedInviterName}在timeprint上邀请您加入${escapedGroupName}团队，请您点击以下链接加入团队:
-        </p>
-        <p style="font-size: 16px; line-height: 1.7; margin: 16px 0 0;">
-          <a href="${link}" style="color: #2563eb;">${link}</a>
-        </p>
+      <div style="margin: 0; padding: 0; background: #f6f7f9;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 18px;">
+          <div style="background: #ffffff; border: 1px solid #edf0f3; border-radius: 18px; overflow: hidden; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);">
+            <div style="padding: 34px 32px 28px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 0 0 36px;">
+                <tr>
+                  <td style="vertical-align: middle;">
+                    <img src="cid:timeprint-app-icon" width="56" height="56" alt="Timeprint" style="display: block; width: 56px; height: 56px; border-radius: 14px;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-left: 22px; color: #111827; font-size: 30px; font-weight: 500;">
+                    Timeprint
+                  </td>
+                </tr>
+              </table>
+              <div style="width: 88px; height: 88px; border-radius: 50%; background: #405768; color: #ffffff; font-size: 44px; line-height: 88px; text-align: center; margin: 0 0 34px;">
+                ${inviterInitial}
+              </div>
+              <div style="color: #111827; font-size: 32px; line-height: 1.28; font-weight: 800; margin: 0 0 30px;">
+                ${escapedInviterName} invited you to join ${escapedGroupName}
+              </div>
+              <p style="color: #5f6368; font-size: 21px; line-height: 1.5; margin: 0 0 34px;">
+                Collect and organize work photos automatically with Timeprint teamspace
+              </p>
+              <a href="${link}" style="display: block; background: #1f456d; color: #ffffff; text-decoration: none; text-align: center; font-size: 21px; font-weight: 700; padding: 17px 22px; border-radius: 10px;">
+                Accept Now
+              </a>
+            </div>
+            <div style="background: #edf6ff; padding: 26px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <tr>
+                  <td style="width: 58px; vertical-align: middle;">
+                    <div style="width: 50px; height: 50px; border-radius: 10px; background: #ffffff; color: #1f456d; font-size: 18px; font-weight: 800; line-height: 50px; text-align: center;">TM</div>
+                  </td>
+                  <td style="vertical-align: middle; padding-left: 14px;">
+                    <div style="color: #111827; font-size: 24px; font-weight: 800; line-height: 1.25;">${escapedGroupName}</div>
+                    <div style="color: #374151; font-size: 17px; line-height: 1.5;">${memberCount} members · ${photoCount} photos</div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     `,
     scene: "team-invite",
+    attachments: [
+      {
+        filename: "timeprint-mail-icon.png",
+        path: path.join(process.cwd(), "public", "timeprint-mail-icon.png"),
+        cid: "timeprint-app-icon",
+        contentType: "image/png",
+      },
+    ],
   })
 }

@@ -91,7 +91,7 @@ x-sign-id: md5(email + signKey)
 1. `user/vericode/send` 发送邮箱验证码。
 2. `user/login/vericode` 使用验证码登录，保存返回的 `token`。
 3. `group/list` 获取团队列表。
-4. 无团队时调用 `group/create` 创建团队。
+4. 用户可以加入或创建多个团队；无团队时调用 `group/create` 创建团队。
 5. 管理员或创建者调用 `group/project/create` 创建项目。
 6. 成员拍照后调用 `photo/upload` 上传照片记录。
 7. 调用 `photo/list/v1` 查看团队或项目照片。
@@ -330,15 +330,24 @@ POST user/info/update
 ```json
 {
   "userName": "New Name",
-  "avatar": "https://example.com/new-avatar.png"
+  "avatar": "https://example.com/new-avatar.png",
+  "email": "new@example.com"
 }
 ```
 
 响应：
 
 ```json
-{}
+{
+  "userID": "user_xxx",
+  "userName": "New Name",
+  "avatar": "https://example.com/new-avatar.png",
+  "shortName": null,
+  "email": "new@example.com"
+}
 ```
+
+三个字段都可选；传 `email` 时服务端会校验邮箱格式和唯一性。
 
 ### 删除账号
 
@@ -357,6 +366,8 @@ POST user/delete
 ```json
 {}
 ```
+
+注销账号会删除该用户资料、会话、验证码、该用户创建的团队及其关联数据、该用户在其他团队内的成员关系和照片记录。该操作不可恢复。
 
 ### 获取 Web token
 
@@ -589,7 +600,7 @@ POST group/delete
 {}
 ```
 
-仅创建者可删除。
+仅创建者可操作。注销团队会删除该团队、成员、项目、照片、分享、打包任务、PDF 设置和邀请记录。该操作不可恢复。
 
 ### 转让团队
 

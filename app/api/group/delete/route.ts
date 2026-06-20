@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, ok, readBody, requireTeamManager, requireUser } from "@/app/api/_utils/api"
+import { deleteTeamData } from "@/app/api/_utils/delete"
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     const member = await requireTeamManager(groupID, user.id)
     if (!member || member.role !== "OWNER") return bad("只有创建者可以删除团队", 403)
-    await prisma.team.update({ where: { groupID }, data: { deletedAt: new Date() } })
+    await prisma.$transaction((tx) => deleteTeamData(tx, groupID))
     return ok()
   } catch (err) {
     console.log("[app/group/delete] error:", err)

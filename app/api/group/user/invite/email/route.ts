@@ -20,7 +20,13 @@ export async function POST(req: Request) {
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     if (!(await requireTeamManager(groupID, user.id))) return bad("无团队管理权限", 403)
-    const team = await prisma.team.findUnique({ where: { groupID }, select: { groupName: true } })
+    const team = await prisma.team.findUnique({
+      where: { groupID },
+      select: {
+        groupName: true,
+        _count: { select: { members: true, photos: true } },
+      },
+    })
     if (!team) return bad("团队不存在")
 
     const emails = asStringArray(body.emails).map(normalizeEmail)
@@ -68,6 +74,8 @@ export async function POST(req: Request) {
           groupName: team.groupName,
           inviterName: user.userName || user.shortName || user.email,
           inviteCode: invite.inviteCode,
+          memberCount: team._count.members,
+          photoCount: team._count.photos,
         }),
       })),
     )
