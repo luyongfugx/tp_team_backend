@@ -90,11 +90,12 @@ x-sign-id: md5(email + signKey)
 
 1. `user/vericode/send` 发送邮箱验证码。
 2. `user/login/vericode` 使用验证码登录，保存返回的 `token`。
-3. `group/list` 获取团队列表。
-4. 用户可以加入或创建多个团队；无团队时调用 `group/create` 创建团队。
-5. 管理员或创建者调用 `group/project/create` 创建项目。
-6. 成员拍照后调用 `photo/upload` 上传照片记录。
-7. 调用 `photo/list/v1` 查看团队或项目照片。
+3. 首次登录时，如果用户没有待处理团队邀请，且没有所属团队，服务端会自动创建一个默认团队，团队名格式为 `username's team`。
+4. `group/list` 获取团队列表。
+5. 用户可以加入或创建多个团队；也可以调用 `group/create` 手动创建团队。
+6. 管理员或创建者调用 `group/project/create` 创建项目。
+7. 成员拍照后调用 `photo/upload` 上传照片记录。
+8. 调用 `photo/list/v1` 查看团队或项目照片。
 
 ## 3. 用户 / 登录
 

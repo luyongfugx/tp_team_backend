@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSession } from "@/lib/auth"
+import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
       data: { consumed: true },
     })
 
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+
     // 用户不存在则创建（首次登录即注册）
     const user = await prisma.user.upsert({
       where: { email: normalizedEmail },
@@ -46,6 +49,7 @@ export async function POST(req: Request) {
     })
 
     const { token, expiresAt } = await createSession(user.id)
+    if (!existing) await createDefaultTeamIfNeeded(user)
 
     return NextResponse.json({
       success: true,

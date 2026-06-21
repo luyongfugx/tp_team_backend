@@ -3,6 +3,7 @@ import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { verifyAppleIdentityToken } from "@/lib/apple-auth"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
+import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 
 function nameFromBody(body: Record<string, unknown>) {
   if (typeof body.userName === "string" && body.userName.trim()) return body.userName.trim()
@@ -63,6 +64,7 @@ export async function POST(req: Request) {
         })
 
     const { token } = await createSession(user.id, appInstanceID)
+    if (!existing) await createDefaultTeamIfNeeded(user)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })

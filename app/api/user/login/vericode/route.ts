@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
+import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 
 export async function POST(req: Request) {
   try {
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
       user.id,
       typeof body.appInstanceID === "string" ? body.appInstanceID : undefined,
     )
+    if (!existing) await createDefaultTeamIfNeeded(user)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })
