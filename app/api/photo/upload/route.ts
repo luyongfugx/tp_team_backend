@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
 
-function maybeJson(value: unknown) {
+function maybeJson(value: unknown): Prisma.InputJsonValue | undefined {
   if (value == null) return undefined
   if (typeof value !== "string") return value
   try {
-    return JSON.parse(value)
+    return JSON.parse(value) as Prisma.InputJsonValue
   } catch {
     return value
   }
@@ -18,18 +19,23 @@ export async function POST(req: Request) {
     if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
-    const projectID = Number(body.projectID)
+    const projectID = body.projectID == null ? undefined : Number(body.projectID)
     const timestamp = Number(body.takePhotoTimestamp)
-    if (!groupID || !Number.isFinite(projectID) || !Number.isFinite(timestamp)) return bad()
+    if (!groupID || !Number.isFinite(timestamp)) return bad()
     if (typeof body.ossFileName !== "string" || !body.ossFileName) return bad()
     if (typeof body.takePhotoFormatTime !== "string" || typeof body.takePhotoTimezoneID !== "string") return bad()
     if (!(await requireTeamMember(groupID, user.id))) return bad("无团队访问权限", 403)
 
-    const project = await prisma.project.findFirst({ where: { groupID, projectID, deletedAt: null } })
-    if (!project) return bad("项目不存在")
+    const hasProject = projectID != null && Number.isFinite(projectID) && projectID > 0
+    const project = hasProject
+      ? await prisma.project.findFirst({ where: { groupID, projectID, deletedAt: null } })
+      : null
+    if (hasProject && !project) return bad("项目不存在")
 
-    const mediaInfo = maybeJson(body.mediaInfo) as Record<string, unknown> | string | undefined
-    const mediaObject = mediaInfo && typeof mediaInfo === "object" ? mediaInfo : undefined
+    const mediaInfo = maybeJson(body.mediaInfo)
+    const mediaObject = mediaInfo && typeof mediaInfo === "object" && !Array.isArray(mediaInfo)
+      ? mediaInfo as Record<string, unknown>
+      : undefined
     const baseURL = process.env.COS_PUBLIC_BASE_URL || ""
     const fallbackURL = baseURL ? `${baseURL.replace(/\/$/, "")}/${body.ossFileName}` : undefined
     const largeURL = typeof mediaObject?.imageUrl === "string"
@@ -42,7 +48,7 @@ export async function POST(req: Request) {
     const photo = await prisma.photo.create({
       data: {
         groupID,
-        projectID,
+        projectID: project?.projectID,
         userID: user.id,
         mediaType: body.mediaType == null ? 0 : Number(body.mediaType),
         timestamp: BigInt(timestamp),
@@ -54,7 +60,7 @@ export async function POST(req: Request) {
         userName: user.userName,
         userShortName: user.shortName,
         userAvatar: user.avatar,
-        projectName: project.projectName,
+        projectName: project?.projectName,
         antiFakeCode: typeof body.antiFakeCode === "string" ? body.antiFakeCode : undefined,
         ossFileName: body.ossFileName,
         localPhotoName: typeof body.localPhotoName === "string" ? body.localPhotoName : undefined,
@@ -70,11 +76,11 @@ export async function POST(req: Request) {
         systemInfo: maybeJson(body.systemInfo),
         mediaInfo,
         attendanceInfo: maybeJson(body.attendanceInfo),
-        searchText: [body.location, body.antiFakeCode, body.localPhotoName, project.projectName, user.userName].filter(Boolean).join(" "),
-      },
+        searchText: [body.location, body.antiFakeCode, body.localPhotoName, project?.projectName, user.userName].filter(Boolean).join(" "),
+      } as never,
     })
 
-    await prisma.$transaction([
+    const updates = [
       prisma.teamMember.update({
         where: { groupID_userID: { groupID, userID: user.id } },
         data: {
@@ -84,15 +90,20 @@ export async function POST(req: Request) {
           latestPhotoTimeInterval: Math.max(Date.now() - timestamp, 0),
         },
       }),
-      prisma.project.update({
-        where: { projectID },
-        data: {
-          photoCount: { increment: 1 },
-          latestPhotoTimestamp: BigInt(timestamp),
-          latestPhotoSmallURL: largeURL,
-        },
-      }),
-    ])
+      ...(project
+        ? [
+            prisma.project.update({
+              where: { projectID: project.projectID },
+              data: {
+                photoCount: { increment: 1 },
+                latestPhotoTimestamp: BigInt(timestamp),
+                latestPhotoSmallURL: largeURL,
+              },
+            }),
+          ]
+        : []),
+    ]
+    await prisma.$transaction(updates)
 
     return ok({ photoID: photo.photoID })
   } catch (err) {

@@ -1389,8 +1389,8 @@ POST photo/list/v1
       "userName": "Wayne",
       "userShortName": "W",
       "userAvatar": "https://example.com/avatar.png",
-      "projectID": 1,
-      "projectName": "上海项目",
+      "projectID": null,
+      "projectName": null,
       "antiFakeCode": "ABC123",
       "ossFileName": "photos/a.jpg",
       "localPhotoName": "IMG_0001.JPG",
@@ -1409,6 +1409,8 @@ POST photo/list/v1
   ]
 }
 ```
+
+`projectID` 为可选筛选条件。不传时返回团队下全部照片；照片可以不属于任何项目，此时返回的 `projectID`、`projectName` 为 `null`。
 
 ### 上传照片
 
@@ -1477,6 +1479,8 @@ POST photo/upload
   "attendanceInfo": null
 }
 ```
+
+`projectID` 可选；不传、传 `null` 或传 `0` 时，照片只归属团队，不归属任何项目。传有效 `projectID` 时，服务端会校验该项目属于当前团队。
 
 响应：
 
@@ -1562,6 +1566,8 @@ POST photo/move/v1
   "movedCount": 2
 }
 ```
+
+`targetProjectID = 0` 表示将照片移出项目，仅保留团队归属。
 
 ### 分享照片
 

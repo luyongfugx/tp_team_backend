@@ -217,7 +217,7 @@ model ProjectMember {
 model Photo {
   photoID             String    @id @default(cuid())
   groupID             String
-  projectID           Int
+  projectID           Int?
   userID              String
   mediaType           Int       @default(0)
   timestamp           BigInt
@@ -250,7 +250,7 @@ model Photo {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   team                Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
-  project             Project   @relation(fields: [projectID], references: [projectID], onDelete: Restrict)
+  project             Project?  @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
   user                User      @relation(fields: [userID], references: [id], onDelete: Restrict)
 
   @@index([groupID, timestamp])

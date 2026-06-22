@@ -12,6 +12,13 @@ export async function POST(req: Request) {
     const targetProjectID = Number(body.targetProjectID)
     if (!Number.isFinite(targetProjectID)) return bad()
     if (!(await requireTeamManager(groupID, user.id))) return bad("无照片移动权限", 403)
+    if (targetProjectID <= 0) {
+      const result = await prisma.photo.updateMany({
+        where: selectedPhotoWhere(body, groupID),
+        data: { projectID: null, projectName: null } as never,
+      })
+      return ok({ movedCount: result.count })
+    }
     const target = await prisma.project.findFirst({ where: { groupID, projectID: targetProjectID, deletedAt: null } })
     if (!target) return bad("目标项目不存在")
     const result = await prisma.photo.updateMany({

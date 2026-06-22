@@ -46,13 +46,6 @@ function inviteLink(inviteCode: string) {
   return url.toString()
 }
 
-function verificationCopyLink(code: string) {
-  const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://teamspace.timeprint.net"
-  const url = new URL("/api/auth/verify-code/copy", baseURL)
-  url.searchParams.set("code", code)
-  return url.toString()
-}
-
 function verificationLoginLink(code: string) {
   const url = new URL("https://www.timeprint.net/login")
   url.searchParams.set("code", code)
@@ -116,13 +109,12 @@ async function sendLoggedMail({
 
 export async function sendVerificationEmail(email: string, code: string) {
   const escapedCode = escapeHtml(code)
-  const copyLink = verificationCopyLink(code)
   const loginLink = verificationLoginLink(code)
 
   return sendLoggedMail({
     to: email,
     subject: "Timeprint Verification Code",
-    text: `Your Timeprint verification code is ${code}. This code is valid for the next 5 minutes and can only be used once. Login now: ${loginLink} Copy code: ${copyLink}`,
+    text: `Your Timeprint verification code is ${code}. This code is valid for the next 5 minutes and can only be used once. Login now: ${loginLink}`,
     html: `
       <div style="margin: 0; padding: 0; background: #f6f7f9;">
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 18px;">
@@ -137,10 +129,7 @@ export async function sendVerificationEmail(email: string, code: string) {
             <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 0 0 28px;">
               If you didn't request this code, please ignore this email.
             </p>
-            <a href="${copyLink}" style="display: inline-block; background: #111111; color: #ffffff; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px;">
-              Copy verification code
-            </a>
-            <a href="${loginLink}" style="display: inline-block; background: #ffe700; color: #111111; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px; margin-left: 10px;">
+            <a href="${loginLink}" style="display: inline-block; background: #ffe700; color: #111111; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px;">
               现在登录
             </a>
             <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 34px 0 0;">

@@ -36,7 +36,7 @@ export default function Page() {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background p-4">
+    <main className={`min-h-svh bg-background p-4 ${auth ? "md:p-6" : "flex items-center justify-center"}`}>
       {ready &&
         (auth ? (
           <Dashboard
