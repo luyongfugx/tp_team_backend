@@ -509,6 +509,95 @@ POST group/list
 }
 ```
 
+### 首页聚合接口
+
+```text
+POST group/home
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "projectID": null,
+  "pageIndex": 1,
+  "pageSize": 60,
+  "timezone": "Asia/Shanghai"
+}
+```
+
+响应固定为 `{ "code": 0, "data": { ... } }`。认证失败时 `code = 401`；参数或权限错误会返回对应 `code` 和 `message/error`。
+
+`groupID` 不传时，服务端优先使用用户上次选中的团队，再使用用户加入的第一个团队。传入有效 `groupID` 后，服务端会保存为该用户当前选中团队。
+
+`projectID`：
+
+- 传项目 ID：照片流只返回该项目照片。
+- 传 `null`：照片流返回团队全部照片，包括项目照片和 `projectID = null` 的团队级照片。
+- 不传：服务端使用用户上次选中的项目状态；如果上次就是 `null`，继续返回团队全部照片。
+
+响应示例：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "setupStep": "teamHome",
+    "selectedGroupID": "group_xxx",
+    "selectedProjectID": null,
+    "selectedGroup": {
+      "groupID": "group_xxx",
+      "groupName": "Wayne's Team",
+      "role": "创建者",
+      "roleID": 1,
+      "memberNum": 4,
+      "syncNum": 86
+    },
+    "selectedProject": null,
+    "pendingInvite": null,
+    "groups": [
+      {
+        "groupID": "group_xxx",
+        "groupName": "Wayne's Team",
+        "role": "创建者",
+        "roleID": 1,
+        "memberNum": 4,
+        "syncNum": 86,
+        "defaultSelect": 123,
+        "projects": [],
+        "members": []
+      }
+    ],
+    "photos": {
+      "totalCount": 86,
+      "pageIndex": 1,
+      "pageSize": 60,
+      "hasMore": true,
+      "list": []
+    },
+    "homeStats": {
+      "memberCount": 4,
+      "projectCount": 2,
+      "syncCount": 86,
+      "todayPhotoCount": 5,
+      "todayActiveMemberCount": 2,
+      "todayInactiveMemberCount": 2,
+      "latestPhotoID": "photo_xxx"
+    }
+  }
+}
+```
+
+`setupStep`：
+
+- `teamHome`：用户已有团队且已有项目，首页可直接展示。
+- `joinTeam`：用户没有团队，但有待加入邀请，返回 `pendingInvite`。
+- `createTeam`：用户没有团队，也没有待加入邀请。
+- `createProject`：用户有团队但没有项目。
+
+`pendingInvite` 字段等价于原来的 `group/user/invite/list` 首条待加入邀请。
+
 ### 创建团队
 
 ```text
