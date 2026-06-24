@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { bad, ok, readBody, requireTeamManager, requireUser } from "@/app/api/_utils/api"
-import { selectedPhotoWhere } from "@/app/api/_utils/photo"
+import { bad, canManage, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { batchPhotoWhereForUser, isForbiddenPersonalPhotoScene, selectedPhotoWhere } from "@/app/api/_utils/photo"
 
 export async function POST(req: Request) {
   try {
@@ -11,10 +11,21 @@ export async function POST(req: Request) {
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     const targetProjectID = Number(body.targetProjectID)
     if (!Number.isFinite(targetProjectID)) return bad()
-    if (!(await requireTeamManager(groupID, user.id))) return bad("无照片移动权限", 403)
+    const member = await requireTeamMember(groupID, user.id)
+    if (!member) return bad("无团队访问权限", 403)
+    if (isForbiddenPersonalPhotoScene(body, user.id)) return bad("个人详情只支持操作自己的照片", 403)
+    const isManager = canManage(member)
+    const baseWhere = selectedPhotoWhere(body, groupID)
+    if (!isManager) {
+      const forbiddenCount = await prisma.photo.count({
+        where: { AND: [baseWhere, { userID: { not: user.id } }] },
+      })
+      if (forbiddenCount > 0) return bad("无照片移动权限", 403)
+    }
+    const moveWhere = batchPhotoWhereForUser(body, groupID, user.id, isManager)
     if (targetProjectID <= 0) {
       const result = await prisma.photo.updateMany({
-        where: selectedPhotoWhere(body, groupID),
+        where: moveWhere,
         data: { projectID: null, projectName: null } as never,
       })
       return ok({ movedCount: result.count })
@@ -22,7 +33,7 @@ export async function POST(req: Request) {
     const target = await prisma.project.findFirst({ where: { groupID, projectID: targetProjectID, deletedAt: null } })
     if (!target) return bad("目标项目不存在")
     const result = await prisma.photo.updateMany({
-      where: selectedPhotoWhere(body, groupID),
+      where: moveWhere,
       data: { projectID: targetProjectID, projectName: target.projectName },
     })
     return ok({ movedCount: result.count })

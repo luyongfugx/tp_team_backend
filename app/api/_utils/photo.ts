@@ -72,3 +72,31 @@ export function selectedPhotoWhere(
     photoID: unSelectedPhotoIDs.length ? { notIn: unSelectedPhotoIDs } : undefined,
   }
 }
+
+export function batchPhotoWhereForUser(
+  body: Record<string, unknown>,
+  groupID: string,
+  currentUserID: string,
+  canManageTeamPhotos: boolean,
+): Prisma.PhotoWhereInput {
+  const scene = typeof body.scene === "string" ? body.scene : ""
+  const isPersonalScene = ["user", "personal", "member"].includes(scene)
+  const where = selectedPhotoWhere(body, groupID)
+
+  if (isPersonalScene) {
+    return { ...where, userID: currentUserID }
+  }
+
+  if (!canManageTeamPhotos) {
+    return { ...where, userID: currentUserID }
+  }
+
+  return where
+}
+
+export function isForbiddenPersonalPhotoScene(body: Record<string, unknown>, currentUserID: string) {
+  const scene = typeof body.scene === "string" ? body.scene : ""
+  if (!["user", "personal", "member"].includes(scene)) return false
+  const detailUserIDs = asStringArray(body.userID || body.userIDs || body.colleagueUserID)
+  return detailUserIDs.length > 0 && (detailUserIDs.length !== 1 || detailUserIDs[0] !== currentUserID)
+}

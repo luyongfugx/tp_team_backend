@@ -14,6 +14,8 @@ model User {
   userName             String?
   shortName            String?
   avatar               String?
+  selectedGroupID      String?
+  selectedProjectID    Int?
   appInstanceID        String?
   deletedAt            DateTime?
   createdAt            DateTime          @default(now())
@@ -24,6 +26,9 @@ model User {
   teamMemberships      TeamMember[]
   projectMemberships   ProjectMember[]
   photos               Photo[]
+
+  @@index([selectedGroupID])
+  @@index([selectedProjectID])
 }
 
 model VerificationCode {

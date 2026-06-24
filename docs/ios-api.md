@@ -344,9 +344,78 @@ POST user/info/update
   "userName": "New Name",
   "avatar": "https://example.com/new-avatar.png",
   "shortName": null,
-  "email": "new@example.com"
+  "email": "new@example.com",
+  "selectedGroupID": "group_xxx",
+  "selectedProjectID": 1
 }
 ```
+
+### 查询当前用户选中的团队和项目
+
+```text
+POST user/selection/query
+```
+
+请求：
+
+```json
+{}
+```
+
+响应：
+
+```json
+{
+  "selectedGroupID": "group_xxx",
+  "selectedProjectID": 1,
+  "role": "创建者",
+  "roleID": 1,
+  "selectedTeam": {
+    "groupID": "group_xxx",
+    "groupName": "Wayne's team",
+    "role": "创建者",
+    "roleID": 1
+  },
+  "selectedProject": {
+    "projectID": 1,
+    "projectName": "上海项目"
+  }
+}
+```
+
+如果当前没有选中团队或项目，对应字段返回 `null`。服务端会校验选中团队必须是当前用户已加入的团队；如果已保存的团队或项目失效，查询接口返回 `null`。
+
+### 修改当前用户选中的团队和项目
+
+```text
+POST user/selection/update
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "projectID": 1
+}
+```
+
+也支持使用字段名 `selectedGroupID`、`selectedProjectID`。
+
+`projectID` 可传 `0` 或 `null`，表示只选中团队，不选中任何项目。
+
+响应：
+
+```json
+{
+  "selectedGroupID": "group_xxx",
+  "selectedProjectID": 1,
+  "role": "创建者",
+  "roleID": 1
+}
+```
+
+`roleID`：`1` 创建者，`2` 管理员，`3` 普通成员。
 
 三个字段都可选；传 `email` 时服务端会校验邮箱格式和唯一性。
 
@@ -1527,7 +1596,8 @@ POST photo/delete/batch/v1
   "groupID": "group_xxx",
   "selectedPhotoIDs": ["photo_1", "photo_2"],
   "unSelectedPhotoIDs": [],
-  "rangeSelected": false
+  "rangeSelected": false,
+  "scene": "team"
 }
 ```
 
@@ -1540,6 +1610,18 @@ POST photo/delete/batch/v1
 ```
 
 当 `rangeSelected = true` 时，表示按当前筛选条件全选，`unSelectedPhotoIDs` 表示排除项。
+
+`scene` 可选：
+
+- `team`：团队照片页批量操作。
+- `project`：项目照片页批量操作，通常同时传 `projectID` 作为筛选条件。
+- `user`：个人详情照片页批量操作，必须只操作当前登录用户自己的照片；可同时传 `colleagueUserID` 为当前用户 ID。
+
+权限规则：
+
+- 创建者、管理员：可以批量删除团队/项目内任意成员的照片。
+- 普通成员：只能删除自己的照片；如果批量条件命中了其他人的照片，接口返回 `403`。
+- 个人详情页：只支持删除当前登录用户自己的照片，即使是管理员也不能通过 `scene=user` 删除别人的个人详情照片。
 
 ### 移动照片
 
@@ -1555,7 +1637,8 @@ POST photo/move/v1
   "selectedPhotoIDs": ["photo_1", "photo_2"],
   "unSelectedPhotoIDs": [],
   "rangeSelected": false,
-  "targetProjectID": 2
+  "targetProjectID": 2,
+  "scene": "project"
 }
 ```
 
@@ -1568,6 +1651,8 @@ POST photo/move/v1
 ```
 
 `targetProjectID = 0` 表示将照片移出项目，仅保留团队归属。
+
+批量移动同样支持 `scene=team/project/user`。创建者、管理员可移动团队/项目内任意成员的照片；普通成员只能移动自己的照片；个人详情页 `scene=user` 只支持移动当前登录用户自己的照片。传有效 `targetProjectID` 时，目标项目必须属于当前团队。
 
 ### 分享照片
 

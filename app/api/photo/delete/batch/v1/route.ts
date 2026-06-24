@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { bad, ok, readBody, requireTeamManager, requireUser } from "@/app/api/_utils/api"
-import { selectedPhotoWhere } from "@/app/api/_utils/photo"
+import { bad, canManage, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { batchPhotoWhereForUser, isForbiddenPersonalPhotoScene, selectedPhotoWhere } from "@/app/api/_utils/photo"
 
 export async function POST(req: Request) {
   try {
@@ -9,9 +9,19 @@ export async function POST(req: Request) {
     if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
-    if (!(await requireTeamManager(groupID, user.id))) return bad("无照片删除权限", 403)
+    const member = await requireTeamMember(groupID, user.id)
+    if (!member) return bad("无团队访问权限", 403)
+    if (isForbiddenPersonalPhotoScene(body, user.id)) return bad("个人详情只支持删除自己的照片", 403)
+    const isManager = canManage(member)
+    const baseWhere = selectedPhotoWhere(body, groupID)
+    if (!isManager) {
+      const forbiddenCount = await prisma.photo.count({
+        where: { AND: [baseWhere, { userID: { not: user.id } }] },
+      })
+      if (forbiddenCount > 0) return bad("无照片删除权限", 403)
+    }
     const result = await prisma.photo.updateMany({
-      where: selectedPhotoWhere(body, groupID),
+      where: batchPhotoWhereForUser(body, groupID, user.id, isManager),
       data: { deletedAt: new Date() },
     })
     return ok({ deletedCount: result.count })

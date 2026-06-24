@@ -22,12 +22,18 @@ export async function POST(req: Request) {
         email: email && email !== user.email ? email : undefined,
       },
     })
+    const updatedUser = updated as typeof updated & {
+      selectedGroupID?: string | null
+      selectedProjectID?: number | null
+    }
     return ok({
       userID: updated.id,
       userName: updated.userName,
       avatar: updated.avatar,
       shortName: updated.shortName,
       email: updated.email,
+      selectedGroupID: updatedUser.selectedGroupID ?? null,
+      selectedProjectID: updatedUser.selectedProjectID ?? null,
     })
   } catch (err) {
     console.log("[app/user/info/update] error:", err)
