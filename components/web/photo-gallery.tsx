@@ -6,6 +6,7 @@ import { ArrowLeft, Download, Folder, ImageOff, Maximize2, X } from "lucide-reac
 export type WebPhoto = {
   photoID: string
   imageURL: string | null
+  thumbnailURL: string | null
   downloadURL: string
   localPhotoName: string | null
   location: string | null
@@ -81,7 +82,7 @@ export function WebPhotoGallery({
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
                   {day.photos.map((photo) => (
                     <div key={photo.photoID} className="group relative aspect-square overflow-hidden rounded-lg bg-white/[0.06]">
-                      {photo.imageURL ? (
+                      {photo.thumbnailURL ? (
                         <button
                           type="button"
                           onClick={() => setActivePhoto(photo)}
@@ -89,7 +90,7 @@ export function WebPhotoGallery({
                           aria-label="查看大图"
                         >
                           <img
-                            src={photo.imageURL}
+                            src={photo.thumbnailURL}
                             alt={photo.localPhotoName || photo.location || "团队照片"}
                             className="size-full object-cover transition duration-200 group-hover:scale-[1.03]"
                             loading="lazy"

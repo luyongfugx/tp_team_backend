@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { WebPhoto, WebPhotoDay } from "@/components/web/photo-gallery"
-import { resolvePhotoURL } from "@/app/web/photo-url"
+import { resolvePhotoURL, thumbnailPhotoURL } from "@/app/web/photo-url"
 
 const photoSelect = {
   photoID: true,
@@ -49,10 +49,11 @@ function groupPhotosByDate(records: GalleryPhotoRecord[]): WebPhotoDay[] {
   for (const photo of records) {
     const date = photoDate(photo)
     const dateText = formatDate(date)
-    const imageURL = resolvePhotoURL(photo.smallURL || photo.largeURL)
+    const imageURL = resolvePhotoURL(photo.largeURL || photo.smallURL)
     const item: WebPhoto = {
       photoID: photo.photoID,
       imageURL,
+      thumbnailURL: thumbnailPhotoURL(imageURL),
       downloadURL: `/api/web/photos/download?photoID=${encodeURIComponent(photo.photoID)}`,
       localPhotoName: photo.localPhotoName,
       location: photo.location,

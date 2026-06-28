@@ -5,3 +5,10 @@ export function resolvePhotoURL(value: string | null | undefined) {
   if (!baseURL) return value.startsWith("/") ? value : `/${value}`
   return `${baseURL.replace(/\/$/, "")}/${value.replace(/^\//, "")}`
 }
+
+export function thumbnailPhotoURL(value: string | null | undefined) {
+  if (!value) return null
+  if (/^(data:|blob:)/i.test(value)) return value
+  const separator = value.includes("?") ? "&" : "?"
+  return `${value}${separator}imageMogr2/thumbnail/x200`
+}
