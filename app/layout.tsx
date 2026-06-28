@@ -14,9 +14,9 @@ export const metadata: Metadata = {
   description: 'Timeprint TeamSpace',
   generator: 'timeprint.net',
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/logo.png',
+    icon: [{ url: '/favicon.ico?v=2', type: 'image/x-icon', sizes: 'any' }],
+    shortcut: [{ url: '/favicon.ico?v=2', type: 'image/x-icon' }],
+    apple: [{ url: '/logo.png?v=2', type: 'image/png' }],
   },
 }
 
