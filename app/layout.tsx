@@ -10,9 +10,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'timeprint.net',
+  description: 'Timeprint TeamSpace',
+  generator: 'timeprint.net',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
