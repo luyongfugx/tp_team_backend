@@ -26,6 +26,9 @@ model User {
   teamMemberships      TeamMember[]
   projectMemberships   ProjectMember[]
   photos               Photo[]
+  feedPosts            TeamFeed[]        @relation("TeamFeedCreatedBy")
+  feedComments         TeamFeedComment[]
+  feedLikes            TeamFeedLike[]
 
   @@index([selectedGroupID])
   @@index([selectedProjectID])
@@ -65,6 +68,12 @@ enum InviteLinkWay {
   EMAIL
 }
 
+enum FeedType {
+  TEXT
+  PHOTO
+  SYSTEM
+}
+
 model Team {
   groupID                String             @id @default(cuid())
   groupName              String
@@ -84,6 +93,9 @@ model Team {
   emailInvites           TeamEmailInvite[]
   pdfSetting             PhotoPdfSetting?
   photos                 Photo[]
+  feeds                  TeamFeed[]
+  feedComments           TeamFeedComment[]
+  feedLikes              TeamFeedLike[]
   photoShares            PhotoShare[]
   packageTasks           PhotoPackageTask[]
 
@@ -195,6 +207,7 @@ model Project {
   team                 Team            @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
   members              ProjectMember[]
   photos               Photo[]
+  feeds                TeamFeed[]
 
   @@index([groupID])
   @@index([groupID, deletedAt])
@@ -220,11 +233,11 @@ model ProjectMember {
 }
 
 model Photo {
-  photoID             String    @id @default(cuid())
+  photoID             String     @id @default(cuid())
   groupID             String
   projectID           Int?
   userID              String
-  mediaType           Int       @default(0)
+  mediaType           Int        @default(0)
   timestamp           BigInt
   takePhotoFormatTime String
   takePhotoTimezoneID String
@@ -239,8 +252,8 @@ model Photo {
   ossFileName         String
   localPhotoName      String?
   location            String?
-  lat                 Decimal?  @db.Decimal(10, 7)
-  lng                 Decimal?  @db.Decimal(10, 7)
+  lat                 Decimal?   @db.Decimal(10, 7)
+  lng                 Decimal?   @db.Decimal(10, 7)
   watermarkID         String?
   watermarkBaseID     String?
   saveToDevice        Int?
@@ -250,19 +263,82 @@ model Photo {
   systemInfo          Json?
   mediaInfo           Json?
   attendanceInfo      Json?
-  searchText          String?   @db.Text
+  searchText          String?    @db.Text
   deletedAt           DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  team                Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
-  project             Project?  @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
-  user                User      @relation(fields: [userID], references: [id], onDelete: Restrict)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  team                Team       @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  project             Project?   @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
+  user                User       @relation(fields: [userID], references: [id], onDelete: Restrict)
+  feeds               TeamFeed[]
 
   @@index([groupID, timestamp])
   @@index([projectID, timestamp])
   @@index([userID, timestamp])
   @@index([mediaType])
   @@index([deletedAt])
+}
+
+model TeamFeed {
+  feedID          String            @id @default(cuid())
+  groupID         String
+  projectID       Int?
+  photoID         String?
+  createdByUserID String?
+  feedType        FeedType          @default(TEXT)
+  title           String?
+  content         String?           @db.Text
+  payload         Json?
+  commentCount    Int               @default(0)
+  likeCount       Int               @default(0)
+  deletedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  team            Team              @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  project         Project?          @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
+  photo           Photo?            @relation(fields: [photoID], references: [photoID], onDelete: SetNull)
+  createdBy       User?             @relation("TeamFeedCreatedBy", fields: [createdByUserID], references: [id], onDelete: SetNull)
+  comments        TeamFeedComment[]
+  likes           TeamFeedLike[]
+
+  @@index([groupID, createdAt])
+  @@index([groupID, projectID, createdAt])
+  @@index([createdByUserID])
+  @@index([deletedAt])
+}
+
+model TeamFeedComment {
+  commentID String    @id @default(cuid())
+  feedID    String
+  groupID   String
+  userID    String?
+  content   String    @db.Text
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  feed      TeamFeed  @relation(fields: [feedID], references: [feedID], onDelete: Cascade)
+  team      Team      @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  user      User?     @relation(fields: [userID], references: [id], onDelete: SetNull)
+
+  @@index([feedID, createdAt])
+  @@index([groupID, createdAt])
+  @@index([userID])
+  @@index([deletedAt])
+}
+
+model TeamFeedLike {
+  likeID    String   @id @default(cuid())
+  feedID    String
+  groupID   String
+  userID    String?
+  createdAt DateTime @default(now())
+  feed      TeamFeed @relation(fields: [feedID], references: [feedID], onDelete: Cascade)
+  team      Team     @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  user      User?    @relation(fields: [userID], references: [id], onDelete: SetNull)
+
+  @@unique([feedID, userID])
+  @@index([groupID, createdAt])
+  @@index([userID])
 }
 
 model PhotoShare {

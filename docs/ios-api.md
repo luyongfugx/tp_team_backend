@@ -1951,7 +1951,246 @@ POST photo/pdf/setting/update
 {}
 ```
 
-## 10. iOS 端注意事项
+## 10. Feed 流 / 评论 / 点赞
+
+### 表结构设计
+
+`TeamFeed`：团队或项目首页动态。`groupID` 必填，`projectID` 可为空；为空表示团队级动态，非空表示项目动态。支持 `TEXT`、`PHOTO`、`SYSTEM` 三种类型，预留 `payload` JSON 承载扩展数据。
+
+`TeamFeedComment`：动态评论。只支持新增和删除，不支持修改；删除为软删除。
+
+`TeamFeedLike`：动态点赞。`feedID + userID` 唯一，防止重复点赞；取消点赞会删除点赞记录，用户之后可再次点赞。
+
+权限规则：
+
+1. 所有 feed、评论、点赞接口都需要登录，并且当前用户必须是该 `groupID` 的团队成员。
+2. 带 `projectID` 时，项目必须属于当前团队且未删除。
+3. 删除 feed：创建者本人、团队管理员、团队创建者可删除。
+4. 删除评论：评论本人、团队管理员、团队创建者可删除。
+5. 取消点赞：只取消当前用户自己的点赞。
+
+### 获取 Feed 列表
+
+```text
+POST feed/list
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "projectID": 123,
+  "pageIndex": 1,
+  "pageSize": 20
+}
+```
+
+说明：
+
+|参数|类型|必填|说明|
+|---|---|---|---|
+|`groupID`|string|是|团队 ID|
+|`projectID`|number / null|否|传项目 ID 时只返回该项目动态；不传或传 `null` 时返回整个团队动态|
+|`scope`|string|否|传 `teamOnly` 时只返回 `projectID=null` 的团队级动态|
+|`pageIndex`|number|否|默认 1|
+|`pageSize`|number|否|默认 20，最大 100|
+
+响应：
+
+```json
+{
+  "totalCount": 12,
+  "pageIndex": 1,
+  "pageSize": 20,
+  "hasMore": false,
+  "list": [
+    {
+      "feedID": "feed_xxx",
+      "groupID": "group_xxx",
+      "projectID": 123,
+      "photoID": "photo_xxx",
+      "feedType": "PHOTO",
+      "title": "今日进展",
+      "content": "现场照片已同步",
+      "payload": {},
+      "commentCount": 2,
+      "likeCount": 3,
+      "likedByMe": true,
+      "createdAt": "2026-06-28T00:00:00.000Z",
+      "updatedAt": "2026-06-28T00:00:00.000Z",
+      "createdBy": {
+        "userID": "user_xxx",
+        "userName": "Wayne",
+        "shortName": "WL",
+        "email": "wayne@example.com",
+        "avatar": "https://example.com/avatar.png"
+      },
+      "latestComments": []
+    }
+  ]
+}
+```
+
+### 创建 Feed
+
+```text
+POST feed/create
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "projectID": 123,
+  "feedType": "TEXT",
+  "title": "今日进展",
+  "content": "现场已完成打卡",
+  "photoID": "photo_xxx",
+  "payload": {}
+}
+```
+
+说明：`projectID`、`title`、`content`、`photoID`、`payload` 都可按场景选择；但 `title/content/photoID/payload` 至少要传一个。`photoID` 如有传，照片必须属于当前团队；带 `projectID` 时照片也必须属于该项目。
+
+响应：
+
+```json
+{
+  "feedInfo": {}
+}
+```
+
+### 删除 Feed
+
+```text
+POST feed/delete
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "feedID": "feed_xxx"
+}
+```
+
+响应：
+
+```json
+{}
+```
+
+### 新增评论
+
+```text
+POST feed/comment/create
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "feedID": "feed_xxx",
+  "content": "收到"
+}
+```
+
+响应：
+
+```json
+{
+  "commentInfo": {
+    "commentID": "comment_xxx",
+    "feedID": "feed_xxx",
+    "groupID": "group_xxx",
+    "content": "收到",
+    "createdAt": "2026-06-28T00:00:00.000Z",
+    "user": {
+      "userID": "user_xxx",
+      "userName": "Wayne",
+      "shortName": "WL",
+      "email": "wayne@example.com",
+      "avatar": "https://example.com/avatar.png"
+    }
+  }
+}
+```
+
+### 删除评论
+
+```text
+POST feed/comment/delete
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "commentID": "comment_xxx"
+}
+```
+
+响应：
+
+```json
+{}
+```
+
+### 点赞
+
+```text
+POST feed/like/create
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "feedID": "feed_xxx"
+}
+```
+
+响应：
+
+```json
+{
+  "likeID": "like_xxx",
+  "liked": true,
+  "alreadyLiked": false
+}
+```
+
+### 取消点赞
+
+```text
+POST feed/like/delete
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "feedID": "feed_xxx"
+}
+```
+
+响应：
+
+```json
+{
+  "liked": false,
+  "deleted": true
+}
+```
+
+## 11. iOS 端注意事项
 
 1. 登录成功后保存 `token`，后续请求放到 `Authorization: Bearer <token>`。
 2. 时间戳统一使用毫秒级 Unix timestamp。
