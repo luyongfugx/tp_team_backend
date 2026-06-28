@@ -2,9 +2,11 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
+import { localeFromRequest, t } from "@/lib/i18n"
 
 export async function GET(req: Request) {
   try {
+    const locale = localeFromRequest(req)
     const user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
 
@@ -84,7 +86,7 @@ export async function GET(req: Request) {
             userName: member.user.userName,
             shortName: member.user.shortName,
             avatar: member.user.avatar,
-            role: roleToName(member.role),
+            role: roleToName(member.role, locale),
             roleID: roleToID(member.role),
             joinedAt: member.joinedAt,
           })),
@@ -103,6 +105,6 @@ export async function GET(req: Request) {
     )
   } catch (err) {
     console.log("[app/admin/overview] error:", err)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return NextResponse.json({ error: t(localeFromRequest(req), "common.serverError") }, { status: 500 })
   }
 }

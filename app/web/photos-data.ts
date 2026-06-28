@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { WebPhoto, WebPhotoDay } from "@/components/web/photo-gallery"
 import { resolvePhotoURL, thumbnailPhotoURL } from "@/app/web/photo-url"
+import { localeDateCode, resolveLocale, type AppLocale } from "@/lib/i18n"
 
 const photoSelect = {
   photoID: true,
@@ -24,19 +25,28 @@ function photoDate(photo: GalleryPhotoRecord) {
   return Number.isFinite(parsed) ? new Date(parsed) : new Date(0)
 }
 
-function formatDate(date: Date) {
-  const parts = new Intl.DateTimeFormat("zh-CN", {
+function formatDate(date: Date, locale: AppLocale) {
+  const dateLocale = localeDateCode(locale)
+  if (locale === "zh-Hans" || locale === "zh-Hant") {
+    const parts = new Intl.DateTimeFormat(dateLocale, {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date)
+    const get = (type: string) => parts.find((part) => part.type === type)?.value || ""
+    return `${get("year")} 年 ${get("month")} 月 ${get("day")} 日`
+  }
+  return new Intl.DateTimeFormat(dateLocale, {
     timeZone: "Asia/Shanghai",
     year: "numeric",
-    month: "2-digit",
+    month: "short",
     day: "2-digit",
-  }).formatToParts(date)
-  const get = (type: string) => parts.find((part) => part.type === type)?.value || ""
-  return `${get("year")} 年 ${get("month")} 月 ${get("day")} 日`
+  }).format(date)
 }
 
-function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("zh-CN", {
+function formatTime(date: Date, locale: AppLocale) {
+  return new Intl.DateTimeFormat(localeDateCode(locale), {
     timeZone: "Asia/Shanghai",
     hour: "2-digit",
     minute: "2-digit",
@@ -44,11 +54,11 @@ function formatTime(date: Date) {
   }).format(date)
 }
 
-function groupPhotosByDate(records: GalleryPhotoRecord[]): WebPhotoDay[] {
+function groupPhotosByDate(records: GalleryPhotoRecord[], locale: AppLocale): WebPhotoDay[] {
   const grouped = new Map<string, WebPhoto[]>()
   for (const photo of records) {
     const date = photoDate(photo)
-    const dateText = formatDate(date)
+    const dateText = formatDate(date, locale)
     const imageURL = resolvePhotoURL(photo.largeURL || photo.smallURL)
     const item: WebPhoto = {
       photoID: photo.photoID,
@@ -59,7 +69,7 @@ function groupPhotosByDate(records: GalleryPhotoRecord[]): WebPhotoDay[] {
       location: photo.location,
       userName: photo.userName,
       projectName: photo.projectName,
-      timeText: formatTime(date),
+      timeText: formatTime(date, locale),
     }
     const photos = grouped.get(dateText) || []
     photos.push(item)
@@ -68,7 +78,8 @@ function groupPhotosByDate(records: GalleryPhotoRecord[]): WebPhotoDay[] {
   return Array.from(grouped, ([dateText, photos]) => ({ dateText, photos }))
 }
 
-export async function getTeamGallery(groupID: string) {
+export async function getTeamGallery(groupID: string, localeInput?: string) {
+  const locale = resolveLocale(localeInput)
   const [team, photos, memberCount] = await Promise.all([
     prisma.team.findFirst({
       where: { groupID, deletedAt: null },
@@ -83,13 +94,14 @@ export async function getTeamGallery(groupID: string) {
   ])
   return {
     team,
-    days: groupPhotosByDate(photos),
+    days: groupPhotosByDate(photos, locale),
     photoCount: photos.length,
     memberCount,
   }
 }
 
-export async function getProjectGallery(projectID: number) {
+export async function getProjectGallery(projectID: number, localeInput?: string) {
+  const locale = resolveLocale(localeInput)
   const project = await prisma.project.findFirst({
     where: { projectID, deletedAt: null },
     include: {
@@ -111,7 +123,7 @@ export async function getProjectGallery(projectID: number) {
 
   return {
     project,
-    days: groupPhotosByDate(photos),
+    days: groupPhotosByDate(photos, locale),
     photoCount: photos.length,
     memberCount,
   }

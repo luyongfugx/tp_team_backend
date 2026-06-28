@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { Prisma, TeamRole } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { jsonSafe, readBody, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
+import { localeFromRequest, t, type AppLocale } from "@/lib/i18n"
 
 type HomeCode = 0 | 400 | 401 | 403 | 500
 
@@ -144,11 +145,11 @@ function mapProject(project: {
   }
 }
 
-function mapRole(role: TeamRole) {
-  return { role: roleToName(role), roleID: roleToID(role) }
+function mapRole(role: TeamRole, locale: AppLocale) {
+  return { role: roleToName(role, locale), roleID: roleToID(role) }
 }
 
-async function pendingInviteForUser(user: { id: string; email: string }) {
+async function pendingInviteForUser(user: { id: string; email: string }, locale: AppLocale) {
   const now = new Date()
   const invite = await prisma.teamEmailInvite.findFirst({
     where: {
@@ -183,7 +184,7 @@ async function pendingInviteForUser(user: { id: string; email: string }) {
     uuID: typed.uuID,
     inviteCode: typed.inviteCode,
     inviteLinkWay: "EMAIL",
-    role: roleToName(typed.role),
+    role: roleToName(typed.role, locale),
     roleID: roleToID(typed.role),
     email: typed.email,
     memberNum: typed.team._count.members,
@@ -194,10 +195,11 @@ async function pendingInviteForUser(user: { id: string; email: string }) {
 
 export async function POST(req: Request) {
   try {
+    const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const user = await requireUser(req)
     if (!user) return homeResponse(401, null, "未授权或登录已过期", 401)
 
-    const body = await readBody(req)
     const timeZone = typeof body.timezone === "string" && body.timezone ? body.timezone : "Asia/Shanghai"
     const { pageIndex, pageSize, skip, take } = pageParams(body)
 
@@ -216,7 +218,7 @@ export async function POST(req: Request) {
     })
 
     if (memberships.length === 0) {
-      const pendingInvite = await pendingInviteForUser(user)
+      const pendingInvite = await pendingInviteForUser(user, locale)
       return homeResponse(0, {
         setupStep: pendingInvite ? "joinTeam" : "createTeam",
         selectedGroupID: null,
@@ -298,7 +300,7 @@ export async function POST(req: Request) {
       return {
         groupID: member.groupID,
         groupName: member.team.groupName,
-        ...mapRole(member.role),
+        ...mapRole(member.role, locale),
         memberNum: member.team._count.members,
         syncNum: member.team.syncNum,
         defaultSelect: memberProjects[0]?.projectID ?? null,
@@ -309,7 +311,7 @@ export async function POST(req: Request) {
           shortName: teamMember.user.shortName,
           email: teamMember.user.email,
           avatar: teamMember.user.avatar,
-          ...mapRole(teamMember.role),
+          ...mapRole(teamMember.role, locale),
           photoCount: teamMember.photoCount,
           latestPhotoTimestamp: teamMember.latestPhotoTimestamp == null ? null : Number(teamMember.latestPhotoTimestamp),
           latestPhotoSmallURL: teamMember.latestPhotoSmallURL,
@@ -334,7 +336,7 @@ export async function POST(req: Request) {
       selectedGroup: {
         groupID: selectedGroupID,
         groupName: selectedTeam.groupName,
-        ...mapRole(selectedMembership.role),
+        ...mapRole(selectedMembership.role, locale),
         memberNum: selectedTeam._count.members,
         syncNum: selectedTeam.syncNum,
       },
@@ -360,6 +362,6 @@ export async function POST(req: Request) {
     }))
   } catch (err) {
     console.log("[app/group/home] error:", err)
-    return homeResponse(500, null, "服务器错误，请稍后再试", 500)
+    return homeResponse(500, null, t(localeFromRequest(req), "common.serverError"), 500)
   }
 }

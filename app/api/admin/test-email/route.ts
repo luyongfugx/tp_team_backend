@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateCode } from "@/lib/auth"
+import { localeFromRequest } from "@/lib/i18n"
 import { sendTeamInviteEmail, sendVerificationEmail } from "@/lib/mail"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody, requireUser } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
@@ -12,13 +13,14 @@ export async function POST(req: Request) {
     if (!isSuperAdmin(user)) return bad("无总管理员权限", 403)
 
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const email = normalizeEmail(body.email)
     if (!email || !EMAIL_RE.test(email)) return bad("请输入有效的邮箱地址")
 
     const type = typeof body.type === "string" ? body.type : ""
     if (type === "verification") {
       const code = typeof body.code === "string" && /^\d{6}$/.test(body.code) ? body.code : generateCode()
-      const result = await sendVerificationEmail(email, code)
+      const result = await sendVerificationEmail(email, code, locale)
       return ok({ type, email, code, result })
     }
 
@@ -40,6 +42,7 @@ export async function POST(req: Request) {
         inviteCode,
         memberCount: team?._count.members ?? 1,
         photoCount: team?._count.photos ?? 0,
+        locale,
       })
       return ok({ type, email, inviteCode, result })
     }

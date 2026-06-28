@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { TeamMember, TeamRole, User } from "@prisma/client"
 import { authenticate } from "@/lib/auth"
+import { t, type AppLocale } from "@/lib/i18n"
 import { prisma } from "@/lib/prisma"
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -44,10 +45,10 @@ export function roleToID(role: TeamRole) {
   return 3
 }
 
-export function roleToName(role: TeamRole) {
-  if (role === "OWNER") return "创建者"
-  if (role === "ADMIN") return "管理员"
-  return "普通成员"
+export function roleToName(role: TeamRole, locale: AppLocale | string = "zh-Hans") {
+  if (role === "OWNER") return t(locale, "role.owner")
+  if (role === "ADMIN") return t(locale, "role.admin")
+  return t(locale, "role.member")
 }
 
 export function canManage(member: Pick<TeamMember, "role"> | null | undefined) {

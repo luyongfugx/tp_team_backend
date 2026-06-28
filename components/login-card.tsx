@@ -11,6 +11,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { Mail, ArrowLeft, Loader2 } from "lucide-react"
+import { clientLocale, t } from "@/lib/i18n"
 
 type Step = "email" | "code"
 
@@ -19,12 +20,17 @@ interface LoginCardProps {
 }
 
 export function LoginCard({ onSuccess }: LoginCardProps) {
+  const [locale, setLocale] = useState("zh-Hans")
   const [step, setStep] = useState<Step>("email")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [countdown, setCountdown] = useState(0)
+
+  useEffect(() => {
+    setLocale(clientLocale())
+  }, [])
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -39,17 +45,17 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
       const res = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, locale }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || "发送失败")
+        setError(data.error || t(locale, "common.sendFailed"))
         return
       }
       setStep("code")
       setCountdown(60)
     } catch {
-      setError("网络错误，请稍后再试")
+      setError(t(locale, "common.networkError"))
     } finally {
       setLoading(false)
     }
@@ -66,13 +72,13 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || "验证失败")
+        setError(data.error || t(locale, "common.verifyFailed"))
         setCode("")
         return
       }
       onSuccess(data)
     } catch {
-      setError("网络错误，请稍后再试")
+      setError(t(locale, "common.networkError"))
     } finally {
       setLoading(false)
     }
@@ -85,12 +91,12 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
           <Mail className="size-5" />
         </div>
         <CardTitle className="text-xl">
-          {step === "email" ? "登录 / 注册" : "输入验证码"}
+          {step === "email" ? t(locale, "login.titleEmail") : t(locale, "login.titleCode")}
         </CardTitle>
         <CardDescription>
           {step === "email"
-            ? "输入邮箱，我们将向你发送 6 位验证码"
-            : `验证码已发送至 ${email}`}
+            ? t(locale, "login.descEmail")
+            : t(locale, "login.descCode", { email })}
         </CardDescription>
       </CardHeader>
 
@@ -104,7 +110,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱地址</Label>
+              <Label htmlFor="email">{t(locale, "login.emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -118,7 +124,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading || !email}>
               {loading && <Loader2 className="size-4 animate-spin" />}
-              发送验证码
+              {t(locale, "login.sendCode")}
             </Button>
           </form>
         )}
@@ -147,7 +153,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
               {error && <p className="text-sm text-destructive">{error}</p>}
               {loading && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> 验证中...
+                  <Loader2 className="size-4 animate-spin" /> {t(locale, "login.verifying")}
                 </p>
               )}
             </div>
@@ -162,7 +168,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                 }}
                 className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
               >
-                <ArrowLeft className="size-4" /> 返回
+                <ArrowLeft className="size-4" /> {t(locale, "web.back")}
               </button>
               <button
                 type="button"
@@ -170,7 +176,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                 disabled={countdown > 0 || loading}
                 className="text-primary disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
-                {countdown > 0 ? `${countdown}s 后重新发送` : "重新发送验证码"}
+                {countdown > 0 ? t(locale, "login.resendAfter", { seconds: countdown }) : t(locale, "login.resend")}
               </button>
             </div>
           </div>

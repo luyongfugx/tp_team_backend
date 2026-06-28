@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateCode, CODE_TTL_MS } from "@/lib/auth"
+import { localeFromRequest, t } from "@/lib/i18n"
 import { sendVerificationEmail } from "@/lib/mail"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json()
+    const body = await req.json()
+    const { email } = body
+    const locale = localeFromRequest(req, body)
 
     if (!email || typeof email !== "string" || !EMAIL_RE.test(email)) {
-      return NextResponse.json({ error: "请输入有效的邮箱地址" }, { status: 400 })
+      return NextResponse.json({ error: t(locale, "common.invalidEmail") }, { status: 400 })
     }
 
     const normalizedEmail = email.toLowerCase().trim()
@@ -24,7 +27,7 @@ export async function POST(req: Request) {
       orderBy: { createdAt: "desc" },
     })
     if (recent) {
-      return NextResponse.json({ error: "验证码发送过于频繁，请稍后再试" }, { status: 429 })
+      return NextResponse.json({ error: t(locale, "common.tooFrequent") }, { status: 429 })
     }
 
     const code = generateCode()
@@ -40,11 +43,11 @@ export async function POST(req: Request) {
       data: { email: normalizedEmail, code, expiresAt },
     })
 
-    await sendVerificationEmail(normalizedEmail, code)
+    await sendVerificationEmail(normalizedEmail, code, locale)
 
-    return NextResponse.json({ success: true, message: "验证码已发送" })
+    return NextResponse.json({ success: true, message: t(locale, "common.sentCode") })
   } catch (err) {
     console.log("[v0] send-code error:", err)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return NextResponse.json({ error: t(localeFromRequest(req), "common.serverError") }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer"
 import path from "path"
+import { t, type AppLocale } from "@/lib/i18n"
 
 type SendMailResult = {
   ok: boolean
@@ -43,12 +44,6 @@ function errorMessage(err: unknown) {
 function inviteLink(inviteCode: string) {
   const url = new URL("https://share.timeprint.net/invite")
   url.searchParams.set("code", inviteCode)
-  return url.toString()
-}
-
-function verificationLoginLink(code: string) {
-  const url = new URL("https://www.timeprint.net/login")
-  url.searchParams.set("code", code)
   return url.toString()
 }
 
@@ -107,14 +102,17 @@ async function sendLoggedMail({
   }
 }
 
-export async function sendVerificationEmail(email: string, code: string) {
+export async function sendVerificationEmail(email: string, code: string, locale: AppLocale | string = "zh-Hans") {
   const escapedCode = escapeHtml(code)
-  const loginLink = verificationLoginLink(code)
+  const subject = t(locale, "mail.verification.subject")
+  const validText = t(locale, "mail.verification.valid")
+  const ignoreText = t(locale, "mail.verification.ignore")
+  const teamText = t(locale, "mail.verification.team")
 
   return sendLoggedMail({
     to: email,
-    subject: "Timeprint Verification Code",
-    text: `Your Timeprint verification code is ${code}. This code is valid for the next 5 minutes and can only be used once. Login now: ${loginLink}`,
+    subject,
+    text: t(locale, "mail.verification.text", { code }),
     html: `
       <div style="margin: 0; padding: 0; background: #f6f7f9;">
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 18px;">
@@ -124,16 +122,13 @@ export async function sendVerificationEmail(email: string, code: string) {
               ${escapedCode}
             </div>
             <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 0 0 18px;">
-              This code is valid for the next 5 minutes and can only be used once.
+              ${escapeHtml(validText)}
             </p>
             <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 0 0 28px;">
-              If you didn't request this code, please ignore this email.
+              ${escapeHtml(ignoreText)}
             </p>
-            <a href="${loginLink}" style="display: inline-block; background: #ffe700; color: #111111; text-decoration: none; font-size: 17px; font-weight: 700; padding: 13px 22px; border-radius: 10px;">
-              现在登录
-            </a>
             <p style="color: #111827; font-size: 20px; line-height: 1.5; margin: 34px 0 0;">
-              The Timeprint Team<br />
+              ${escapeHtml(teamText)}<br />
               <a href="https://timeprint.net" style="color: #1683d8; text-decoration: none;">timeprint.net</a>
             </p>
           </div>
@@ -165,6 +160,7 @@ export async function sendTeamInviteEmail({
   inviteCode,
   memberCount,
   photoCount,
+  locale = "zh-Hans",
 }: {
   email: string
   groupName: string
@@ -172,16 +168,20 @@ export async function sendTeamInviteEmail({
   inviteCode: string
   memberCount: number
   photoCount: number
+  locale?: AppLocale | string
 }) {
   const link = inviteLink(inviteCode)
   const escapedGroupName = escapeHtml(groupName)
-  const escapedInviterName = escapeHtml(inviterName)
   const inviterInitial = escapeHtml((inviterName.trim()[0] || "T").toUpperCase())
-  const content = `${inviterName} invited you to join ${groupName}. Accept now: ${link}`
+  const content = t(locale, "mail.invite.text", { inviterName, groupName, link })
+  const headline = t(locale, "mail.invite.headline", { inviterName, groupName })
+  const description = t(locale, "mail.invite.description")
+  const button = t(locale, "mail.invite.button")
+  const stats = t(locale, "mail.invite.stats", { memberCount, photoCount })
 
   return sendLoggedMail({
     to: email,
-    subject: `${inviterName} invited you to join ${groupName}`,
+    subject: t(locale, "mail.invite.subject", { inviterName, groupName }),
     text: content,
     html: `
       <div style="margin: 0; padding: 0; background: #f6f7f9;">
@@ -202,13 +202,13 @@ export async function sendTeamInviteEmail({
                 ${inviterInitial}
               </div>
               <div style="color: #111827; font-size: 32px; line-height: 1.28; font-weight: 800; margin: 0 0 30px;">
-                ${escapedInviterName} invited you to join ${escapedGroupName}
+                ${escapeHtml(headline)}
               </div>
               <p style="color: #5f6368; font-size: 21px; line-height: 1.5; margin: 0 0 34px;">
-                Collect and organize work photos automatically with Timeprint teamspace
+                ${escapeHtml(description)}
               </p>
               <a href="${link}" style="display: block; background: #1f456d; color: #ffffff; text-decoration: none; text-align: center; font-size: 21px; font-weight: 700; padding: 17px 22px; border-radius: 10px;">
-                Accept Now
+                ${escapeHtml(button)}
               </a>
             </div>
             <div style="background: #edf6ff; padding: 26px 32px;">
@@ -219,7 +219,7 @@ export async function sendTeamInviteEmail({
                   </td>
                   <td style="vertical-align: middle; padding-left: 14px;">
                     <div style="color: #111827; font-size: 24px; font-weight: 800; line-height: 1.25;">${escapedGroupName}</div>
-                    <div style="color: #374151; font-size: 17px; line-height: 1.5;">${memberCount} members · ${photoCount} photos</div>
+                    <div style="color: #374151; font-size: 17px; line-height: 1.5;">${escapeHtml(stats)}</div>
                   </td>
                 </tr>
               </table>

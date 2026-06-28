@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { localeFromRequest } from "@/lib/i18n"
 import { sendTeamInviteEmail } from "@/lib/mail"
 import { asStringArray, bad, EMAIL_RE, normalizeEmail, ok, readBody, requireTeamManager, requireUser, roleIDToRole } from "@/app/api/_utils/api"
 
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     const user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     if (!(await requireTeamManager(groupID, user.id))) return bad("无团队管理权限", 403)
     const team = await prisma.team.findUnique({
@@ -76,6 +78,7 @@ export async function POST(req: Request) {
           inviteCode: invite.inviteCode,
           memberCount: team._count.members,
           photoCount: team._count.photos,
+          locale,
         }),
       })),
     )

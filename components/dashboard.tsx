@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Camera, FolderKanban, LogOut, Mail, RefreshCw, Send, Users } from "lucide-react"
+import { clientLocale, t } from "@/lib/i18n"
 
 interface DashboardProps {
   token: string
@@ -80,7 +81,7 @@ function StatCard({
   )
 }
 
-function TestEmailPanel({ token, teams }: { token: string; teams: TeamInfo[] }) {
+function TestEmailPanel({ token, teams, locale }: { token: string; teams: TeamInfo[]; locale: string }) {
   const [email, setEmail] = useState("")
   const [groupID, setGroupID] = useState("")
   const [loadingType, setLoadingType] = useState<"" | "verification" | "invite">("")
@@ -96,16 +97,16 @@ function TestEmailPanel({ token, teams }: { token: string; teams: TeamInfo[] }) 
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ type, email, groupID }),
+        body: JSON.stringify({ type, email, groupID, locale }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setMessage(data.error || "发送失败")
+        setMessage(data.error || t(locale, "common.sendFailed"))
         return
       }
-      setMessage(type === "verification" ? `验证码测试邮件已发送：${data.code}` : `邀请测试邮件已发送：${data.inviteCode}`)
+      setMessage(type === "verification" ? t(locale, "dashboard.codeSent", { code: data.code }) : t(locale, "dashboard.inviteSent", { code: data.inviteCode }))
     } catch {
-      setMessage("网络错误，请稍后再试")
+      setMessage(t(locale, "common.networkError"))
     } finally {
       setLoadingType("")
     }
@@ -116,24 +117,24 @@ function TestEmailPanel({ token, teams }: { token: string; teams: TeamInfo[] }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Mail className="size-5" />
-          邮件模板测试
+          {t(locale, "dashboard.emailTest")}
         </CardTitle>
-        <CardDescription>总管理员可发送登录验证码和团队邀请测试邮件。</CardDescription>
+        <CardDescription>{t(locale, "dashboard.emailTestDesc")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
         <div className="space-y-2">
-          <Label htmlFor="test-email">收件邮箱</Label>
+          <Label htmlFor="test-email">{t(locale, "dashboard.recipient")}</Label>
           <Input id="test-email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="test-team">邀请邮件团队</Label>
+          <Label htmlFor="test-team">{t(locale, "dashboard.inviteTeam")}</Label>
           <select
             id="test-team"
             value={groupID}
             onChange={(event) => setGroupID(event.target.value)}
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
-            <option value="">使用默认测试团队</option>
+            <option value="">{t(locale, "dashboard.defaultTeam")}</option>
             {teams.map((team) => (
               <option key={team.groupID} value={team.groupID}>
                 {team.groupName}
@@ -144,11 +145,11 @@ function TestEmailPanel({ token, teams }: { token: string; teams: TeamInfo[] }) 
         <div className="flex items-end gap-2">
           <Button onClick={() => send("verification")} disabled={!email || loadingType !== ""} variant="outline">
             <Send className="size-4" />
-            验证码
+            {t(locale, "dashboard.verification")}
           </Button>
           <Button onClick={() => send("invite")} disabled={!email || loadingType !== ""}>
             <Send className="size-4" />
-            邀请
+            {t(locale, "dashboard.invite")}
           </Button>
         </div>
         {message && <p className="md:col-span-3 text-sm text-muted-foreground">{message}</p>}
@@ -157,7 +158,7 @@ function TestEmailPanel({ token, teams }: { token: string; teams: TeamInfo[] }) 
   )
 }
 
-function TeamSection({ team }: { team: TeamInfo }) {
+function TeamSection({ team, locale }: { team: TeamInfo; locale: string }) {
   const latestPhotos = team.photos.filter((photo) => photo.smallURL || photo.largeURL)
 
   return (
@@ -167,13 +168,13 @@ function TeamSection({ team }: { team: TeamInfo }) {
           <div>
             <CardTitle className="text-lg">{team.groupName}</CardTitle>
             <CardDescription>
-              创建者：{team.owner.userName || team.owner.email} · {new Date(team.createdAt).toLocaleString()}
+              {t(locale, "dashboard.creator")}: {team.owner.userName || team.owner.email} · {new Date(team.createdAt).toLocaleString()}
             </CardDescription>
           </div>
           <div className="flex gap-2 text-sm text-muted-foreground">
-            <span>{team.memberNum} 成员</span>
-            <span>{team.projectNum} 项目</span>
-            <span>{team.photoNum} 照片</span>
+            <span>{t(locale, "web.memberCount", { count: team.memberNum })}</span>
+            <span>{team.projectNum} {t(locale, "dashboard.projects")}</span>
+            <span>{t(locale, "web.photoCount", { count: team.photoNum })}</span>
           </div>
         </div>
       </CardHeader>
@@ -181,7 +182,7 @@ function TeamSection({ team }: { team: TeamInfo }) {
         <section>
           <h3 className="mb-3 flex items-center gap-2 font-medium">
             <Users className="size-4" />
-            成员
+            {t(locale, "dashboard.members")}
           </h3>
           <div className="space-y-2">
             {team.members.slice(0, 8).map((member) => (
@@ -196,13 +197,13 @@ function TeamSection({ team }: { team: TeamInfo }) {
         <section>
           <h3 className="mb-3 flex items-center gap-2 font-medium">
             <FolderKanban className="size-4" />
-            项目
+            {t(locale, "dashboard.projects")}
           </h3>
           <div className="space-y-2">
             {team.projects.slice(0, 8).map((project) => (
               <div key={project.projectID} className="rounded-md border p-3 text-sm">
                 <div className="font-medium">{project.projectName}</div>
-                <div className="text-muted-foreground">{project.memberCount} 成员 · {project.photoCount} 照片</div>
+                <div className="text-muted-foreground">{t(locale, "web.memberCount", { count: project.memberCount })} · {t(locale, "web.photoCount", { count: project.photoCount })}</div>
               </div>
             ))}
           </div>
@@ -211,7 +212,7 @@ function TeamSection({ team }: { team: TeamInfo }) {
         <section>
           <h3 className="mb-3 flex items-center gap-2 font-medium">
             <Camera className="size-4" />
-            最新照片
+            {t(locale, "dashboard.latestPhotos")}
           </h3>
           {latestPhotos.length > 0 ? (
             <div className="grid grid-cols-3 gap-2">
@@ -223,7 +224,7 @@ function TeamSection({ team }: { team: TeamInfo }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border p-4 text-sm text-muted-foreground">暂无照片</div>
+            <div className="rounded-md border p-4 text-sm text-muted-foreground">{t(locale, "web.noPhotos")}</div>
           )}
         </section>
       </CardContent>
@@ -232,31 +233,32 @@ function TeamSection({ team }: { team: TeamInfo }) {
 }
 
 export function Dashboard({ token, user, onLogout }: DashboardProps) {
+  const [locale, setLocale] = useState("zh-Hans")
   const [overview, setOverview] = useState<Overview | null>(null)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
   const title = useMemo(() => {
-    if (!overview) return "后台管理"
-    return isSuperAdmin ? "总管理员后台" : "团队创建者后台"
-  }, [isSuperAdmin, overview])
+    if (!overview) return t(locale, "dashboard.manage")
+    return isSuperAdmin ? t(locale, "dashboard.admin") : t(locale, "dashboard.owner")
+  }, [isSuperAdmin, locale, overview])
 
   async function loadOverview() {
     setLoading(true)
     setMessage("")
     try {
       const res = await fetch("/api/admin/overview", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
-        setMessage(data.error || "加载失败")
+        setMessage(data.error || t(locale, "common.sendFailed"))
         return
       }
       setOverview(data)
     } catch {
-      setMessage("网络错误，请稍后再试")
+      setMessage(t(locale, "common.networkError"))
     } finally {
       setLoading(false)
     }
@@ -271,9 +273,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   }
 
   useEffect(() => {
+    setLocale(clientLocale())
+  }, [])
+
+  useEffect(() => {
     loadOverview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [token, locale])
 
   return (
     <div className="w-full max-w-7xl space-y-6">
@@ -285,34 +291,34 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
         <div className="flex gap-2">
           <Button onClick={loadOverview} disabled={loading} variant="outline">
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-            刷新
+            {t(locale, "dashboard.refresh")}
           </Button>
           <Button onClick={logout} variant="outline">
             <LogOut className="size-4" />
-            退出
+            {t(locale, "dashboard.logout")}
           </Button>
         </div>
       </header>
 
       {message && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{message}</div>}
-      {loading && <div className="rounded-md border p-6 text-sm text-muted-foreground">正在加载后台数据...</div>}
+      {loading && <div className="rounded-md border p-6 text-sm text-muted-foreground">{t(locale, "common.loading")}</div>}
 
       {overview && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={<Building2 className="size-5" />} label="团队" value={overview.summary.teamCount} />
-            <StatCard icon={<Users className="size-5" />} label="用户" value={overview.summary.userCount} />
-            <StatCard icon={<FolderKanban className="size-5" />} label="项目" value={overview.summary.projectCount} />
-            <StatCard icon={<Camera className="size-5" />} label="照片" value={overview.summary.photoCount} />
+            <StatCard icon={<Building2 className="size-5" />} label={t(locale, "dashboard.teams")} value={overview.summary.teamCount} />
+            <StatCard icon={<Users className="size-5" />} label={t(locale, "dashboard.users")} value={overview.summary.userCount} />
+            <StatCard icon={<FolderKanban className="size-5" />} label={t(locale, "dashboard.projects")} value={overview.summary.projectCount} />
+            <StatCard icon={<Camera className="size-5" />} label={t(locale, "dashboard.photos")} value={overview.summary.photoCount} />
           </div>
 
-          {isSuperAdmin && <TestEmailPanel token={token} teams={overview.teams} />}
+          {isSuperAdmin && <TestEmailPanel token={token} teams={overview.teams} locale={locale} />}
 
           <div className="space-y-4">
             {overview.teams.map((team) => (
-              <TeamSection key={team.groupID} team={team} />
+              <TeamSection key={team.groupID} team={team} locale={locale} />
             ))}
-            {overview.teams.length === 0 && <div className="rounded-md border p-6 text-sm text-muted-foreground">暂无可管理团队</div>}
+            {overview.teams.length === 0 && <div className="rounded-md border p-6 text-sm text-muted-foreground">{t(locale, "dashboard.noTeams")}</div>}
           </div>
         </>
       )}

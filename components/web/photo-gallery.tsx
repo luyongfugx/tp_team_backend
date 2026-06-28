@@ -26,12 +26,26 @@ type GalleryHeader = {
   meta: string
 }
 
+export type GalleryLabels = {
+  back: string
+  noPhotos: string
+  noPhotosHint: string
+  viewLarge: string
+  teamPhoto: string
+  downloadImage: string
+  close: string
+  download: string
+  largeImage: string
+}
+
 export function WebPhotoGallery({
   header,
   days,
+  labels,
 }: {
   header: GalleryHeader
   days: WebPhotoDay[]
+  labels: GalleryLabels
 }) {
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days])
   const [activePhoto, setActivePhoto] = useState<WebPhoto | null>(null)
@@ -44,7 +58,7 @@ export function WebPhotoGallery({
             type="button"
             onClick={() => history.length > 1 ? history.back() : undefined}
             className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
-            aria-label="返回"
+            aria-label={labels.back}
           >
             <ArrowLeft className="size-7" />
           </button>
@@ -69,8 +83,8 @@ export function WebPhotoGallery({
         {allPhotos.length === 0 ? (
           <div className="flex min-h-[42vh] flex-col items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-center">
             <ImageOff className="mb-3 size-10 text-white/35" />
-            <p className="text-lg font-medium text-white/80">暂无照片</p>
-            <p className="mt-1 text-sm text-white/45">上传后的图片会按日期显示在这里</p>
+            <p className="text-lg font-medium text-white/80">{labels.noPhotos}</p>
+            <p className="mt-1 text-sm text-white/45">{labels.noPhotosHint}</p>
           </div>
         ) : (
           <div className="space-y-10 pb-12">
@@ -87,11 +101,11 @@ export function WebPhotoGallery({
                           type="button"
                           onClick={() => setActivePhoto(photo)}
                           className="block size-full text-left"
-                          aria-label="查看大图"
+                          aria-label={labels.viewLarge}
                         >
                           <img
                             src={photo.thumbnailURL}
-                            alt={photo.localPhotoName || photo.location || "团队照片"}
+                            alt={photo.localPhotoName || photo.location || labels.teamPhoto}
                             className="size-full object-cover transition duration-200 group-hover:scale-[1.03]"
                             loading="lazy"
                           />
@@ -107,7 +121,7 @@ export function WebPhotoGallery({
                       <a
                         href={photo.downloadURL}
                         className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition hover:bg-black/75 group-hover:opacity-100"
-                        aria-label="下载图片"
+                        aria-label={labels.downloadImage}
                       >
                         <Download className="size-4" />
                       </a>
@@ -127,7 +141,7 @@ export function WebPhotoGallery({
               type="button"
               onClick={() => setActivePhoto(null)}
               className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
-              aria-label="关闭"
+              aria-label={labels.close}
             >
               <X className="size-7" />
             </button>
@@ -136,14 +150,14 @@ export function WebPhotoGallery({
               className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-black transition hover:bg-white/85"
             >
               <Download className="size-4" />
-              下载
+              {labels.download}
             </a>
           </div>
           <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-5">
             {activePhoto.imageURL && (
               <img
                 src={activePhoto.imageURL}
-                alt={activePhoto.localPhotoName || activePhoto.location || "大图"}
+                alt={activePhoto.localPhotoName || activePhoto.location || labels.largeImage}
                 className="max-h-full max-w-full rounded-lg object-contain"
               />
             )}
