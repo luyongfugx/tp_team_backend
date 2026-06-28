@@ -144,6 +144,16 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
           avatar: creator.avatar,
         }
       : null,
+    likedUsers: likes
+      .map((like) => like && typeof like === "object" ? (like as Record<string, unknown>).user : null)
+      .filter((user): user is Record<string, unknown> => Boolean(user))
+      .map((user) => ({
+        userID: user.id,
+        userName: user.userName,
+        shortName: user.shortName,
+        email: user.email,
+        avatar: user.avatar,
+      })),
     latestComments: comments.map(mapComment),
   }
 }
@@ -171,7 +181,10 @@ export function mapComment(item: unknown) {
 
 export const feedInclude = {
   createdBy: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
-  likes: { select: { userID: true } },
+  likes: {
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
+  },
   comments: {
     where: { deletedAt: null },
     orderBy: { createdAt: "desc" },
