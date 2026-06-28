@@ -175,7 +175,6 @@ export const feedInclude = {
   comments: {
     where: { deletedAt: null },
     orderBy: { createdAt: "desc" },
-    take: 3,
     include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
   },
 }
