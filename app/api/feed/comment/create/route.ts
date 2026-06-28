@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
-import { feedPrisma, findVisibleFeed, mapComment } from "@/app/api/_utils/feed"
+import { feedPrisma, findOrCreateFeedForInteraction, mapComment } from "@/app/api/_utils/feed"
 
 export async function POST(req: Request) {
   try {
@@ -14,23 +14,24 @@ export async function POST(req: Request) {
     if (!content) return bad("请输入评论内容")
     if (content.length > 2000) return bad("评论内容不能超过 2000 个字符")
     if (!(await requireTeamMember(groupID, user.id))) return bad("无团队访问权限", 403)
-    const feed = await findVisibleFeed(groupID, feedID)
-    if (!feed) return bad("动态不存在")
+    const feedResult = await findOrCreateFeedForInteraction(body, groupID, user.id, feedID)
+    if (!feedResult.feed) return bad(feedResult.error || "动态不存在", feedResult.status || 400)
+    const actualFeedID = String(feedResult.feed.feedID)
 
     const comment = await prisma.$transaction(async (tx) => {
       const delegate = tx as unknown as typeof feedPrisma
       const created = await delegate.teamFeedComment.create({
-        data: { feedID, groupID, userID: user.id, content },
+        data: { feedID: actualFeedID, groupID, userID: user.id, content },
         include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
       })
       await delegate.teamFeed.update({
-        where: { feedID },
+        where: { feedID: actualFeedID },
         data: { commentCount: { increment: 1 } },
       })
       return created
     })
 
-    return ok({ commentInfo: jsonSafe(mapComment(comment)) })
+    return ok({ feedID: actualFeedID, feedCreated: Boolean(feedResult.created), commentInfo: jsonSafe(mapComment(comment)) })
   } catch (err) {
     console.log("[app/feed/comment/create] error:", err)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })

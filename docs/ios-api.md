@@ -2042,6 +2042,7 @@ POST feed/create
 
 ```json
 {
+  "feedID": "feed_xxx",
   "groupID": "group_xxx",
   "projectID": 123,
   "feedType": "TEXT",
@@ -2052,7 +2053,7 @@ POST feed/create
 }
 ```
 
-说明：`projectID`、`title`、`content`、`photoID`、`payload` 都可按场景选择；但 `title/content/photoID/payload` 至少要传一个。`photoID` 如有传，照片必须属于当前团队；带 `projectID` 时照片也必须属于该项目。
+说明：`feedID` 可选；如果客户端传了 `feedID`，服务端创建时一定使用这个 `feedID`。重复传同一个已存在的 `feedID` 时，服务端直接返回已有动态。`projectID`、`title`、`content`、`photoID`、`payload` 都可按场景选择；但 `title/content/photoID/payload` 至少要传一个。`photoID` 如有传，照片必须属于当前团队；带 `projectID` 时照片也必须属于该项目。
 
 响应：
 
@@ -2095,14 +2096,24 @@ POST feed/comment/create
 {
   "groupID": "group_xxx",
   "feedID": "feed_xxx",
+  "projectID": 123,
+  "photoID": "photo_xxx",
+  "feedType": "PHOTO",
+  "feedTitle": "今日进展",
+  "feedContent": "现场照片已同步",
+  "feedPayload": {},
   "content": "收到"
 }
 ```
+
+说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再创建评论。自动创建 feed 时会使用请求中的 `projectID`、`photoID`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`；这些字段可按场景传，不会把 `content` 评论内容当作 feed 内容。
 
 响应：
 
 ```json
 {
+  "feedID": "feed_xxx",
+  "feedCreated": true,
   "commentInfo": {
     "commentID": "comment_xxx",
     "feedID": "feed_xxx",
@@ -2152,14 +2163,24 @@ POST feed/like/create
 ```json
 {
   "groupID": "group_xxx",
-  "feedID": "feed_xxx"
+  "feedID": "feed_xxx",
+  "projectID": 123,
+  "photoID": "photo_xxx",
+  "feedType": "PHOTO",
+  "feedTitle": "今日进展",
+  "feedContent": "现场照片已同步",
+  "feedPayload": {}
 }
 ```
+
+说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再点赞。自动创建 feed 时同样使用 `projectID`、`photoID`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`。
 
 响应：
 
 ```json
 {
+  "feedID": "feed_xxx",
+  "feedCreated": true,
   "likeID": "like_xxx",
   "liked": true,
   "alreadyLiked": false

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
-import { feedInclude, feedPrisma, mapFeed, parseFeedType, parseProjectID, validatePhotoScope, validateProjectScope } from "@/app/api/_utils/feed"
+import { feedInclude, feedPrisma, findVisibleFeed, mapFeed, parseFeedType, parseProjectID, validatePhotoScope, validateProjectScope } from "@/app/api/_utils/feed"
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +8,7 @@ export async function POST(req: Request) {
     if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
+    const feedID = typeof body.feedID === "string" && body.feedID.trim() ? body.feedID.trim() : undefined
     if (!(await requireTeamMember(groupID, user.id))) return bad("无团队访问权限", 403)
     const projectID = parseProjectID(body.projectID)
     if (Number.isNaN(projectID)) return bad("项目不正确")
@@ -19,9 +20,14 @@ export async function POST(req: Request) {
     const payload = body.payload && typeof body.payload === "object" ? body.payload : undefined
     if (!title && !content && !photoID && !payload) return bad("请输入动态内容")
     if (photoID && !(await validatePhotoScope(groupID, photoID, projectID))) return bad("照片不存在")
+    if (feedID) {
+      const existingFeed = await findVisibleFeed(groupID, feedID)
+      if (existingFeed) return ok({ feedInfo: jsonSafe(mapFeed(existingFeed, user.id)), existed: true })
+    }
 
     const feed = await feedPrisma.teamFeed.create({
       data: {
+        ...(feedID ? { feedID } : {}),
         groupID,
         projectID,
         photoID,

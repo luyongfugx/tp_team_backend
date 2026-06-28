@@ -69,6 +69,50 @@ export async function findVisibleFeed(groupID: string, feedID: string) {
   })
 }
 
+export async function findOrCreateFeedForInteraction(
+  body: Record<string, unknown>,
+  groupID: string,
+  userID: string,
+  feedID: string,
+) {
+  const existing = await findVisibleFeed(groupID, feedID)
+  if (existing) return { feed: existing, created: false }
+
+  const projectID = parseProjectID(body.projectID)
+  if (Number.isNaN(projectID)) return { error: "项目不正确", status: 400 }
+  if (!(await validateProjectScope(groupID, projectID))) return { error: "项目不存在", status: 400 }
+
+  const photoID = typeof body.photoID === "string" && body.photoID ? body.photoID : undefined
+  if (photoID && !(await validatePhotoScope(groupID, photoID, projectID))) return { error: "照片不存在", status: 400 }
+
+  const title = typeof body.feedTitle === "string" && body.feedTitle.trim()
+    ? body.feedTitle.trim().slice(0, 120)
+    : typeof body.title === "string" && body.title.trim()
+      ? body.title.trim().slice(0, 120)
+      : undefined
+  const content = typeof body.feedContent === "string" && body.feedContent.trim() ? body.feedContent.trim() : undefined
+  const payload = body.feedPayload && typeof body.feedPayload === "object"
+    ? body.feedPayload
+    : body.payload && typeof body.payload === "object"
+      ? body.payload
+      : undefined
+
+  const feed = await feedPrisma.teamFeed.create({
+    data: {
+      ...(feedID ? { feedID } : {}),
+      groupID,
+      projectID,
+      photoID,
+      createdByUserID: userID,
+      feedType: parseFeedType(body.feedType || (photoID ? "PHOTO" : "TEXT")),
+      title,
+      content,
+      payload,
+    },
+  })
+  return { feed, created: true }
+}
+
 export function canDeleteFeedItem(item: Record<string, unknown>, user: Pick<User, "id">, member: Pick<TeamMember, "role">) {
   return canManage(member) || item.createdByUserID === user.id || item.userID === user.id
 }
