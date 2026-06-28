@@ -11,6 +11,33 @@ export function generateCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, "0")
 }
 
+export async function getOrCreateVerificationCode(email: string) {
+  const now = new Date()
+  const existing = await prisma.verificationCode.findFirst({
+    where: {
+      email,
+      consumed: false,
+      expiresAt: { gt: now },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+  if (existing) {
+    return { code: existing.code, expiresAt: existing.expiresAt, reused: true }
+  }
+
+  await prisma.verificationCode.updateMany({
+    where: { email, consumed: false },
+    data: { consumed: true },
+  })
+
+  const code = generateCode()
+  const expiresAt = new Date(Date.now() + CODE_TTL_MS)
+  await prisma.verificationCode.create({
+    data: { email, code, expiresAt },
+  })
+  return { code, expiresAt, reused: false }
+}
+
 // 生成随机 token
 export function generateToken(): string {
   return randomBytes(32).toString("hex")
