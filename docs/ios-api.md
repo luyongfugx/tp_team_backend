@@ -228,6 +228,66 @@ APPLE_CLIENT_IDS=com.example.ios.bundle
 APPLE_CLIENT_IDS=com.example.ios.bundle,com.example.web.service
 ```
 
+### Google 账户登录
+
+```text
+POST user/login/google
+```
+
+请求：
+
+```json
+{
+  "identityToken": "google-id-token",
+  "nonce": "optional-nonce",
+  "userName": "Wayne Lu",
+  "avatar": "https://lh3.googleusercontent.com/xxx",
+  "appInstanceID": "ios-device-instance-id"
+}
+```
+
+字段说明：
+
+|字段|说明|
+|---|---|
+|`identityToken` / `idToken`|必填，Google Sign-In SDK 返回的 ID Token。后端只信这个 token，不信客户端直接传的 Google user id|
+|`nonce`|可选，如果客户端发起 Google 登录时设置了 nonce，传同一个 nonce；后端会与 token 内 `nonce` 比对|
+|`userName`|可选；不传时后端会优先使用 Google token 内的 `name`|
+|`avatar`|可选；不传时后端会优先使用 Google token 内的 `picture`|
+|`appInstanceID`|可选，设备实例 ID|
+
+响应：
+
+```json
+{
+  "userID": "user_xxx",
+  "userName": "Wayne Lu",
+  "avatar": "https://lh3.googleusercontent.com/xxx",
+  "shortName": null,
+  "ownerTeamCount": 1,
+  "token": "login-token",
+  "email": "user@example.com",
+  "isNewUser": false,
+  "groupID": "group_xxx"
+}
+```
+
+服务端会校验 Google `identityToken` 的签名、`iss`、`aud`、过期时间和可选 nonce，并要求 `email_verified=true`。首次 Google 登录如果该邮箱没有待加入邀请且没有所属团队，会自动创建默认团队。
+
+服务端环境变量：
+
+```text
+GOOGLE_CLIENT_IDS=your-web-server-client-id.apps.googleusercontent.com
+```
+
+如果后续多个客户端共用后端，可以用英文逗号分隔：
+
+```text
+GOOGLE_CLIENT_IDS=web-client-id.apps.googleusercontent.com,ios-client-id.apps.googleusercontent.com
+```
+
+建议优先配置 Web application 类型的 server client ID，并在 iOS `Info.plist` 的 `GIDServerClientID` 中使用同一个值。
+
 ### 刷新 token
 
 ```text
