@@ -38,9 +38,9 @@ export default async function TeamPhotosPage({
         close: t(locale, "web.close"),
         download: t(locale, "web.download"),
         largeImage: t(locale, "web.largeImage"),
-        open: "打开",
-        bannerTitle: "今日水印相机·分类照片",
-        bannerSubtitle: "更多功能请见团队工作台",
+        open: t(locale, "web.bannerOpen"),
+        bannerTitle: t(locale, "web.bannerTitle"),
+        bannerSubtitle: t(locale, "web.bannerSubtitle"),
       }}
     />
   )
