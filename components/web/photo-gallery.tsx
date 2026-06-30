@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ArrowLeft, Download, Folder, ImageOff, Maximize2, X } from "lucide-react"
+import { Download, Folder, Home, ImageOff, X } from "lucide-react"
 
 export type WebPhoto = {
   photoID: string
@@ -36,6 +36,9 @@ export type GalleryLabels = {
   close: string
   download: string
   largeImage: string
+  open: string
+  bannerTitle: string
+  bannerSubtitle: string
 }
 
 export function WebPhotoGallery({
@@ -51,20 +54,16 @@ export function WebPhotoGallery({
   const [activePhoto, setActivePhoto] = useState<WebPhoto | null>(null)
 
   return (
-    <main className="min-h-svh bg-[#080d13] text-white">
+    <main className="min-h-svh bg-[#080d13] pb-[calc(96px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(104px+env(safe-area-inset-bottom))]">
       <div className="mx-auto min-h-svh w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="sticky top-0 z-20 -mx-4 mb-8 flex items-center justify-between bg-[#080d13]/92 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <button
-            type="button"
-            onClick={() => history.length > 1 ? history.back() : undefined}
+        <header className="sticky top-0 z-20 -mx-4 mb-8 flex items-center bg-[#080d13]/92 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <a
+            href="https://www.timeprint.net"
             className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
-            aria-label={labels.back}
+            aria-label="Timeprint home"
           >
-            <ArrowLeft className="size-7" />
-          </button>
-          <div className="rounded-lg border border-white/45 p-1 text-white/85">
-            <Maximize2 className="size-5" />
-          </div>
+            <Home className="size-6" />
+          </a>
         </header>
 
         <section className="mb-10 flex items-center gap-4">
@@ -87,10 +86,10 @@ export function WebPhotoGallery({
             <p className="mt-1 text-sm text-white/45">{labels.noPhotosHint}</p>
           </div>
         ) : (
-          <div className="space-y-10 pb-12">
+          <div className="space-y-8 pb-12">
             {days.map((day) => (
               <section key={day.dateText}>
-                <h2 className="mb-5 text-3xl font-bold tracking-normal text-white sm:text-4xl">
+                <h2 className="mb-4 text-xl font-semibold tracking-normal text-white sm:text-2xl">
                   {day.dateText}
                 </h2>
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
@@ -167,6 +166,27 @@ export function WebPhotoGallery({
           </div>
         </div>
       )}
+
+      <a
+        href="https://www.timeprint.net"
+        className="fixed inset-x-0 bottom-0 z-40 block border-t border-black/10 bg-white px-4 py-3 text-black shadow-[0_-10px_30px_rgba(0,0,0,0.18)]"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="Timeprint"
+            className="size-14 shrink-0 rounded-xl sm:size-16"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-lg font-semibold text-black sm:text-xl">{labels.bannerTitle}</div>
+            <div className="truncate text-sm text-black/55 sm:text-base">{labels.bannerSubtitle}</div>
+          </div>
+          <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#1295f5] px-7 py-3 text-lg font-semibold text-white shadow-sm sm:px-9">
+            {labels.open}
+          </span>
+        </div>
+      </a>
     </main>
   )
 }
