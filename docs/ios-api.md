@@ -354,7 +354,8 @@ POST user/info/query
       "userID": "user_1",
       "userName": "Wayne",
       "shortName": "W",
-      "avatar": "https://example.com/avatar.png"
+      "avatar": "https://example.com/avatar.png",
+      "email": "wayne@example.com"
     }
   ]
 }
@@ -742,6 +743,8 @@ POST group/user/setting/update
 POST group/user/exit
 ```
 
+当前登录用户主动退出团队。
+
 请求：
 
 ```json
@@ -756,7 +759,12 @@ POST group/user/exit
 {}
 ```
 
-创建者不能直接退出，需要先调用团队转让接口。
+规则：
+
+- 需要登录。
+- 普通成员、管理员可主动退出。
+- 创建者不能直接退出，需要先调用团队转让接口。
+- 退出后会删除该用户在团队下的项目成员关系。
 
 ### 加入团队
 
@@ -887,6 +895,8 @@ POST group/user/list
 POST group/user/delete
 ```
 
+团队创建者或管理员移除团队成员。
+
 请求：
 
 ```json
@@ -899,14 +909,27 @@ POST group/user/delete
 响应：
 
 ```json
-{}
+{
+  "deletedCount": 2,
+  "deletedUserIDs": ["user_1", "user_2"]
+}
 ```
+
+规则：
+
+- 需要登录。
+- 只有团队创建者或管理员可操作。
+- 不能通过此接口移除自己。
+- 不能移除团队创建者。
+- 成员被移除后，会同步删除该用户在团队下的项目成员关系。
 
 ### 更新成员角色
 
 ```text
 POST group/user/role/update
 ```
+
+设置团队成员角色为管理员或普通成员。
 
 请求：
 
@@ -921,10 +944,25 @@ POST group/user/role/update
 响应：
 
 ```json
-{}
+{
+  "userID": "user_xxx",
+  "role": "ADMIN",
+  "roleID": 2
+}
 ```
 
-仅创建者可操作。转让创建者请使用 `group/transfer`。
+`roleID`：
+
+- `2`：管理员。
+- `3`：普通成员。
+
+规则：
+
+- 需要登录。
+- 仅团队创建者可操作。
+- 不能修改自己的创建者角色。
+- 不能通过此接口设置创建者；转让创建者请使用 `group/transfer`。
+- 成员角色更新后，会同步更新该用户在团队下所有项目里的角色。
 
 ### 查询邀请链接
 

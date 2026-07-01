@@ -47,6 +47,7 @@ export function photoSelect() {
     userName: true,
     userShortName: true,
     userAvatar: true,
+    user: { select: { userName: true, shortName: true, avatar: true } },
     projectID: true,
     projectName: true,
     antiFakeCode: true,
@@ -57,6 +58,16 @@ export function photoSelect() {
     lng: true,
     createdAt: true,
   } satisfies Prisma.PhotoSelect
+}
+
+export function mapPhotoWithUserFallback(photo: Prisma.PhotoGetPayload<{ select: ReturnType<typeof photoSelect> }>) {
+  const { user, ...payload } = photo
+  return {
+    ...payload,
+    userName: payload.userName || user.userName,
+    userShortName: payload.userShortName || user.shortName,
+    userAvatar: payload.userAvatar || user.avatar,
+  }
 }
 
 export function selectedPhotoWhere(

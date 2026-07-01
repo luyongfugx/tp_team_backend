@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, pageArgs, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
-import { photoSelect, photoWhere } from "@/app/api/_utils/photo"
+import { mapPhotoWithUserFallback, photoSelect, photoWhere } from "@/app/api/_utils/photo"
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         take: 20,
       }),
     ])
-    return ok({ totalCount, photos: jsonSafe(photos), contributors: jsonSafe(contributors) })
+    return ok({ totalCount, photos: jsonSafe(photos.map(mapPhotoWithUserFallback)), contributors: jsonSafe(contributors) })
   } catch (err) {
     console.log("[app/photo/list/v1] error:", err)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })

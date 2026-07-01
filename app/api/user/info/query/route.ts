@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const userIDs = asStringArray(body.userID)
     const users = await prisma.user.findMany({
       where: { id: { in: userIDs }, deletedAt: null },
-      select: { id: true, userName: true, shortName: true, avatar: true },
+      select: { id: true, email: true, userName: true, shortName: true, avatar: true },
     })
     return ok({
       userInfo: users.map((item) => ({
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
         userName: item.userName,
         shortName: item.shortName,
         avatar: item.avatar,
+        email: item.email,
       })),
     })
   } catch (err) {

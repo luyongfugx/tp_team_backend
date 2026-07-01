@@ -11,7 +11,10 @@ export async function POST(req: Request) {
     const member = await requireTeamMember(groupID, user.id)
     if (!member) return bad("无团队访问权限", 403)
     if (member.role === "OWNER") return bad("创建者需要先转让团队")
-    await prisma.teamMember.delete({ where: { groupID_userID: { groupID, userID: user.id } } })
+    await prisma.$transaction([
+      prisma.projectMember.deleteMany({ where: { groupID, userID: user.id } }),
+      prisma.teamMember.delete({ where: { groupID_userID: { groupID, userID: user.id } } }),
+    ])
     return ok()
   } catch (err) {
     console.log("[app/group/user/exit] error:", err)

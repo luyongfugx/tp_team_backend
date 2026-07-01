@@ -12,17 +12,29 @@ export async function POST(req: Request) {
     const manager = await requireTeamManager(groupID, user.id)
     if (!manager || manager.role !== "OWNER") return bad("只有创建者可以调整团队角色", 403)
     if (targetUserID === user.id) return bad("不能修改自己的创建者角色")
+    if (body.roleID !== 2 && body.roleID !== "2" && body.roleID !== 3 && body.roleID !== "3") {
+      return bad("只能设置为管理员或普通成员")
+    }
     const role = roleIDToRole(body.roleID)
-    if (role === "OWNER") return bad("转让创建者请使用团队转让接口")
-    await prisma.teamMember.update({
+    const targetMember = await prisma.teamMember.findUnique({
       where: { groupID_userID: { groupID, userID: targetUserID } },
-      data: { role, roleID: roleToID(role) },
+      select: { role: true },
     })
-    await prisma.projectMember.updateMany({
-      where: { groupID, userID: targetUserID },
-      data: { role, roleID: roleToID(role) },
-    })
-    return ok()
+    if (!targetMember) return bad("成员不存在")
+    if (targetMember.role === "OWNER") return bad("转让创建者请使用团队转让接口")
+
+    const roleID = roleToID(role)
+    await prisma.$transaction([
+      prisma.teamMember.update({
+        where: { groupID_userID: { groupID, userID: targetUserID } },
+        data: { role, roleID },
+      }),
+      prisma.projectMember.updateMany({
+        where: { groupID, userID: targetUserID },
+        data: { role, roleID },
+      }),
+    ])
+    return ok({ userID: targetUserID, role, roleID })
   } catch (err) {
     console.log("[app/group/user/role/update] error:", err)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
