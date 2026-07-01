@@ -128,3 +128,24 @@ export async function getProjectGallery(projectID: number, localeInput?: string)
     memberCount,
   }
 }
+
+export async function getUserGallery(userID: string, localeInput?: string) {
+  const locale = resolveLocale(localeInput)
+  const [user, photos] = await Promise.all([
+    prisma.user.findFirst({
+      where: { id: userID, deletedAt: null },
+      select: { id: true, email: true, userName: true, shortName: true, avatar: true },
+    }),
+    prisma.photo.findMany({
+      where: { userID, deletedAt: null },
+      select: photoSelect,
+      orderBy: { timestamp: "desc" },
+    }),
+  ])
+
+  return {
+    user,
+    days: groupPhotosByDate(photos, locale),
+    photoCount: photos.length,
+  }
+}

@@ -50,6 +50,7 @@ type MessageKey =
   | "web.bannerTitle"
   | "web.bannerSubtitle"
   | "web.teamAllPhotos"
+  | "web.userAllPhotos"
   | "web.noLocation"
   | "web.photoCount"
   | "web.memberCount"
@@ -148,6 +149,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "more photos in Timeprint camera",
     "web.teamAllPhotos": "All team photos",
+    "web.userAllPhotos": "All user photos",
     "web.noLocation": "No location",
     "web.photoCount": "{count} photos",
     "web.memberCount": "{count} members",
@@ -219,6 +221,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "小印相机",
     "web.bannerSubtitle": "更多照片请在小印相机中查看",
     "web.teamAllPhotos": "团队所有照片",
+    "web.userAllPhotos": "用户所有照片",
     "web.noLocation": "未设置地点",
     "web.photoCount": "{count} 张照片",
     "web.memberCount": "{count} 名成员",
@@ -290,6 +293,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "小印相機",
     "web.bannerSubtitle": "更多照片請在小印相機中查看",
     "web.teamAllPhotos": "團隊所有照片",
+    "web.userAllPhotos": "使用者所有照片",
     "web.noLocation": "未設定地點",
     "web.photoCount": "{count} 張照片",
     "web.memberCount": "{count} 名成員",
@@ -361,6 +365,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "ดูรูปภาพเพิ่มเติมใน Timeprint Camera",
     "web.teamAllPhotos": "รูปภาพทั้งหมดของทีม",
+    "web.userAllPhotos": "รูปภาพทั้งหมดของผู้ใช้",
     "web.noLocation": "ไม่มีตำแหน่ง",
     "web.photoCount": "{count} รูปภาพ",
     "web.memberCount": "สมาชิก {count} คน",
@@ -432,6 +437,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "Xem thêm ảnh trong Timeprint Camera",
     "web.teamAllPhotos": "Tất cả ảnh nhóm",
+    "web.userAllPhotos": "Tất cả ảnh người dùng",
     "web.noLocation": "Chưa đặt vị trí",
     "web.photoCount": "{count} ảnh",
     "web.memberCount": "{count} thành viên",
@@ -503,6 +509,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "Lihat foto lainnya di Timeprint Camera",
     "web.teamAllPhotos": "Semua foto tim",
+    "web.userAllPhotos": "Semua foto pengguna",
     "web.noLocation": "Lokasi belum diatur",
     "web.photoCount": "{count} foto",
     "web.memberCount": "{count} anggota",
@@ -574,6 +581,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "Lihat lebih banyak foto dalam Timeprint Camera",
     "web.teamAllPhotos": "Semua foto pasukan",
+    "web.userAllPhotos": "Semua foto pengguna",
     "web.noLocation": "Tiada lokasi",
     "web.photoCount": "{count} foto",
     "web.memberCount": "{count} ahli",
@@ -645,6 +653,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "Veja mais fotos no Timeprint Camera",
     "web.teamAllPhotos": "Todas as fotos da equipe",
+    "web.userAllPhotos": "Todas as fotos do usuário",
     "web.noLocation": "Sem localização",
     "web.photoCount": "{count} fotos",
     "web.memberCount": "{count} membros",
@@ -716,6 +725,7 @@ const dictionaries: Record<AppLocale, Messages> = {
     "web.bannerTitle": "Timeprint Camera",
     "web.bannerSubtitle": "Ver más fotos en Timeprint Camera",
     "web.teamAllPhotos": "Todas las fotos del equipo",
+    "web.userAllPhotos": "Todas las fotos del usuario",
     "web.noLocation": "Sin ubicación",
     "web.photoCount": "{count} fotos",
     "web.memberCount": "{count} miembros",
