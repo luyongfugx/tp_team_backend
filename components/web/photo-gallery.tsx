@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react"
-import { ChevronLeft, ChevronRight, Download, Folder, Home, ImageOff, X } from "lucide-react"
+import { Download, Folder, Home, ImageOff, X } from "lucide-react"
 
 export type WebPhoto = {
   photoID: string
@@ -93,9 +93,9 @@ export function WebPhotoGallery({
   }, [activePhoto, allPhotos.length])
 
   return (
-    <main className="min-h-svh bg-[#080d13] pb-[calc(96px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(104px+env(safe-area-inset-bottom))]">
+    <main className="min-h-svh bg-[#080d13] pb-[calc(64px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(70px+env(safe-area-inset-bottom))]">
       <div className="mx-auto min-h-svh w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="sticky top-0 z-20 -mx-4 mb-8 flex items-center bg-[#080d13]/92 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <header className="sticky top-0 z-20 -mx-4 mb-3 flex items-center bg-[#080d13]/92 px-4 py-[9px] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <a
             href="https://www.timeprint.net"
             className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
@@ -110,11 +110,11 @@ export function WebPhotoGallery({
             <Folder className="size-9 fill-white text-white sm:size-11" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-3xl font-bold tracking-normal text-white sm:text-4xl">
+            <h1 className="truncate text-2xl font-bold tracking-normal text-white sm:text-4xl">
               {header.title}
             </h1>
-            <p className="mt-2 truncate text-lg text-white/50 sm:text-xl">{header.subtitle}</p>
-            <p className="mt-1 truncate text-lg text-white/50 sm:text-xl">{header.meta}</p>
+            <p className="mt-2 whitespace-normal break-words text-m text-white/50 sm:text-m">{header.subtitle}</p>
+            <p className="mt-1 truncate text-m text-white/50 sm:text-m">{header.meta}</p>
           </div>
         </section>
 
@@ -203,10 +203,10 @@ export function WebPhotoGallery({
               <button
                 type="button"
                 onClick={showPrevious}
-                className="absolute left-3 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white transition hover:bg-black/70 sm:inline-flex"
+                className="absolute left-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-3xl font-light leading-none text-white shadow-lg transition hover:bg-black/75 sm:left-4 sm:size-14"
                 aria-label="Previous photo"
               >
-                <ChevronLeft className="size-7" />
+                &lt;
               </button>
             )}
             {activePhoto.imageURL && (
@@ -221,10 +221,10 @@ export function WebPhotoGallery({
               <button
                 type="button"
                 onClick={showNext}
-                className="absolute right-3 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white transition hover:bg-black/70 sm:inline-flex"
+                className="absolute right-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-3xl font-light leading-none text-white shadow-lg transition hover:bg-black/75 sm:right-4 sm:size-14"
                 aria-label="Next photo"
               >
-                <ChevronRight className="size-7" />
+                &gt;
               </button>
             )}
           </div>
@@ -236,20 +236,20 @@ export function WebPhotoGallery({
 
       <a
         href="https://www.timeprint.net"
-        className="fixed inset-x-0 bottom-0 z-40 block border-t border-black/10 bg-white px-4 py-3 text-black shadow-[0_-10px_30px_rgba(0,0,0,0.18)]"
-        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+        className="fixed inset-x-0 bottom-0 z-40 block border-t border-black/10 bg-white px-3 py-2 text-black shadow-[0_-10px_30px_rgba(0,0,0,0.18)]"
+        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-2.5">
           <img
             src="/logo.png"
             alt="Timeprint"
-            className="size-14 shrink-0 rounded-xl sm:size-16"
+            className="size-9 shrink-0 rounded-lg sm:size-11"
           />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-lg font-semibold text-black sm:text-xl">{labels.bannerTitle}</div>
-            <div className="truncate text-sm text-black/55 sm:text-base">{labels.bannerSubtitle}</div>
+            <div className="truncate text-sm font-semibold text-black sm:text-base">{labels.bannerTitle}</div>
+            <div className="truncate text-xs text-black/55 sm:text-sm">{labels.bannerSubtitle}</div>
           </div>
-          <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#1295f5] px-7 py-3 text-lg font-semibold text-white shadow-sm sm:px-9">
+          <span className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#1295f5] px-4 py-1.5 text-sm font-semibold text-white shadow-sm sm:px-5 sm:py-2">
             {labels.open}
           </span>
         </div>
