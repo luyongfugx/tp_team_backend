@@ -110,11 +110,11 @@ export function WebPhotoGallery({
             <Folder className="size-9 fill-white text-white sm:size-11" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold tracking-normal text-white sm:text-4xl">
+            <h1 className="truncate text-1xl font-bold tracking-normal text-white sm:text-4xl">
               {header.title}
             </h1>
-            <p className="mt-2 whitespace-normal break-words text-m text-white/50 sm:text-m">{header.subtitle}</p>
-            <p className="mt-1 truncate text-m text-white/50 sm:text-m">{header.meta}</p>
+            <p className="mt-1 whitespace-normal break-words text-sm text-white/50 sm:text-sm">{header.subtitle}</p>
+            <p className="mt-0.5 truncate text-xs text-white/50 sm:text-sm">{header.meta}</p>
           </div>
         </section>
 
@@ -128,7 +128,7 @@ export function WebPhotoGallery({
           <div className="space-y-8 pb-12">
             {days.map((day) => (
               <section key={day.dateText}>
-                <h2 className="mb-4 text-xl font-semibold tracking-normal text-white sm:text-2xl">
+                <h2 className="mb-4 text-m font-semibold tracking-normal text-white sm:text-m">
                   {day.dateText}
                 </h2>
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
