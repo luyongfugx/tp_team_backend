@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Download, Folder, Home, ImageOff, X } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react"
+import { ChevronLeft, ChevronRight, Download, Folder, Home, ImageOff, X } from "lucide-react"
 
 export type WebPhoto = {
   photoID: string
@@ -51,7 +51,46 @@ export function WebPhotoGallery({
   labels: GalleryLabels
 }) {
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days])
-  const [activePhoto, setActivePhoto] = useState<WebPhoto | null>(null)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const activePhoto = activeIndex == null ? null : allPhotos[activeIndex] ?? null
+  const canGoPrevious = activeIndex != null && activeIndex > 0
+  const canGoNext = activeIndex != null && activeIndex < allPhotos.length - 1
+
+  function openPhoto(photoID: string) {
+    const index = allPhotos.findIndex((photo) => photo.photoID === photoID)
+    if (index >= 0) setActiveIndex(index)
+  }
+
+  function showPrevious() {
+    setActiveIndex((index) => index == null ? index : Math.max(index - 1, 0))
+  }
+
+  function showNext() {
+    setActiveIndex((index) => index == null ? index : Math.min(index + 1, allPhotos.length - 1))
+  }
+
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    if (!touchStart.current) return
+    const touch = event.changedTouches[0]
+    const deltaX = touch.clientX - touchStart.current.x
+    const deltaY = touch.clientY - touchStart.current.y
+    touchStart.current = null
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return
+    if (deltaX < 0) showNext()
+    if (deltaX > 0) showPrevious()
+  }
+
+  useEffect(() => {
+    if (!activePhoto) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setActiveIndex(null)
+      if (event.key === "ArrowLeft") showPrevious()
+      if (event.key === "ArrowRight") showNext()
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [activePhoto, allPhotos.length])
 
   return (
     <main className="min-h-svh bg-[#080d13] pb-[calc(96px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(104px+env(safe-area-inset-bottom))]">
@@ -98,7 +137,7 @@ export function WebPhotoGallery({
                       {photo.thumbnailURL ? (
                         <button
                           type="button"
-                          onClick={() => setActivePhoto(photo)}
+                          onClick={() => openPhoto(photo.photoID)}
                           className="block size-full text-left"
                           aria-label={labels.viewLarge}
                         >
@@ -134,11 +173,18 @@ export function WebPhotoGallery({
       </div>
 
       {activePhoto && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
+        <div
+          className="fixed inset-0 z-50 flex touch-pan-y flex-col bg-black/95"
+          onTouchStart={(event) => {
+            const touch = event.touches[0]
+            touchStart.current = { x: touch.clientX, y: touch.clientY }
+          }}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="flex h-16 shrink-0 items-center justify-between px-4">
             <button
               type="button"
-              onClick={() => setActivePhoto(null)}
+              onClick={() => setActiveIndex(null)}
               className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
               aria-label={labels.close}
             >
@@ -153,12 +199,33 @@ export function WebPhotoGallery({
             </a>
           </div>
           <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-5">
+            {canGoPrevious && (
+              <button
+                type="button"
+                onClick={showPrevious}
+                className="absolute left-3 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white transition hover:bg-black/70 sm:inline-flex"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft className="size-7" />
+              </button>
+            )}
             {activePhoto.imageURL && (
               <img
                 src={activePhoto.imageURL}
                 alt={activePhoto.localPhotoName || activePhoto.location || labels.largeImage}
                 className="max-h-full max-w-full rounded-lg object-contain"
+                draggable={false}
               />
+            )}
+            {canGoNext && (
+              <button
+                type="button"
+                onClick={showNext}
+                className="absolute right-3 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white transition hover:bg-black/70 sm:inline-flex"
+                aria-label="Next photo"
+              >
+                <ChevronRight className="size-7" />
+              </button>
             )}
           </div>
           <div className="shrink-0 px-4 pb-5 text-center text-sm text-white/55">
