@@ -105,7 +105,7 @@ export function WebPhotoGallery({
           </a>
         </header>
 
-        <section className="mb-10 flex items-center gap-4">
+        <section className="mb-6 flex items-center gap-4">
           <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-[#755a21] shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:size-20">
             <Folder className="size-9 fill-white text-white sm:size-11" />
           </div>
