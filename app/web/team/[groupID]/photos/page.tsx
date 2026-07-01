@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { WebPhotoGallery } from "@/components/web/photo-gallery"
 import { getTeamGallery } from "@/app/web/photos-data"
-import { resolveLocale, t } from "@/lib/i18n"
+import { resolveLocale, supportedLocaleOptions, t } from "@/lib/i18n"
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value
@@ -28,6 +28,8 @@ export default async function TeamPhotosPage({
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,
       }}
       days={days}
+      currentLocale={locale}
+      languageOptions={supportedLocaleOptions}
       labels={{
         back: t(locale, "web.back"),
         noPhotos: t(locale, "web.noPhotos"),

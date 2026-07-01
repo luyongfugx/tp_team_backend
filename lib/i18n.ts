@@ -2,6 +2,18 @@ export const supportedLocales = ["en", "zh-Hans", "zh-Hant", "th", "vi", "id", "
 
 export type AppLocale = (typeof supportedLocales)[number]
 
+export const supportedLocaleOptions: Array<{ value: AppLocale; label: string }> = [
+  { value: "en", label: "English" },
+  { value: "zh-Hans", label: "简体中文" },
+  { value: "zh-Hant", label: "繁體中文" },
+  { value: "th", label: "ไทย" },
+  { value: "vi", label: "Tiếng Việt" },
+  { value: "id", label: "Bahasa Indonesia" },
+  { value: "ms", label: "Bahasa Melayu" },
+  { value: "pt", label: "Português" },
+  { value: "es", label: "Español" },
+]
+
 type MessageKey =
   | "role.owner"
   | "role.admin"

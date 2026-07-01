@@ -26,6 +26,11 @@ type GalleryHeader = {
   meta: string
 }
 
+type LanguageOption = {
+  value: string
+  label: string
+}
+
 export type GalleryLabels = {
   back: string
   noPhotos: string
@@ -45,10 +50,14 @@ export function WebPhotoGallery({
   header,
   days,
   labels,
+  currentLocale,
+  languageOptions,
 }: {
   header: GalleryHeader
   days: WebPhotoDay[]
   labels: GalleryLabels
+  currentLocale: string
+  languageOptions: LanguageOption[]
 }) {
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -81,6 +90,14 @@ export function WebPhotoGallery({
     if (deltaX > 0) showPrevious()
   }
 
+  function changeLanguage(locale: string) {
+    const url = new URL(window.location.href)
+    url.searchParams.set("lang", locale)
+    url.searchParams.delete("locale")
+    url.searchParams.delete("language")
+    window.location.href = url.toString()
+  }
+
   useEffect(() => {
     if (!activePhoto) return
     function handleKeyDown(event: KeyboardEvent) {
@@ -95,7 +112,7 @@ export function WebPhotoGallery({
   return (
     <main className="min-h-svh bg-[#080d13] pb-[calc(64px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(70px+env(safe-area-inset-bottom))]">
       <div className="mx-auto min-h-svh w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="sticky top-0 z-20 -mx-4 mb-3 flex items-center bg-[#080d13]/92 px-4 py-[9px] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <header className="sticky top-0 z-20 -mx-4 mb-3 flex items-center justify-between bg-[#080d13]/92 px-4 py-[9px] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <a
             href="https://www.timeprint.net"
             className="inline-flex size-10 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
@@ -103,6 +120,18 @@ export function WebPhotoGallery({
           >
             <Home className="size-6" />
           </a>
+          <select
+            value={currentLocale}
+            onChange={(event) => changeLanguage(event.target.value)}
+            className="h-9 max-w-[150px] rounded-md border border-white/15 bg-white/10 px-2 text-sm text-white outline-none backdrop-blur transition hover:bg-white/15 focus:border-white/45 sm:max-w-none"
+            aria-label="Language"
+          >
+            {languageOptions.map((option) => (
+              <option key={option.value} value={option.value} className="bg-[#111827] text-white">
+                {option.label}
+              </option>
+            ))}
+          </select>
         </header>
 
         <section className="mb-6 flex items-center gap-4">
