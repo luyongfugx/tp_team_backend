@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react"
-import { Download, Folder, Home, ImageOff, X } from "lucide-react"
+import { Download, Folder, Globe2, Home, ImageOff, X } from "lucide-react"
 
 export type WebPhoto = {
   photoID: string
@@ -61,8 +61,10 @@ export function WebPhotoGallery({
 }) {
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const activePhoto = activeIndex == null ? null : allPhotos[activeIndex] ?? null
+  const currentLanguageLabel = languageOptions.find((option) => option.value === currentLocale)?.label || currentLocale
   const canGoPrevious = activeIndex != null && activeIndex > 0
   const canGoNext = activeIndex != null && activeIndex < allPhotos.length - 1
 
@@ -95,6 +97,7 @@ export function WebPhotoGallery({
     url.searchParams.set("lang", locale)
     url.searchParams.delete("locale")
     url.searchParams.delete("language")
+    setLanguageMenuOpen(false)
     window.location.href = url.toString()
   }
 
@@ -109,6 +112,15 @@ export function WebPhotoGallery({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [activePhoto, allPhotos.length])
 
+  useEffect(() => {
+    if (!languageMenuOpen) return
+    function closeMenu() {
+      setLanguageMenuOpen(false)
+    }
+    window.addEventListener("click", closeMenu)
+    return () => window.removeEventListener("click", closeMenu)
+  }, [languageMenuOpen])
+
   return (
     <main className="min-h-svh bg-[#080d13] pb-[calc(64px+env(safe-area-inset-bottom))] text-white sm:pb-[calc(70px+env(safe-area-inset-bottom))]">
       <div className="mx-auto min-h-svh w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
@@ -120,18 +132,45 @@ export function WebPhotoGallery({
           >
             <Home className="size-6" />
           </a>
-          <select
-            value={currentLocale}
-            onChange={(event) => changeLanguage(event.target.value)}
-            className="h-9 max-w-[150px] rounded-md border border-white/15 bg-white/10 px-2 text-sm text-white outline-none backdrop-blur transition hover:bg-white/15 focus:border-white/45 sm:max-w-none"
-            aria-label="Language"
-          >
-            {languageOptions.map((option) => (
-              <option key={option.value} value={option.value} className="bg-[#111827] text-white">
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setLanguageMenuOpen((open) => !open)
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/20 bg-white px-3 text-sm font-medium text-black shadow-sm transition hover:bg-white/90"
+              aria-haspopup="listbox"
+              aria-expanded={languageMenuOpen}
+            >
+              <Globe2 className="size-4" />
+              <span className="max-w-[92px] truncate">{currentLanguageLabel}</span>
+            </button>
+            {languageMenuOpen && (
+              <div
+                className="absolute right-0 top-[calc(100%+8px)] z-30 w-44 overflow-hidden rounded-md border border-black/10 bg-white py-1.5 text-left text-sm text-black shadow-[0_8px_24px_rgba(15,23,42,0.18)]"
+                role="listbox"
+              >
+                {languageOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      changeLanguage(option.value)
+                    }}
+                    className={`block w-full px-3 py-2 text-left transition hover:bg-black/[0.06] ${
+                      option.value === currentLocale ? "bg-black/[0.07]" : ""
+                    }`}
+                    role="option"
+                    aria-selected={option.value === currentLocale}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </header>
 
         <section className="mb-6 flex items-center gap-4">
