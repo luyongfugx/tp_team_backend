@@ -1085,6 +1085,15 @@ POST group/user/invite/role/list
 POST group/user/invite/email
 ```
 
+该接口会直接把邮箱对应的用户加入团队，并发送通知邮件，不再需要被邀请用户点击同意。
+
+规则：
+
+- 如果邮箱对应用户已存在：直接加入团队。
+- 如果邮箱对应用户不存在：自动用该邮箱创建用户，并加入团队。
+- 如果该用户已经是团队成员：不会重复加入，也不会发送通知邮件。
+- 该接口只允许设置 `roleID=2` 管理员或 `roleID=3` 普通成员；其他值按普通成员处理。
+
 请求：
 
 ```json
@@ -1099,21 +1108,22 @@ POST group/user/invite/email
 
 ```json
 {
-  "expiredDays": 7,
   "succeedSendEmails": ["a@example.com"],
   "failedSendEmails": [],
   "invalidEmails": [],
-  "alreadyMemberEmails": ["b@example.com"]
+  "alreadyMemberEmails": ["b@example.com"],
+  "joinedEmails": ["a@example.com"],
+  "createdUserEmails": ["a@example.com"]
 }
 ```
 
-邮件内容里的加入链接格式：
+邮件内容为“xxx 把您加入 xxx团队”，按钮文案为“查看”。邮件里的查看链接格式：
 
 ```text
-https://share.timeprint.net/invite?code=123456
+https://share.timeprint.net/invite?code=group_xxx
 ```
 
-其中 `code` 为 6 位数字邀请码。
+其中 `code` 的值为团队 `groupID`，不再是 6 位数字邀请码。
 
 ### 根据邀请码查询邀请信息
 
@@ -1770,6 +1780,8 @@ POST photo/delete
 {}
 ```
 
+说明：该接口为软删除，只会设置照片的 `deletedAt`，不会物理删除照片记录。
+
 ### 批量删除照片
 
 ```text
@@ -1795,6 +1807,8 @@ POST photo/delete/batch/v1
   "deletedCount": 2
 }
 ```
+
+说明：该接口为软删除，只会批量设置照片的 `deletedAt`，不会物理删除照片记录。
 
 当 `rangeSelected = true` 时，表示按当前筛选条件全选，`unSelectedPhotoIDs` 表示排除项。
 

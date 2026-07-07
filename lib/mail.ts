@@ -41,9 +41,9 @@ function errorMessage(err: unknown) {
   return String(err)
 }
 
-function inviteLink(inviteCode: string) {
+function inviteLink(groupID: string) {
   const url = new URL("https://share.timeprint.net/invite")
-  url.searchParams.set("code", inviteCode)
+  url.searchParams.set("code", groupID)
   return url.toString()
 }
 
@@ -157,7 +157,7 @@ export async function sendTeamInviteEmail({
   email,
   groupName,
   inviterName,
-  inviteCode,
+  groupID,
   memberCount,
   photoCount,
   locale = "zh-Hans",
@@ -165,12 +165,12 @@ export async function sendTeamInviteEmail({
   email: string
   groupName: string
   inviterName: string
-  inviteCode: string
+  groupID: string
   memberCount: number
   photoCount: number
   locale?: AppLocale | string
 }) {
-  const link = inviteLink(inviteCode)
+  const link = inviteLink(groupID)
   const escapedGroupName = escapeHtml(groupName)
   const inviterInitial = escapeHtml((inviterName.trim()[0] || "T").toUpperCase())
   const content = t(locale, "mail.invite.text", { inviterName, groupName, link })

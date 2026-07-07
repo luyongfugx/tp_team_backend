@@ -1,18 +1,8 @@
-import { randomInt, randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { localeFromRequest } from "@/lib/i18n"
 import { sendTeamInviteEmail } from "@/lib/mail"
 import { asStringArray, bad, EMAIL_RE, normalizeEmail, ok, readBody, requireTeamManager, requireUser, roleIDToRole } from "@/app/api/_utils/api"
-
-async function createInviteCode() {
-  for (let index = 0; index < 20; index += 1) {
-    const code = randomInt(100000, 1000000).toString()
-    const existingInvite = await prisma.teamEmailInvite.findFirst({ where: { inviteCode: code } as never })
-    if (!existingInvite) return code
-  }
-  throw new Error("生成邀请码失败")
-}
 
 export async function POST(req: Request) {
   try {
@@ -22,8 +12,8 @@ export async function POST(req: Request) {
     const locale = localeFromRequest(req, body)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
     if (!(await requireTeamManager(groupID, user.id))) return bad("无团队管理权限", 403)
-    const team = await prisma.team.findUnique({
-      where: { groupID },
+    const team = await prisma.team.findFirst({
+      where: { groupID, deletedAt: null },
       select: {
         groupName: true,
         _count: { select: { members: true, photos: true } },
@@ -40,43 +30,45 @@ export async function POST(req: Request) {
       include: { user: true },
     })
     const alreadyMemberEmails = existingMembers.map((item) => item.user.email)
-    const role = roleIDToRole(body.roleID)
+    const requestedRole = roleIDToRole(body.roleID)
+    const role = requestedRole === "ADMIN" ? "ADMIN" : "MEMBER"
     const roleID = role === "ADMIN" ? 2 : 3
-    const sendTargetEmails = validEmails.filter((email) => !alreadyMemberEmails.includes(email))
-    const inviteData = await Promise.all(
-      sendTargetEmails.map(async (email) => ({
-        groupID,
-        email,
-        inviterID: user.id,
-        role,
-        roleID,
-        uuID: randomUUID(),
-        inviteCode: await createInviteCode(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      })),
-    )
+    const targetEmails = validEmails.filter((email) => !alreadyMemberEmails.includes(email))
+    const existingUserEmails = new Set(users.map((item) => item.email))
+    const createdUserEmails: string[] = []
+    const joinedEmails: string[] = []
 
-    if (inviteData.length > 0) {
-      await prisma.$transaction([
-        prisma.teamEmailInvite.deleteMany({
-          where: {
-            groupID,
-            email: { in: sendTargetEmails },
-          },
-        }),
-        prisma.teamEmailInvite.createMany({ data: inviteData }),
-      ])
+    if (validEmails.length > 0) {
+      await prisma.teamEmailInvite.deleteMany({
+        where: { groupID, email: { in: validEmails } },
+      })
+    }
+
+    for (const email of targetEmails) {
+      const targetUser = await prisma.user.upsert({
+        where: { email },
+        update: { deletedAt: null },
+        create: { email },
+      })
+      if (!existingUserEmails.has(email)) createdUserEmails.push(email)
+
+      await prisma.teamMember.upsert({
+        where: { groupID_userID: { groupID, userID: targetUser.id } },
+        update: {},
+        create: { groupID, userID: targetUser.id, role, roleID },
+      })
+      joinedEmails.push(email)
     }
 
     const sendResults = await Promise.all(
-      inviteData.map(async (invite) => ({
-        email: invite.email,
+      joinedEmails.map(async (email) => ({
+        email,
         result: await sendTeamInviteEmail({
-          email: invite.email,
+          email,
           groupName: team.groupName,
           inviterName: user.userName || user.shortName || user.email,
-          inviteCode: invite.inviteCode,
-          memberCount: team._count.members,
+          groupID,
+          memberCount: team._count.members + joinedEmails.length,
           photoCount: team._count.photos,
           locale,
         }),
@@ -86,11 +78,12 @@ export async function POST(req: Request) {
     const failedSendEmails = sendResults.filter((item) => !item.result.ok).map((item) => item.email)
 
     return ok({
-      expiredDays: 7,
       succeedSendEmails,
       failedSendEmails,
       invalidEmails,
       alreadyMemberEmails,
+      joinedEmails,
+      createdUserEmails,
     })
   } catch (err) {
     console.log("[app/group/user/invite/email] error:", err)
