@@ -4,6 +4,7 @@ type Tx = Prisma.TransactionClient
 type TxWithTeamInviteCode = Tx & {
   teamInviteCode: { deleteMany: (args: unknown) => Promise<unknown> }
   teamFeed: { deleteMany: (args: unknown) => Promise<unknown> }
+  teamFeedPhoto: { deleteMany: (args: unknown) => Promise<unknown> }
   teamFeedComment: { deleteMany: (args: unknown) => Promise<unknown> }
   teamFeedLike: { deleteMany: (args: unknown) => Promise<unknown> }
 }
@@ -11,6 +12,7 @@ type TxWithTeamInviteCode = Tx & {
 export async function deleteTeamData(tx: Tx, groupID: string) {
   await (tx as TxWithTeamInviteCode).teamFeedLike.deleteMany({ where: { groupID } })
   await (tx as TxWithTeamInviteCode).teamFeedComment.deleteMany({ where: { groupID } })
+  await (tx as TxWithTeamInviteCode).teamFeedPhoto.deleteMany({ where: { groupID } })
   await (tx as TxWithTeamInviteCode).teamFeed.deleteMany({ where: { groupID } })
   await tx.photo.deleteMany({ where: { groupID } })
   await tx.projectMember.deleteMany({ where: { groupID } })
@@ -35,6 +37,7 @@ export async function deleteUserData(tx: Tx, user: Pick<User, "id" | "email">) {
     await deleteTeamData(tx, team.groupID)
   }
 
+  await (tx as TxWithTeamInviteCode).teamFeedPhoto.deleteMany({ where: { photo: { userID: user.id } } })
   await tx.photo.deleteMany({ where: { userID: user.id } })
   await tx.projectMember.deleteMany({ where: { userID: user.id } })
   await tx.teamMember.deleteMany({ where: { userID: user.id } })

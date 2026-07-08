@@ -1,6 +1,6 @@
 import type { TeamMember, User } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { canManage } from "@/app/api/_utils/api"
+import { asStringArray, canManage } from "@/app/api/_utils/api"
 
 type FeedDelegatePrisma = typeof prisma & {
   teamFeed: {
@@ -9,6 +9,10 @@ type FeedDelegatePrisma = typeof prisma & {
     count: (args: Record<string, unknown>) => Promise<number>
     create: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
     update: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+  }
+  teamFeedPhoto: {
+    createMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    deleteMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
   teamFeedComment: {
     findFirst: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
@@ -24,6 +28,13 @@ type FeedDelegatePrisma = typeof prisma & {
 }
 
 export const feedPrisma = prisma as FeedDelegatePrisma
+
+export function feedAggregationWindowMs() {
+  const ms = Number(process.env.TEAM_FEED_AGGREGATION_MS)
+  if (Number.isFinite(ms) && ms > 0) return ms
+  const minutes = Number(process.env.TEAM_FEED_AGGREGATION_MINUTES ?? 5)
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 5) * 60 * 1000
+}
 
 export function pageFeedArgs(body: Record<string, unknown>, defaultSize = 20) {
   const pageIndex = Math.max(Number(body.pageIndex ?? 1), 1)
@@ -62,6 +73,40 @@ export async function validatePhotoScope(groupID: string, photoID: string, proje
   return Boolean(photo)
 }
 
+export function parseFeedPhotoIDs(body: Record<string, unknown>) {
+  const photoIDs = [
+    ...asStringArray(body.photoIDs),
+    ...asStringArray(body.photoID),
+  ].map((item) => item.trim()).filter(Boolean)
+  return Array.from(new Set(photoIDs))
+}
+
+export async function validatePhotoScopes(groupID: string, photoIDs: string[], projectID: number | null) {
+  if (photoIDs.length === 0) return true
+  const count = await prisma.photo.count({
+    where: {
+      groupID,
+      photoID: { in: photoIDs },
+      deletedAt: null,
+      ...(projectID == null ? {} : { projectID }),
+    },
+  })
+  return count === photoIDs.length
+}
+
+export async function attachPhotosToFeed(feedID: string, groupID: string, photoIDs: string[]) {
+  const uniquePhotoIDs = Array.from(new Set(photoIDs.filter(Boolean)))
+  if (uniquePhotoIDs.length === 0) return
+  await feedPrisma.teamFeedPhoto.createMany({
+    data: uniquePhotoIDs.map((photoID, index) => ({ feedID, groupID, photoID, sortOrder: index })),
+    skipDuplicates: true,
+  })
+  await feedPrisma.teamFeed.update({
+    where: { feedID },
+    data: { updatedAt: new Date() },
+  })
+}
+
 export async function findVisibleFeed(groupID: string, feedID: string) {
   if (!groupID || !feedID) return null
   return feedPrisma.teamFeed.findFirst({
@@ -82,8 +127,9 @@ export async function findOrCreateFeedForInteraction(
   if (Number.isNaN(projectID)) return { error: "项目不正确", status: 400 }
   if (!(await validateProjectScope(groupID, projectID))) return { error: "项目不存在", status: 400 }
 
-  const photoID = typeof body.photoID === "string" && body.photoID ? body.photoID : undefined
-  if (photoID && !(await validatePhotoScope(groupID, photoID, projectID))) return { error: "照片不存在", status: 400 }
+  const photoIDs = parseFeedPhotoIDs(body)
+  const photoID = photoIDs[0]
+  if (!(await validatePhotoScopes(groupID, photoIDs, projectID))) return { error: "照片不存在", status: 400 }
 
   const title = typeof body.feedTitle === "string" && body.feedTitle.trim()
     ? body.feedTitle.trim().slice(0, 120)
@@ -110,6 +156,7 @@ export async function findOrCreateFeedForInteraction(
       payload,
     },
   })
+  await attachPhotosToFeed(String(feed.feedID), groupID, photoIDs)
   return { feed, created: true }
 }
 
@@ -126,6 +173,12 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
     groupID: item.groupID,
     projectID: item.projectID,
     photoID: item.photoID,
+    photos: Array.isArray(item.feedPhotos)
+      ? item.feedPhotos
+          .map((feedPhoto) => feedPhoto && typeof feedPhoto === "object" ? (feedPhoto as Record<string, unknown>).photo : null)
+          .filter((photo): photo is Record<string, unknown> => Boolean(photo))
+          .map(mapFeedPhoto)
+      : [],
     feedType: item.feedType,
     title: item.title,
     content: item.content,
@@ -158,6 +211,35 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
   }
 }
 
+function mapFeedPhoto(item: Record<string, unknown>) {
+  const timeInfo = item.timeInfo && typeof item.timeInfo === "object" ? item.timeInfo as Record<string, unknown> : null
+  const mediaInfo = item.mediaInfo && typeof item.mediaInfo === "object" ? item.mediaInfo as Record<string, unknown> : null
+  return {
+    photoID: item.photoID,
+    mediaType: item.mediaType,
+    timestamp: item.timestamp,
+    timezoneID: item.takePhotoTimezoneID,
+    timezoneAbbreviation: timeInfo && typeof timeInfo.timezoneAbbreviation === "string" ? timeInfo.timezoneAbbreviation : null,
+    duration: item.duration,
+    largeURL: item.largeURL,
+    smallURL: item.smallURL,
+    ossFileName: item.ossFileName,
+    mediaID: mediaInfo && typeof mediaInfo.mediaID === "string" ? mediaInfo.mediaID : null,
+    imageWidth: mediaInfo && typeof mediaInfo.imageWidth === "number" ? mediaInfo.imageWidth : null,
+    imageHeight: mediaInfo && typeof mediaInfo.imageHeight === "number" ? mediaInfo.imageHeight : null,
+    localPhotoName: item.localPhotoName,
+    userID: item.userID,
+    userName: item.userName,
+    userShortName: item.userShortName,
+    userAvatar: item.userAvatar,
+    projectID: item.projectID,
+    projectName: item.projectName,
+    location: item.location,
+    lat: item.lat,
+    lng: item.lng,
+  }
+}
+
 export function mapComment(item: unknown) {
   const comment = item && typeof item === "object" ? item as Record<string, unknown> : {}
   const user = comment.user && typeof comment.user === "object" ? comment.user as Record<string, unknown> : null
@@ -181,6 +263,35 @@ export function mapComment(item: unknown) {
 
 export const feedInclude = {
   createdBy: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
+  feedPhotos: {
+    orderBy: { sortOrder: "asc" },
+    include: {
+      photo: {
+        select: {
+          photoID: true,
+          mediaType: true,
+          timestamp: true,
+          takePhotoTimezoneID: true,
+          duration: true,
+          largeURL: true,
+          smallURL: true,
+          ossFileName: true,
+          timeInfo: true,
+          mediaInfo: true,
+          localPhotoName: true,
+          userID: true,
+          userName: true,
+          userShortName: true,
+          userAvatar: true,
+          projectID: true,
+          projectName: true,
+          location: true,
+          lat: true,
+          lng: true,
+        },
+      },
+    },
+  },
   likes: {
     orderBy: { createdAt: "desc" },
     include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },

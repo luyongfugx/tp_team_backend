@@ -2,6 +2,18 @@ import { NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { feedAggregationWindowMs } from "@/app/api/_utils/feed"
+
+type FeedPhotoDelegate = {
+  teamFeed: {
+    findFirst: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+    create: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    update: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+  }
+  teamFeedPhoto: {
+    createMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+  }
+}
 
 function maybeJson(value: unknown): Prisma.InputJsonValue | undefined {
   if (value == null) return undefined
@@ -11,6 +23,52 @@ function maybeJson(value: unknown): Prisma.InputJsonValue | undefined {
   } catch {
     return value
   }
+}
+
+async function attachPhotoToRecentFeed({
+  groupID,
+  projectID,
+  userID,
+  photoID,
+}: {
+  groupID: string
+  projectID?: number
+  userID: string
+  photoID: string
+}) {
+  const delegate = prisma as never as FeedPhotoDelegate
+  const windowStart = new Date(Date.now() - feedAggregationWindowMs())
+  const feed = await delegate.teamFeed.findFirst({
+    where: {
+      groupID,
+      projectID: projectID ?? null,
+      createdByUserID: userID,
+      feedType: "PHOTO",
+      deletedAt: null,
+      createdAt: { gte: windowStart },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+  const targetFeed = feed ?? await delegate.teamFeed.create({
+    data: {
+      groupID,
+      projectID: projectID ?? null,
+      photoID,
+      createdByUserID: userID,
+      feedType: "PHOTO",
+    },
+  })
+  await delegate.teamFeedPhoto.createMany({
+    data: [{ feedID: targetFeed.feedID, groupID, photoID }],
+    skipDuplicates: true,
+  })
+  if (feed) {
+    await delegate.teamFeed.update({
+      where: { feedID: targetFeed.feedID },
+      data: { updatedAt: new Date() },
+    })
+  }
+  return String(targetFeed.feedID)
 }
 
 export async function POST(req: Request) {
@@ -104,8 +162,14 @@ export async function POST(req: Request) {
         : []),
     ]
     await prisma.$transaction(updates)
+    const feedID = await attachPhotoToRecentFeed({
+      groupID,
+      projectID: project?.projectID,
+      userID: user.id,
+      photoID: photo.photoID,
+    })
 
-    return ok({ photoID: photo.photoID })
+    return ok({ photoID: photo.photoID, feedID })
   } catch (err) {
     console.log("[app/photo/upload] error:", err)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })

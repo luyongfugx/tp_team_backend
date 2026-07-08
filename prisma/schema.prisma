@@ -95,6 +95,7 @@ model Team {
   pdfSetting             PhotoPdfSetting?
   photos                 Photo[]
   feeds                  TeamFeed[]
+  feedPhotos             TeamFeedPhoto[]
   feedComments           TeamFeedComment[]
   feedLikes              TeamFeedLike[]
   photoShares            PhotoShare[]
@@ -272,6 +273,7 @@ model Photo {
   project             Project?   @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
   user                User       @relation(fields: [userID], references: [id], onDelete: Restrict)
   feeds               TeamFeed[]
+  feedItems           TeamFeedPhoto[]
 
   @@index([groupID, timestamp])
   @@index([projectID, timestamp])
@@ -299,6 +301,7 @@ model TeamFeed {
   project         Project?          @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
   photo           Photo?            @relation(fields: [photoID], references: [photoID], onDelete: SetNull)
   createdBy       User?             @relation("TeamFeedCreatedBy", fields: [createdByUserID], references: [id], onDelete: SetNull)
+  feedPhotos      TeamFeedPhoto[]
   comments        TeamFeedComment[]
   likes           TeamFeedLike[]
 
@@ -306,6 +309,22 @@ model TeamFeed {
   @@index([groupID, projectID, createdAt])
   @@index([createdByUserID])
   @@index([deletedAt])
+}
+
+model TeamFeedPhoto {
+  id        String   @id @default(cuid())
+  feedID    String
+  groupID   String
+  photoID   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  feed      TeamFeed @relation(fields: [feedID], references: [feedID], onDelete: Cascade)
+  team      Team     @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  photo     Photo    @relation(fields: [photoID], references: [photoID], onDelete: Cascade)
+
+  @@unique([feedID, photoID])
+  @@index([groupID, createdAt])
+  @@index([photoID])
 }
 
 model TeamFeedComment {

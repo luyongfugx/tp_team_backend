@@ -1752,9 +1752,12 @@ POST photo/upload
 
 ```json
 {
-  "photoID": "photo_xxx"
+  "photoID": "photo_xxx",
+  "feedID": "feed_xxx"
 }
 ```
+
+说明：上传成功后，服务端会自动把同一用户、同一团队/项目、5 分钟内上传的照片归到同一条 `PHOTO` 类型 Feed，并返回该 `feedID`。
 
 ### 删除单张照片
 
@@ -2069,6 +2072,28 @@ POST photo/pdf/setting/update
 
 `TeamFeed`：团队或项目首页动态。`groupID` 必填，`projectID` 可为空；为空表示团队级动态，非空表示项目动态。支持 `TEXT`、`PHOTO`、`SYSTEM` 三种类型，预留 `payload` JSON 承载扩展数据。
 
+`TeamFeedPhoto`：Feed 和照片的关联表。一条 `TeamFeed` 可以对应多张照片。`TeamFeed.photoID` 仅保留为兼容字段，通常是第一张照片；客户端展示照片组时应优先使用返回里的 `photos` 数组。
+
+照片上传后，服务端会自动把同一用户、同一团队/项目、默认 5 分钟内上传的照片归到同一条 `PHOTO` 类型 Feed。超过窗口会创建新的 Feed。时间窗口可在环境变量里修改：
+
+```env
+TEAM_FEED_AGGREGATION_MINUTES=5
+```
+
+也可以用毫秒精度覆盖：
+
+```env
+TEAM_FEED_AGGREGATION_MS=300000
+```
+
+聚合规则：
+
+- 同一个用户。
+- 同一个团队。
+- 同一个项目；团队级照片只会和团队级照片聚合，项目照片只会和同一项目照片聚合。
+- 在配置的上传时间窗口内。
+- 同一条 Feed 追加新照片后会刷新 `updatedAt`，Feed 列表按 `updatedAt` 倒序返回。
+
 `TeamFeedComment`：动态评论。只支持新增和删除，不支持修改；删除为软删除。
 
 `TeamFeedLike`：动态点赞。`feedID + userID` 唯一，防止重复点赞；取消点赞会删除点赞记录，用户之后可再次点赞。
@@ -2102,11 +2127,18 @@ POST feed/list
 
 |参数|类型|必填|说明|
 |---|---|---|---|
-|`groupID`|string|是|团队 ID|
-|`projectID`|number / null|否|传项目 ID 时只返回该项目动态；不传或传 `null` 时返回整个团队动态|
+|`groupID`|string|否|团队 ID。查团队 feed 时传；如果只传 `projectID`，服务端会根据项目反查团队|
+|`projectID`|number / null|否|传项目 ID 时只返回该项目动态；只传 `groupID` 或 `projectID=null` 时返回整个团队动态|
 |`scope`|string|否|传 `teamOnly` 时只返回 `projectID=null` 的团队级动态|
 |`pageIndex`|number|否|默认 1|
 |`pageSize`|number|否|默认 20，最大 100|
+
+查询规则：
+
+- 团队 feed：传 `groupID`，不传 `projectID` 或传 `projectID=null`，返回团队下所有项目 Feed 和团队级 Feed。
+- 项目 feed：传 `projectID`，可不传 `groupID`；服务端会校验该项目所属团队以及当前用户权限。
+- 团队级 Feed：传 `groupID` 且 `scope=teamOnly`，只返回 `projectID=null` 的 Feed。
+- 返回顺序：按 `updatedAt` 倒序，即最近有新照片/评论/点赞等更新的 Feed 在前。
 
 响应：
 
@@ -2122,6 +2154,26 @@ POST feed/list
       "groupID": "group_xxx",
       "projectID": 123,
       "photoID": "photo_xxx",
+      "photos": [
+        {
+          "photoID": "photo_xxx",
+          "mediaType": 0,
+          "timestamp": 1719200000000,
+          "largeURL": "https://...",
+          "smallURL": "https://...",
+          "ossFileName": "teamspace/group_xxx/...",
+          "localPhotoName": "IMG_001.jpg",
+          "userID": "user_xxx",
+          "userName": "Wayne",
+          "userShortName": "WL",
+          "userAvatar": "https://...",
+          "projectID": 123,
+          "projectName": "Project A",
+          "location": "深圳市...",
+          "lat": 22.543096,
+          "lng": 114.057865
+        }
+      ],
       "feedType": "PHOTO",
       "title": "今日进展",
       "content": "现场照片已同步",
@@ -2161,11 +2213,12 @@ POST feed/create
   "title": "今日进展",
   "content": "现场已完成打卡",
   "photoID": "photo_xxx",
+  "photoIDs": ["photo_1", "photo_2"],
   "payload": {}
 }
 ```
 
-说明：`feedID` 可选；如果客户端传了 `feedID`，服务端创建时一定使用这个 `feedID`。重复传同一个已存在的 `feedID` 时，服务端直接返回已有动态。`projectID`、`title`、`content`、`photoID`、`payload` 都可按场景选择；但 `title/content/photoID/payload` 至少要传一个。`photoID` 如有传，照片必须属于当前团队；带 `projectID` 时照片也必须属于该项目。
+说明：`feedID` 可选；如果客户端传了 `feedID`，服务端创建时一定使用这个 `feedID`。重复传同一个已存在的 `feedID` 时，服务端直接返回已有动态。`projectID`、`title`、`content`、`photoID`、`photoIDs`、`payload` 都可按场景选择；但 `title/content/photoID/photoIDs/payload` 至少要传一个。`photoID/photoIDs` 如有传，照片必须属于当前团队；带 `projectID` 时照片也必须属于该项目。
 
 响应：
 
@@ -2210,6 +2263,7 @@ POST feed/comment/create
   "feedID": "feed_xxx",
   "projectID": 123,
   "photoID": "photo_xxx",
+  "photoIDs": ["photo_1", "photo_2"],
   "feedType": "PHOTO",
   "feedTitle": "今日进展",
   "feedContent": "现场照片已同步",
@@ -2218,7 +2272,7 @@ POST feed/comment/create
 }
 ```
 
-说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再创建评论。自动创建 feed 时会使用请求中的 `projectID`、`photoID`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`；这些字段可按场景传，不会把 `content` 评论内容当作 feed 内容。
+说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再创建评论。自动创建 feed 时会使用请求中的 `projectID`、`photoID`、`photoIDs`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`；这些字段可按场景传，不会把 `content` 评论内容当作 feed 内容。
 
 响应：
 
@@ -2278,6 +2332,7 @@ POST feed/like/create
   "feedID": "feed_xxx",
   "projectID": 123,
   "photoID": "photo_xxx",
+  "photoIDs": ["photo_1", "photo_2"],
   "feedType": "PHOTO",
   "feedTitle": "今日进展",
   "feedContent": "现场照片已同步",
@@ -2285,7 +2340,7 @@ POST feed/like/create
 }
 ```
 
-说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再点赞。自动创建 feed 时同样使用 `projectID`、`photoID`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`。
+说明：如果 `feedID` 不存在，服务端会自动创建一条 feed，然后再点赞。自动创建 feed 时同样使用 `projectID`、`photoID`、`photoIDs`、`feedType`、`feedTitle`、`feedContent`、`feedPayload`。
 
 响应：
 
