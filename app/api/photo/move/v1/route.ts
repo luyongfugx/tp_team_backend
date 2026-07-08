@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, canManage, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { createPhotoFeedForMovedPhotos, detachPhotosFromFeeds } from "@/app/api/_utils/feed"
 import { batchPhotoWhereForUser, isForbiddenPersonalPhotoScene, selectedPhotoWhere } from "@/app/api/_utils/photo"
+
+function groupPhotosByUser(photos: Array<{ photoID: string; userID: string }>) {
+  const grouped = new Map<string, string[]>()
+  for (const photo of photos) {
+    const list = grouped.get(photo.userID) ?? []
+    list.push(photo.photoID)
+    grouped.set(photo.userID, list)
+  }
+  return grouped
+}
 
 export async function POST(req: Request) {
   try {
@@ -23,11 +34,26 @@ export async function POST(req: Request) {
       if (forbiddenCount > 0) return bad("无照片移动权限", 403)
     }
     const moveWhere = batchPhotoWhereForUser(body, groupID, user.id, isManager)
+    const photos = await prisma.photo.findMany({
+      where: moveWhere,
+      select: { photoID: true, userID: true },
+    })
+    const photoIDs = photos.map((photo) => photo.photoID)
     if (targetProjectID <= 0) {
       const result = await prisma.photo.updateMany({
         where: moveWhere,
         data: { projectID: null, projectName: null } as never,
       })
+      await detachPhotosFromFeeds(groupID, photoIDs)
+      const photosByUser = groupPhotosByUser(photos)
+      for (const [ownerID, ownerPhotoIDs] of photosByUser) {
+        await createPhotoFeedForMovedPhotos({
+          groupID,
+          projectID: null,
+          userID: ownerID,
+          photoIDs: ownerPhotoIDs,
+        })
+      }
       return ok({ movedCount: result.count })
     }
     const target = await prisma.project.findFirst({ where: { groupID, projectID: targetProjectID, deletedAt: null } })
@@ -36,6 +62,16 @@ export async function POST(req: Request) {
       where: moveWhere,
       data: { projectID: targetProjectID, projectName: target.projectName },
     })
+    await detachPhotosFromFeeds(groupID, photoIDs)
+    const photosByUser = groupPhotosByUser(photos)
+    for (const [ownerID, ownerPhotoIDs] of photosByUser) {
+      await createPhotoFeedForMovedPhotos({
+        groupID,
+        projectID: targetProjectID,
+        userID: ownerID,
+        photoIDs: ownerPhotoIDs,
+      })
+    }
     return ok({ movedCount: result.count })
   } catch (err) {
     console.log("[app/photo/move/v1] error:", err)

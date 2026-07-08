@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, canManage, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { detachPhotosFromFeeds } from "@/app/api/_utils/feed"
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
     if (!photo) return bad("照片不存在")
     if (!canManage(member) && photo.userID !== user.id) return bad("无照片删除权限", 403)
     await prisma.photo.update({ where: { photoID }, data: { deletedAt: new Date() } })
+    await detachPhotosFromFeeds(groupID, [photoID])
     return ok()
   } catch (err) {
     console.log("[app/photo/delete] error:", err)

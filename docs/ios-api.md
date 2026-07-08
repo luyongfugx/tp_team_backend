@@ -1785,6 +1785,8 @@ POST photo/delete
 
 说明：该接口为软删除，只会设置照片的 `deletedAt`，不会物理删除照片记录。
 
+Feed 同步：删除后会把该照片从 `TeamFeedPhoto` 里解绑；如果原 Feed 已没有照片，会软删除该 Feed；如果仍有照片，会把 Feed 的兼容字段 `photoID/projectID` 更新为剩余照片的第一张。
+
 ### 批量删除照片
 
 ```text
@@ -1812,6 +1814,8 @@ POST photo/delete/batch/v1
 ```
 
 说明：该接口为软删除，只会批量设置照片的 `deletedAt`，不会物理删除照片记录。
+
+Feed 同步：批量删除后会把这些照片从对应 Feed 的照片组里解绑；空 Feed 会软删除，非空 Feed 会刷新首图兼容字段。
 
 当 `rangeSelected = true` 时，表示按当前筛选条件全选，`unSelectedPhotoIDs` 表示排除项。
 
@@ -1857,6 +1861,8 @@ POST photo/move/v1
 `targetProjectID = 0` 表示将照片移出项目，仅保留团队归属。
 
 批量移动同样支持 `scene=team/project/user`。创建者、管理员可移动团队/项目内任意成员的照片；普通成员只能移动自己的照片；个人详情页 `scene=user` 只支持移动当前登录用户自己的照片。传有效 `targetProjectID` 时，目标项目必须属于当前团队。
+
+Feed 同步：移动后会先把照片从旧 Feed 解绑，再按照片上传者分组，在目标项目或团队级范围内创建新的 `PHOTO` Feed 并挂载这些照片。原 Feed 如果没有剩余照片会被软删除。
 
 ### 分享照片
 

@@ -11,6 +11,7 @@ type FeedDelegatePrisma = typeof prisma & {
     update: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
   teamFeedPhoto: {
+    findMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>[]>
     createMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
     deleteMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
@@ -107,6 +108,73 @@ export async function attachPhotosToFeed(feedID: string, groupID: string, photoI
   })
 }
 
+async function refreshFeedsAfterPhotoDetach(feedIDs: string[]) {
+  const uniqueFeedIDs = Array.from(new Set(feedIDs.filter(Boolean)))
+  for (const feedID of uniqueFeedIDs) {
+    const remaining = await feedPrisma.teamFeedPhoto.findMany({
+      where: { feedID, photo: { deletedAt: null } },
+      orderBy: { sortOrder: "asc" },
+      include: { photo: { select: { photoID: true, projectID: true } } },
+    })
+    if (remaining.length === 0) {
+      await feedPrisma.teamFeed.update({
+        where: { feedID },
+        data: { deletedAt: new Date(), photoID: null, updatedAt: new Date() },
+      })
+      continue
+    }
+    const first = remaining[0].photo as Record<string, unknown>
+    await feedPrisma.teamFeed.update({
+      where: { feedID },
+      data: {
+        photoID: first.photoID,
+        projectID: first.projectID ?? null,
+        updatedAt: new Date(),
+      },
+    })
+  }
+}
+
+export async function detachPhotosFromFeeds(groupID: string, photoIDs: string[]) {
+  const uniquePhotoIDs = Array.from(new Set(photoIDs.filter(Boolean)))
+  if (uniquePhotoIDs.length === 0) return
+  const feedPhotos = await feedPrisma.teamFeedPhoto.findMany({
+    where: { groupID, photoID: { in: uniquePhotoIDs } },
+    select: { feedID: true },
+  })
+  const feedIDs = feedPhotos.map((item) => String(item.feedID))
+  await feedPrisma.teamFeedPhoto.deleteMany({
+    where: { groupID, photoID: { in: uniquePhotoIDs } },
+  })
+  await refreshFeedsAfterPhotoDetach(feedIDs)
+}
+
+export async function createPhotoFeedForMovedPhotos({
+  groupID,
+  projectID,
+  userID,
+  photoIDs,
+}: {
+  groupID: string
+  projectID: number | null
+  userID: string
+  photoIDs: string[]
+}) {
+  const uniquePhotoIDs = Array.from(new Set(photoIDs.filter(Boolean)))
+  if (uniquePhotoIDs.length === 0) return null
+  const feed = await feedPrisma.teamFeed.create({
+    data: {
+      groupID,
+      projectID,
+      photoID: uniquePhotoIDs[0],
+      createdByUserID: userID,
+      feedType: "PHOTO",
+    },
+  })
+  await attachPhotosToFeed(String(feed.feedID), groupID, uniquePhotoIDs)
+  return String(feed.feedID)
+}
+
 export async function findVisibleFeed(groupID: string, feedID: string) {
   if (!groupID || !feedID) return null
   return feedPrisma.teamFeed.findFirst({
@@ -176,7 +244,7 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
     photos: Array.isArray(item.feedPhotos)
       ? item.feedPhotos
           .map((feedPhoto) => feedPhoto && typeof feedPhoto === "object" ? (feedPhoto as Record<string, unknown>).photo : null)
-          .filter((photo): photo is Record<string, unknown> => Boolean(photo))
+          .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === "object" && !(photo as Record<string, unknown>).deletedAt)
           .map(mapFeedPhoto)
       : [],
     feedType: item.feedType,
@@ -278,6 +346,7 @@ export const feedInclude = {
           ossFileName: true,
           timeInfo: true,
           mediaInfo: true,
+          deletedAt: true,
           localPhotoName: true,
           userID: true,
           userName: true,
