@@ -2098,7 +2098,7 @@ TEAM_FEED_AGGREGATION_MS=300000
 - 同一个团队。
 - 同一个项目；团队级照片只会和团队级照片聚合，项目照片只会和同一项目照片聚合。
 - 在配置的上传时间窗口内。
-- 同一条 Feed 追加新照片后会刷新 `updatedAt`，Feed 列表按 `updatedAt` 倒序返回。
+- 同一条 Feed 追加新照片后会刷新 `updatedAt`，但 Feed 列表固定按 `createdAt` 倒序返回。
 
 `TeamFeedComment`：动态评论。只支持新增和删除，不支持修改；删除为软删除。
 
@@ -2144,7 +2144,7 @@ POST feed/list
 - 团队 feed：传 `groupID`，不传 `projectID` 或传 `projectID=null`，返回团队下所有项目 Feed 和团队级 Feed。
 - 项目 feed：传 `projectID`，可不传 `groupID`；服务端会校验该项目所属团队以及当前用户权限。
 - 团队级 Feed：传 `groupID` 且 `scope=teamOnly`，只返回 `projectID=null` 的 Feed。
-- 返回顺序：按 `updatedAt` 倒序，即最近有新照片/评论/点赞等更新的 Feed 在前。
+- 返回顺序：按 `createdAt` 倒序，即 Feed 生成时间越新的越靠前；评论、点赞、追加照片等更新不会改变列表排序。
 
 响应：
 

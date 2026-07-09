@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       feedPrisma.teamFeed.findMany({
         where,
         include: feedInclude,
-        orderBy: { updatedAt: "desc" },
+        orderBy: { createdAt: "desc" },
         skip,
         take,
       }),

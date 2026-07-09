@@ -172,7 +172,6 @@ export async function sendTeamInviteEmail({
 }) {
   const link = inviteLink(groupID)
   const escapedGroupName = escapeHtml(groupName)
-  const inviterInitial = escapeHtml((inviterName.trim()[0] || "T").toUpperCase())
   const content = t(locale, "mail.invite.text", { inviterName, groupName, link })
   const headline = t(locale, "mail.invite.headline", { inviterName, groupName })
   const description = t(locale, "mail.invite.description")
@@ -198,9 +197,6 @@ export async function sendTeamInviteEmail({
                   </td>
                 </tr>
               </table>
-              <div style="width: 88px; height: 88px; border-radius: 50%; background: #405768; color: #ffffff; font-size: 44px; line-height: 88px; text-align: center; margin: 0 0 34px;">
-                ${inviterInitial}
-              </div>
               <div style="color: #111827; font-size: 32px; line-height: 1.28; font-weight: 800; margin: 0 0 30px;">
                 ${escapeHtml(headline)}
               </div>
@@ -215,7 +211,7 @@ export async function sendTeamInviteEmail({
               <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%;">
                 <tr>
                   <td style="width: 58px; vertical-align: middle;">
-                    <div style="width: 50px; height: 50px; border-radius: 10px; background: #ffffff; color: #1f456d; font-size: 18px; font-weight: 800; line-height: 50px; text-align: center;">TM</div>
+                    <img src="cid:timeprint-app-icon" width="50" height="50" alt="Timeprint" style="display: block; width: 50px; height: 50px; border-radius: 10px;" />
                   </td>
                   <td style="vertical-align: middle; padding-left: 14px;">
                     <div style="color: #111827; font-size: 24px; font-weight: 800; line-height: 1.25;">${escapedGroupName}</div>
