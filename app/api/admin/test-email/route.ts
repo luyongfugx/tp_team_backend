@@ -35,16 +35,17 @@ export async function POST(req: Request) {
       const linkGroupID = team?.groupID || groupID || (typeof body.linkGroupID === "string" && body.linkGroupID.trim()) || "test-team"
       const groupName = team?.groupName || (typeof body.groupName === "string" && body.groupName.trim()) || "Timeprint Team"
       const inviterName = (typeof body.inviterName === "string" && body.inviterName.trim()) || user.userName || user.email
+      const inviteCode = typeof body.inviteCode === "string" && /^\d{6}$/.test(body.inviteCode) ? body.inviteCode : generateCode()
       const result = await sendTeamInviteEmail({
         email,
         groupName,
         inviterName,
-        groupID: linkGroupID,
+        inviteCode,
         memberCount: team?._count.members ?? 1,
         photoCount: team?._count.photos ?? 0,
         locale,
       })
-      return ok({ type, email, groupID: linkGroupID, result })
+      return ok({ type, email, groupID: linkGroupID, inviteCode, result })
     }
 
     return bad("邮件类型不正确")

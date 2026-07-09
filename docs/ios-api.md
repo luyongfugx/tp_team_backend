@@ -1113,17 +1113,20 @@ POST group/user/invite/email
   "invalidEmails": [],
   "alreadyMemberEmails": ["b@example.com"],
   "joinedEmails": ["a@example.com"],
-  "createdUserEmails": ["a@example.com"]
+  "createdUserEmails": ["a@example.com"],
+  "inviteCodes": {
+    "a@example.com": "123456"
+  }
 }
 ```
 
-邮件内容为“xxx 把您加入 xxx团队”，按钮文案为“查看”。邮件里的查看链接格式：
+接口会直接把已存在用户或自动注册的新用户加入团队，同时仍会写入 `TeamEmailInvite` 记录，记录里的 `acceptedAt` 为当前时间。邮件内容为“xxx 把您加入 xxx团队”，按钮文案为“查看”。邮件里的查看链接格式：
 
 ```text
-https://share.timeprint.net/invite?code=group_xxx
+https://share.timeprint.net/invite?code=123456
 ```
 
-其中 `code` 的值为团队 `groupID`，不再是 6 位数字邀请码。
+其中 `code` 的值为 `TeamEmailInvite.inviteCode`，仍是 6 位数字邀请码，方便 `https://share.timeprint.net/invite` 页面按邀请码查询这条邀请记录。
 
 ### 根据邀请码查询邀请信息
 
