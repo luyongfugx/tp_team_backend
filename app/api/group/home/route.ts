@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { Prisma, TeamRole } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { jsonSafe, readBody, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
+import { normalizeTimeZone, todayRangeForTimeZone } from "@/app/api/_utils/timezone"
 import { localeFromRequest, t, type AppLocale } from "@/lib/i18n"
 
 type HomeCode = 0 | 400 | 401 | 403 | 500
@@ -31,43 +32,6 @@ function decimalToNumber(value: unknown) {
 
 function jsonObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
-}
-
-function timezoneOffsetMillis(timeZone: string, date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(date)
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
-  const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"))
-  return asUTC - date.getTime()
-}
-
-function zonedMidnightUTC(timeZone: string, y: number, m: number, d: number) {
-  let utc = Date.UTC(y, m - 1, d, 0, 0, 0, 0)
-  utc -= timezoneOffsetMillis(timeZone, new Date(utc))
-  utc -= timezoneOffsetMillis(timeZone, new Date(utc)) - timezoneOffsetMillis(timeZone, new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0)))
-  return utc
-}
-
-function todayRange(timeZone: string) {
-  const now = new Date()
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now)
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
-  const start = zonedMidnightUTC(timeZone, get("year"), get("month"), get("day"))
-  const end = start + 24 * 60 * 60 * 1000 - 1
-  return { gte: BigInt(start), lte: BigInt(end) }
 }
 
 const photoSelect = {
@@ -201,7 +165,11 @@ export async function POST(req: Request) {
     const user = await requireUser(req)
     if (!user) return homeResponse(401, null, "未授权或登录已过期", 401)
 
-    const timeZone = typeof body.timezone === "string" && body.timezone ? body.timezone : "Asia/Shanghai"
+    const timeZone = normalizeTimeZone(
+      typeof body.timeZone === "string" && body.timeZone.trim().length > 0
+        ? body.timeZone
+        : body.timezone,
+    )
     const { pageIndex, pageSize, skip, take } = pageParams(body)
 
     const memberships = await prisma.teamMember.findMany({
@@ -284,7 +252,7 @@ export async function POST(req: Request) {
     const todayPhotoWhere: Prisma.PhotoWhereInput = {
       groupID: selectedGroupID,
       deletedAt: null,
-      timestamp: todayRange(timeZone),
+      timestamp: todayRangeForTimeZone(timeZone),
       ...(selectedProjectID == null ? {} : { projectID: selectedProjectID }),
     }
 

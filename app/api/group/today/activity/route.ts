@@ -3,43 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
 import { mapPhotoWithUserFallback, photoSelect } from "@/app/api/_utils/photo"
-
-function timezoneOffsetMillis(timeZone: string, date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(date)
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
-  const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"))
-  return asUTC - date.getTime()
-}
-
-function zonedMidnightUTC(timeZone: string, y: number, m: number, d: number) {
-  let utc = Date.UTC(y, m - 1, d, 0, 0, 0, 0)
-  utc -= timezoneOffsetMillis(timeZone, new Date(utc))
-  utc -= timezoneOffsetMillis(timeZone, new Date(utc)) - timezoneOffsetMillis(timeZone, new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0)))
-  return utc
-}
-
-function todayRange(timeZone: string) {
-  const now = new Date()
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now)
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
-  const start = zonedMidnightUTC(timeZone, get("year"), get("month"), get("day"))
-  const end = start + 24 * 60 * 60 * 1000 - 1
-  return { gte: BigInt(start), lte: BigInt(end) }
-}
+import { normalizeTimeZone, todayRangeForTimeZone } from "@/app/api/_utils/timezone"
 
 function mapMember(member: Prisma.TeamMemberGetPayload<{ include: { user: true } }>) {
   return {
@@ -73,13 +37,11 @@ export async function POST(req: Request) {
       if (!project) return bad("项目不存在或无访问权限", 404)
     }
 
-    const timeZone = typeof body.timeZone === "string" && body.timeZone.trim().length > 0
-      ? body.timeZone.trim()
-      : "Asia/Shanghai"
+    const timeZone = normalizeTimeZone(body.timeZone)
     const todayPhotoWhere: Prisma.PhotoWhereInput = {
       groupID,
       deletedAt: null,
-      timestamp: todayRange(timeZone),
+      timestamp: todayRangeForTimeZone(timeZone),
       ...(projectID == null ? {} : { projectID }),
     }
 
