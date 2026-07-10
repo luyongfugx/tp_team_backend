@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
 import { mapPhotoWithUserFallback, photoSelect } from "@/app/api/_utils/photo"
-import { normalizeTimeZone, todayRangeForTimeZone } from "@/app/api/_utils/timezone"
+import { dayRangeForTimeZone, normalizeTimeZone } from "@/app/api/_utils/timezone"
 
 function mapMember(member: Prisma.TeamMemberGetPayload<{ include: { user: true } }>) {
   return {
@@ -42,10 +42,11 @@ export async function POST(req: Request) {
         ? body.timeZone
         : body.timezone,
     )
+    const timestamp = body.timestamp ?? body.takePhotoTimestamp
     const todayPhotoWhere: Prisma.PhotoWhereInput = {
       groupID,
       deletedAt: null,
-      timestamp: todayRangeForTimeZone(timeZone),
+      timestamp: dayRangeForTimeZone(timeZone, timestamp),
       ...(projectID == null ? {} : { projectID }),
     }
 

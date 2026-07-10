@@ -38,6 +38,7 @@ function timezoneOffsetMillis(timeZone: string, date: Date) {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
+    hourCycle: "h23",
   }).formatToParts(date)
   const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
   const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"))
@@ -51,23 +52,22 @@ function zonedMidnightUTC(timeZone: string, y: number, m: number, d: number) {
   return utc
 }
 
-function ianaTodayRange(timeZone: string) {
-  const now = new Date()
+function ianaDayRange(timeZone: string, timestamp: number) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(now)
+  }).formatToParts(new Date(timestamp))
   const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
   const start = zonedMidnightUTC(timeZone, get("year"), get("month"), get("day"))
-  const end = start + 24 * 60 * 60 * 1000 - 1
+  const end = zonedMidnightUTC(timeZone, get("year"), get("month"), get("day") + 1) - 1
   return { gte: BigInt(start), lte: BigInt(end) }
 }
 
-function fixedOffsetTodayRange(offsetMinutes: number) {
+function fixedOffsetDayRange(offsetMinutes: number, timestamp: number) {
   const offsetMillis = offsetMinutes * 60 * 1000
-  const shiftedNow = new Date(Date.now() + offsetMillis)
+  const shiftedNow = new Date(timestamp + offsetMillis)
   const start = Date.UTC(
     shiftedNow.getUTCFullYear(),
     shiftedNow.getUTCMonth(),
@@ -81,6 +81,11 @@ function fixedOffsetTodayRange(offsetMinutes: number) {
   return { gte: BigInt(start), lte: BigInt(end) }
 }
 
+function normalizeTimestamp(input: TimeZoneInput) {
+  const timestamp = Number(input)
+  return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.now()
+}
+
 export function normalizeTimeZone(input: TimeZoneInput) {
   const timeZone = typeof input === "string" && input.trim().length > 0
     ? input.trim()
@@ -91,11 +96,16 @@ export function normalizeTimeZone(input: TimeZoneInput) {
   return DEFAULT_TIME_ZONE
 }
 
-export function todayRangeForTimeZone(input: TimeZoneInput) {
+export function dayRangeForTimeZone(input: TimeZoneInput, timestampInput?: TimeZoneInput) {
   const timeZone = normalizeTimeZone(input)
+  const timestamp = normalizeTimestamp(timestampInput)
   const offsetMinutes = parseOffsetMinutes(timeZone)
   if (offsetMinutes != null) {
-    return fixedOffsetTodayRange(offsetMinutes)
+    return fixedOffsetDayRange(offsetMinutes, timestamp)
   }
-  return ianaTodayRange(timeZone)
+  return ianaDayRange(timeZone, timestamp)
+}
+
+export function todayRangeForTimeZone(input: TimeZoneInput) {
+  return dayRangeForTimeZone(input)
 }

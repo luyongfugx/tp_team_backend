@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { Prisma, TeamRole } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { jsonSafe, readBody, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
-import { normalizeTimeZone, todayRangeForTimeZone } from "@/app/api/_utils/timezone"
+import { dayRangeForTimeZone, normalizeTimeZone } from "@/app/api/_utils/timezone"
 import { localeFromRequest, t, type AppLocale } from "@/lib/i18n"
 
 type HomeCode = 0 | 400 | 401 | 403 | 500
@@ -170,6 +170,7 @@ export async function POST(req: Request) {
         ? body.timeZone
         : body.timezone,
     )
+    const todayTimestamp = body.timestamp ?? body.takePhotoTimestamp
     const { pageIndex, pageSize, skip, take } = pageParams(body)
 
     const memberships = await prisma.teamMember.findMany({
@@ -252,7 +253,7 @@ export async function POST(req: Request) {
     const todayPhotoWhere: Prisma.PhotoWhereInput = {
       groupID: selectedGroupID,
       deletedAt: null,
-      timestamp: todayRangeForTimeZone(timeZone),
+      timestamp: dayRangeForTimeZone(timeZone, todayTimestamp),
       ...(selectedProjectID == null ? {} : { projectID: selectedProjectID }),
     }
 
