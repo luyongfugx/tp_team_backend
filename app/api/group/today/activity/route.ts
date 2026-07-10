@@ -37,7 +37,11 @@ export async function POST(req: Request) {
       if (!project) return bad("项目不存在或无访问权限", 404)
     }
 
-    const timeZone = normalizeTimeZone(body.timeZone)
+    const timeZone = normalizeTimeZone(
+      typeof body.timeZone === "string" && body.timeZone.trim().length > 0
+        ? body.timeZone
+        : body.timezone,
+    )
     const todayPhotoWhere: Prisma.PhotoWhereInput = {
       groupID,
       deletedAt: null,
