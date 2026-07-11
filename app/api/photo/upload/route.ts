@@ -11,6 +11,7 @@ type FeedPhotoDelegate = {
     update: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
   teamFeedPhoto: {
+    findFirst: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
     createMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
 }
@@ -23,6 +24,15 @@ function maybeJson(value: unknown): Prisma.InputJsonValue | undefined {
   } catch {
     return value
   }
+}
+
+function jsonObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
+}
+
+function mediaIDFromInfo(value: unknown) {
+  const mediaInfo = jsonObject(value)
+  return typeof mediaInfo?.mediaID === "string" && mediaInfo.mediaID.trim() ? mediaInfo.mediaID.trim() : null
 }
 
 async function attachPhotoToRecentFeed({
@@ -71,6 +81,16 @@ async function attachPhotoToRecentFeed({
   return String(targetFeed.feedID)
 }
 
+async function findExistingPhotoFeedID(groupID: string, photoID: string) {
+  const delegate = prisma as never as FeedPhotoDelegate
+  const feedPhoto = await delegate.teamFeedPhoto.findFirst({
+    where: { groupID, photoID, feed: { deletedAt: null } },
+    orderBy: { createdAt: "desc" },
+    select: { feedID: true },
+  })
+  return feedPhoto ? String(feedPhoto.feedID) : null
+}
+
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
@@ -91,9 +111,8 @@ export async function POST(req: Request) {
     if (hasProject && !project) return bad("项目不存在")
 
     const mediaInfo = maybeJson(body.mediaInfo)
-    const mediaObject = mediaInfo && typeof mediaInfo === "object" && !Array.isArray(mediaInfo)
-      ? mediaInfo as Record<string, unknown>
-      : undefined
+    const mediaObject = jsonObject(mediaInfo) ?? undefined
+    const mediaID = mediaIDFromInfo(mediaInfo)
     const baseURL = process.env.COS_PUBLIC_BASE_URL || ""
     const fallbackURL = baseURL ? `${baseURL.replace(/\/$/, "")}/${body.ossFileName}` : undefined
     const largeURL = typeof mediaObject?.imageUrl === "string"
@@ -102,6 +121,41 @@ export async function POST(req: Request) {
         ? mediaObject.videoUrl
         : fallbackURL
     const duration = mediaObject?.duration == null ? undefined : Number(mediaObject.duration)
+    const existingPhotoByOss = await prisma.photo.findFirst({
+      where: {
+        groupID,
+        userID: user.id,
+        projectID: project?.projectID ?? null,
+        ossFileName: body.ossFileName,
+        deletedAt: null,
+      },
+      select: { photoID: true },
+      orderBy: { createdAt: "desc" },
+    })
+    const existingPhotoByMediaID = existingPhotoByOss || !mediaID
+      ? null
+      : (await prisma.photo.findMany({
+          where: {
+            groupID,
+            userID: user.id,
+            projectID: project?.projectID ?? null,
+            deletedAt: null,
+          },
+          select: { photoID: true, mediaInfo: true },
+          orderBy: { createdAt: "desc" },
+          take: 200,
+        })).find((item) => mediaIDFromInfo(item.mediaInfo) === mediaID) ?? null
+    const existingPhoto = existingPhotoByOss ?? existingPhotoByMediaID
+    if (existingPhoto) {
+      const existingFeedID = await findExistingPhotoFeedID(groupID, existingPhoto.photoID)
+      const feedID = existingFeedID ?? await attachPhotoToRecentFeed({
+        groupID,
+        projectID: project?.projectID,
+        userID: user.id,
+        photoID: existingPhoto.photoID,
+      })
+      return ok({ photoID: existingPhoto.photoID, feedID, duplicated: true })
+    }
 
     const photo = await prisma.photo.create({
       data: {

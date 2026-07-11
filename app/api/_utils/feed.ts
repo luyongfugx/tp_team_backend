@@ -232,6 +232,32 @@ export function canDeleteFeedItem(item: Record<string, unknown>, user: Pick<User
   return canManage(member) || item.createdByUserID === user.id || item.userID === user.id
 }
 
+function feedPhotoFingerprint(photo: Record<string, unknown>) {
+  const mediaInfo = photo.mediaInfo && typeof photo.mediaInfo === "object" ? photo.mediaInfo as Record<string, unknown> : null
+  const mediaID = mediaInfo && typeof mediaInfo.mediaID === "string" && mediaInfo.mediaID.trim() ? mediaInfo.mediaID.trim() : null
+  if (mediaID) return `media:${mediaID}`
+  const ossFileName = typeof photo.ossFileName === "string" && photo.ossFileName.trim() ? photo.ossFileName.trim() : null
+  if (ossFileName) return `oss:${ossFileName}`
+  const largeURL = typeof photo.largeURL === "string" && photo.largeURL.trim() ? photo.largeURL.trim() : null
+  if (largeURL) return `url:${largeURL}`
+  return null
+}
+
+function visibleUniqueFeedPhotos(item: Record<string, unknown>) {
+  if (!Array.isArray(item.feedPhotos)) return []
+  const seen = new Set<string>()
+  return item.feedPhotos
+    .map((feedPhoto) => feedPhoto && typeof feedPhoto === "object" ? (feedPhoto as Record<string, unknown>).photo : null)
+    .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === "object" && !(photo as Record<string, unknown>).deletedAt)
+    .filter((photo) => {
+      const fingerprint = feedPhotoFingerprint(photo)
+      if (!fingerprint) return true
+      if (seen.has(fingerprint)) return false
+      seen.add(fingerprint)
+      return true
+    })
+}
+
 export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
   const creator = item.createdBy && typeof item.createdBy === "object" ? item.createdBy as Record<string, unknown> : null
   const comments = Array.isArray(item.comments) ? item.comments : []
@@ -241,12 +267,7 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
     groupID: item.groupID,
     projectID: item.projectID,
     photoID: item.photoID,
-    photos: Array.isArray(item.feedPhotos)
-      ? item.feedPhotos
-          .map((feedPhoto) => feedPhoto && typeof feedPhoto === "object" ? (feedPhoto as Record<string, unknown>).photo : null)
-          .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === "object" && !(photo as Record<string, unknown>).deletedAt)
-          .map(mapFeedPhoto)
-      : [],
+    photos: visibleUniqueFeedPhotos(item).map(mapFeedPhoto),
     feedType: item.feedType,
     title: item.title,
     content: item.content,
