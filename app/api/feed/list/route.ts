@@ -3,6 +3,31 @@ import { bad, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/a
 import { feedInclude, feedPrisma, mapFeed, pageFeedArgs, parseProjectID, validateProjectScope } from "@/app/api/_utils/feed"
 import { prisma } from "@/lib/prisma"
 
+function timestampMillis(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0
+  if (typeof value === "bigint") return Number(value)
+  if (value instanceof Date) return value.getTime()
+  if (typeof value === "string") {
+    const numberValue = Number(value)
+    if (Number.isFinite(numberValue)) return numberValue
+    const dateValue = Date.parse(value)
+    return Number.isFinite(dateValue) ? dateValue : 0
+  }
+  return 0
+}
+
+function feedOrderTimestamp(feed: Record<string, unknown>) {
+  if (feed.feedType === "PHOTO" && Array.isArray(feed.feedPhotos)) {
+    const photoTimestamps = feed.feedPhotos
+      .map((item) => item && typeof item === "object" ? (item as Record<string, unknown>).photo : null)
+      .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === "object" && !(photo as Record<string, unknown>).deletedAt)
+      .map((photo) => timestampMillis(photo.timestamp))
+      .filter((timestamp) => timestamp > 0)
+    if (photoTimestamps.length > 0) return Math.min(...photoTimestamps)
+  }
+  return timestampMillis(feed.createdAt)
+}
+
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
@@ -33,23 +58,41 @@ export async function POST(req: Request) {
       deletedAt: null,
       ...(projectID == null ? (teamOnly ? { projectID: null } : {}) : { projectID }),
     }
-    const [totalCount, feeds] = await Promise.all([
-      feedPrisma.teamFeed.count({ where }),
-      feedPrisma.teamFeed.findMany({
-        where,
-        include: feedInclude,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take,
-      }),
-    ])
+    const feedsForSort = await feedPrisma.teamFeed.findMany({
+      where,
+      select: {
+        feedID: true,
+        feedType: true,
+        createdAt: true,
+        feedPhotos: {
+          select: {
+            photo: { select: { timestamp: true, deletedAt: true } },
+          },
+        },
+      },
+    })
+    const orderedFeedIDs = feedsForSort
+      .sort((a, b) => feedOrderTimestamp(b) - feedOrderTimestamp(a))
+      .map((feed) => String(feed.feedID))
+    const pageFeedIDs = orderedFeedIDs.slice(skip, skip + take)
+    const feeds = pageFeedIDs.length > 0
+      ? await feedPrisma.teamFeed.findMany({
+          where: { ...where, feedID: { in: pageFeedIDs } },
+          include: feedInclude,
+        })
+      : []
+    const feedsByID = new Map(feeds.map((feed) => [String(feed.feedID), feed]))
+    const orderedFeeds = pageFeedIDs
+      .map((feedID) => feedsByID.get(feedID))
+      .filter((feed): feed is Record<string, unknown> => Boolean(feed))
+    const totalCount = orderedFeedIDs.length
 
     return ok(jsonSafe({
       totalCount,
       pageIndex,
       pageSize,
-      hasMore: skip + feeds.length < totalCount,
-      list: feeds.map((feed) => mapFeed(feed, user.id)),
+      hasMore: skip + orderedFeeds.length < totalCount,
+      list: orderedFeeds.map((feed) => mapFeed(feed, user.id)),
     }))
   } catch (err) {
     console.log("[app/feed/list] error:", err)
