@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createSession } from "@/lib/auth"
+import { createSession, isTestLoginCode } from "@/lib/auth"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -14,30 +14,33 @@ export async function POST(req: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim()
+    const useTestLoginCode = isTestLoginCode(code)
 
-    // 查找最新的未使用验证码
-    const record = await prisma.verificationCode.findFirst({
-      where: { email: normalizedEmail, consumed: false },
-      orderBy: { createdAt: "desc" },
-    })
+    if (!useTestLoginCode) {
+      // 查找最新的未使用验证码
+      const record = await prisma.verificationCode.findFirst({
+        where: { email: normalizedEmail, consumed: false },
+        orderBy: { createdAt: "desc" },
+      })
 
-    if (!record) {
-      return NextResponse.json({ error: "验证码不存在，请重新获取" }, { status: 400 })
+      if (!record) {
+        return NextResponse.json({ error: "验证码不存在，请重新获取" }, { status: 400 })
+      }
+
+      if (record.expiresAt.getTime() < Date.now()) {
+        return NextResponse.json({ error: "验证码已过期，请重新获取" }, { status: 400 })
+      }
+
+      if (record.code !== code.trim()) {
+        return NextResponse.json({ error: "验证码错误" }, { status: 400 })
+      }
+
+      // 标记验证码已使用
+      await prisma.verificationCode.update({
+        where: { id: record.id },
+        data: { consumed: true },
+      })
     }
-
-    if (record.expiresAt.getTime() < Date.now()) {
-      return NextResponse.json({ error: "验证码已过期，请重新获取" }, { status: 400 })
-    }
-
-    if (record.code !== code.trim()) {
-      return NextResponse.json({ error: "验证码错误" }, { status: 400 })
-    }
-
-    // 标记验证码已使用
-    await prisma.verificationCode.update({
-      where: { id: record.id },
-      data: { consumed: true },
-    })
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
 

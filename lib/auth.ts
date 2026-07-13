@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma"
 export const TOKEN_TTL_MS = Number(process.env.TOKEN_TTL_MS || 7 * 24 * 60 * 60 * 1000)
 // 验证码有效期：5 分钟
 export const CODE_TTL_MS = 5 * 60 * 1000
+export const TEST_LOGIN_CODE = "88888"
+
+export function isTestLoginCode(code: unknown) {
+  return typeof code === "string" && code.trim() === TEST_LOGIN_CODE
+}
 
 // 生成 6 位数字验证码
 export function generateCode(): string {

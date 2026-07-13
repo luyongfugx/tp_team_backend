@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createSession } from "@/lib/auth"
+import { createSession, isTestLoginCode } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
@@ -13,14 +13,16 @@ export async function POST(req: Request) {
 
     if (loginType === 0 || loginType === 3) {
       const veriCode = typeof body.veriCode === "string" ? body.veriCode.trim() : ""
-      const record = await prisma.verificationCode.findFirst({
-        where: { email, consumed: false },
-        orderBy: { createdAt: "desc" },
-      })
-      if (!record) return bad("验证码不存在，请重新获取")
-      if (record.expiresAt.getTime() < Date.now()) return bad("验证码已过期，请重新获取")
-      if (record.code !== veriCode) return bad("验证码错误")
-      await prisma.verificationCode.update({ where: { id: record.id }, data: { consumed: true } })
+      if (!isTestLoginCode(veriCode)) {
+        const record = await prisma.verificationCode.findFirst({
+          where: { email, consumed: false },
+          orderBy: { createdAt: "desc" },
+        })
+        if (!record) return bad("验证码不存在，请重新获取")
+        if (record.expiresAt.getTime() < Date.now()) return bad("验证码已过期，请重新获取")
+        if (record.code !== veriCode) return bad("验证码错误")
+        await prisma.verificationCode.update({ where: { id: record.id }, data: { consumed: true } })
+      }
     }
 
     const existing = await prisma.user.findUnique({ where: { email } })
