@@ -300,12 +300,18 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
   const creator = item.createdBy && typeof item.createdBy === "object" ? item.createdBy as Record<string, unknown> : null
   const comments = Array.isArray(item.comments) ? item.comments : []
   const likes = Array.isArray(item.likes) ? item.likes : []
+  const photos = visibleUniqueFeedPhotos(item)
+  const photoTimestamps = photos
+    .map((photo) => Number(photo.timestamp))
+    .filter((timestamp) => Number.isFinite(timestamp) && timestamp > 0)
+  const createdAt = item.feedType === "PHOTO" && photoTimestamps.length > 0 ? Math.min(...photoTimestamps) : item.createdAt
+  const updatedAt = item.feedType === "PHOTO" && photoTimestamps.length > 0 ? Math.max(...photoTimestamps) : item.updatedAt
   return {
     feedID: item.feedID,
     groupID: item.groupID,
     projectID: item.projectID,
     photoID: item.photoID,
-    photos: visibleUniqueFeedPhotos(item).map(mapFeedPhoto),
+    photos: photos.map(mapFeedPhoto),
     feedType: item.feedType,
     title: item.title,
     content: item.content,
@@ -313,8 +319,11 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
     commentCount: item.commentCount,
     likeCount: item.likeCount,
     likedByMe: likes.some((like) => like && typeof like === "object" && (like as Record<string, unknown>).userID === currentUserID),
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
+    createdAt,
+    updatedAt,
+    timestamp: createdAt,
+    createTime: createdAt,
+    updateTime: updatedAt,
     createdBy: creator
       ? {
           userID: creator.id,
