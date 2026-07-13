@@ -153,26 +153,64 @@ export async function createPhotoFeedForMovedPhotos({
   groupID,
   projectID,
   userID,
-  photoIDs,
+  photos,
 }: {
   groupID: string
   projectID: number | null
   userID: string
-  photoIDs: string[]
+  photos: Array<{ photoID: string; timestamp: bigint | number }>
 }) {
-  const uniquePhotoIDs = Array.from(new Set(photoIDs.filter(Boolean)))
-  if (uniquePhotoIDs.length === 0) return null
-  const feed = await feedPrisma.teamFeed.create({
-    data: {
-      groupID,
-      projectID,
-      photoID: uniquePhotoIDs[0],
-      createdByUserID: userID,
-      feedType: "PHOTO",
-    },
-  })
-  await attachPhotosToFeed(String(feed.feedID), groupID, uniquePhotoIDs)
-  return String(feed.feedID)
+  const uniquePhotos = Array.from(
+    new Map(
+      photos
+        .filter((photo) => photo.photoID)
+        .map((photo) => [photo.photoID, { photoID: photo.photoID, timestamp: Number(photo.timestamp) }]),
+    ).values(),
+  )
+    .filter((photo) => Number.isFinite(photo.timestamp))
+    .sort((a, b) => a.timestamp - b.timestamp)
+  if (uniquePhotos.length === 0) return []
+
+  const windowMs = feedAggregationWindowMs()
+  const groups: Array<typeof uniquePhotos> = []
+  for (const photo of uniquePhotos) {
+    const currentGroup = groups[groups.length - 1]
+    const groupStart = currentGroup?.[0]?.timestamp
+    if (!currentGroup || groupStart == null || photo.timestamp - groupStart > windowMs) {
+      groups.push([photo])
+    } else {
+      currentGroup.push(photo)
+    }
+  }
+
+  const feedIDs: string[] = []
+  for (const group of groups) {
+    const first = group[0]
+    const last = group[group.length - 1]
+    const feed = await feedPrisma.teamFeed.create({
+      data: {
+        groupID,
+        projectID,
+        photoID: first.photoID,
+        createdByUserID: userID,
+        feedType: "PHOTO",
+        createdAt: new Date(first.timestamp),
+        updatedAt: new Date(last.timestamp),
+      },
+    })
+    await feedPrisma.teamFeedPhoto.createMany({
+      data: group.map((photo, index) => ({
+        feedID: String(feed.feedID),
+        groupID,
+        photoID: photo.photoID,
+        sortOrder: index,
+        createdAt: new Date(photo.timestamp),
+      })),
+      skipDuplicates: true,
+    })
+    feedIDs.push(String(feed.feedID))
+  }
+  return feedIDs
 }
 
 export async function findVisibleFeed(groupID: string, feedID: string) {

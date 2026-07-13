@@ -4,11 +4,11 @@ import { bad, canManage, ok, readBody, requireTeamMember, requireUser } from "@/
 import { createPhotoFeedForMovedPhotos, detachPhotosFromFeeds } from "@/app/api/_utils/feed"
 import { batchPhotoWhereForUser, isForbiddenPersonalPhotoScene, selectedPhotoWhere } from "@/app/api/_utils/photo"
 
-function groupPhotosByUser(photos: Array<{ photoID: string; userID: string }>) {
-  const grouped = new Map<string, string[]>()
+function groupPhotosByUser(photos: Array<{ photoID: string; userID: string; timestamp: bigint }>) {
+  const grouped = new Map<string, Array<{ photoID: string; timestamp: bigint }>>()
   for (const photo of photos) {
     const list = grouped.get(photo.userID) ?? []
-    list.push(photo.photoID)
+    list.push({ photoID: photo.photoID, timestamp: photo.timestamp })
     grouped.set(photo.userID, list)
   }
   return grouped
@@ -36,9 +36,11 @@ export async function POST(req: Request) {
     const moveWhere = batchPhotoWhereForUser(body, groupID, user.id, isManager)
     const photos = await prisma.photo.findMany({
       where: moveWhere,
-      select: { photoID: true, userID: true },
+      select: { photoID: true, userID: true, timestamp: true },
+      orderBy: { timestamp: "asc" },
     })
     const photoIDs = photos.map((photo) => photo.photoID)
+    const createdFeedIDs: string[] = []
     if (targetProjectID <= 0) {
       const result = await prisma.photo.updateMany({
         where: moveWhere,
@@ -46,15 +48,16 @@ export async function POST(req: Request) {
       })
       await detachPhotosFromFeeds(groupID, photoIDs)
       const photosByUser = groupPhotosByUser(photos)
-      for (const [ownerID, ownerPhotoIDs] of photosByUser) {
-        await createPhotoFeedForMovedPhotos({
+      for (const [ownerID, ownerPhotos] of photosByUser) {
+        const feedIDs = await createPhotoFeedForMovedPhotos({
           groupID,
           projectID: null,
           userID: ownerID,
-          photoIDs: ownerPhotoIDs,
+          photos: ownerPhotos,
         })
+        createdFeedIDs.push(...feedIDs)
       }
-      return ok({ movedCount: result.count })
+      return ok({ movedCount: result.count, feedIDs: createdFeedIDs })
     }
     const target = await prisma.project.findFirst({ where: { groupID, projectID: targetProjectID, deletedAt: null } })
     if (!target) return bad("目标项目不存在")
@@ -64,15 +67,16 @@ export async function POST(req: Request) {
     })
     await detachPhotosFromFeeds(groupID, photoIDs)
     const photosByUser = groupPhotosByUser(photos)
-    for (const [ownerID, ownerPhotoIDs] of photosByUser) {
-      await createPhotoFeedForMovedPhotos({
+    for (const [ownerID, ownerPhotos] of photosByUser) {
+      const feedIDs = await createPhotoFeedForMovedPhotos({
         groupID,
         projectID: targetProjectID,
         userID: ownerID,
-        photoIDs: ownerPhotoIDs,
+        photos: ownerPhotos,
       })
+      createdFeedIDs.push(...feedIDs)
     }
-    return ok({ movedCount: result.count })
+    return ok({ movedCount: result.count, feedIDs: createdFeedIDs })
   } catch (err) {
     console.log("[app/photo/move/v1] error:", err)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
