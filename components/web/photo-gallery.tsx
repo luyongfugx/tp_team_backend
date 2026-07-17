@@ -23,6 +23,7 @@ export type WebPhotoDay = {
 type GalleryHeader = {
   title: string
   subtitle: string
+  subtitleLines?: string[]
   meta: string
 }
 
@@ -181,7 +182,13 @@ export function WebPhotoGallery({
             <h1 className="truncate text-1xl font-bold tracking-normal text-white sm:text-4xl">
               {header.title}
             </h1>
-            <p className="mt-1 whitespace-normal break-words text-sm text-white/50 sm:text-sm">{header.subtitle}</p>
+            <div className="mt-1 space-y-0.5 text-sm text-white/50 sm:text-sm">
+              {(header.subtitleLines?.length ? header.subtitleLines : [header.subtitle])
+                .filter(Boolean)
+                .map((line) => (
+                  <p key={line} className="whitespace-normal break-words">{line}</p>
+                ))}
+            </div>
             <p className="mt-0.5 truncate text-xs text-white/50 sm:text-sm">{header.meta}</p>
           </div>
         </section>
