@@ -90,7 +90,7 @@ export async function getTeamGallery(groupID: string, localeInput?: string) {
       select: photoSelect,
       orderBy: { timestamp: "desc" },
     }),
-    prisma.teamMember.count({ where: { groupID } }),
+    prisma.teamMember.count({ where: { groupID, user: { deletedAt: null } } }),
   ])
   return {
     team,
@@ -118,7 +118,7 @@ export async function getProjectGallery(projectID: number, localeInput?: string)
       select: photoSelect,
       orderBy: { timestamp: "desc" },
     }),
-    prisma.projectMember.count({ where: { projectID } }),
+    prisma.teamMember.count({ where: { groupID: project.groupID, user: { deletedAt: null } } }),
   ])
 
   return {

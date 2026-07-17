@@ -22,12 +22,16 @@ export default async function ProjectPhotosPage({
 
   const { project, days, photoCount, memberCount } = await getProjectGallery(projectID, locale)
   if (!project) notFound()
+  const subtitle = [
+    `${t(locale, "web.teamLabel")}: ${project.team.groupName}`,
+    project.address,
+  ].filter(Boolean).join(" · ")
 
   return (
     <WebPhotoGallery
       header={{
         title: project.projectName,
-        subtitle: project.address || project.team.groupName || t(locale, "web.noLocation"),
+        subtitle: subtitle || t(locale, "web.noLocation"),
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,
       }}
       days={days}
