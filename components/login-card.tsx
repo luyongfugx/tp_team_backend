@@ -91,17 +91,18 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   }
 
   return (
-    <Card className={`w-full max-w-sm border-cyan-200/20 bg-[#15206f]/72 text-white shadow-2xl shadow-slate-950/35 backdrop-blur-xl ring-cyan-200/15 ${className}`}>
+    <Card className={`w-full max-w-sm border-orange-100 bg-white/90 text-slate-950 shadow-2xl shadow-orange-900/10 backdrop-blur-xl ring-orange-50 ${className}`}>
       <CardHeader className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-200 ring-1 ring-cyan-200/25">
+        <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#ea580c] ring-1 ring-orange-100">
             <Mail className="size-5" />
           </div>
-          <CardTitle className="text-xl text-white">
+          <CardTitle className="text-center text-xl text-slate-950">
             {step === "email" ? t(locale, "login.titleEmail") : t(locale, "login.titleCode")}
           </CardTitle>
+          <div aria-hidden="true" />
         </div>
-        <CardDescription className="text-blue-50/70">
+        <CardDescription className="text-slate-500">
           {step === "email"
             ? t(locale, "login.descEmail")
             : t(locale, "login.descCode", { email })}
@@ -118,7 +119,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-blue-50/85">{t(locale, "login.emailLabel")}：</Label>
+              <Label htmlFor="email" className="text-slate-700">{t(locale, "login.emailLabel")}：</Label>
               <Input
                 id="email"
                 type="email"
@@ -127,11 +128,11 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
-                className="h-11 border-cyan-100/20 bg-white/12 px-3 text-white placeholder:text-blue-100/45 focus-visible:border-cyan-200/70 focus-visible:ring-cyan-300/25"
+                className="h-11 border-orange-100 bg-[#fff7ed]/70 px-3 text-slate-950 placeholder:text-slate-400 focus-visible:border-orange-400 focus-visible:ring-orange-200/60"
               />
             </div>
-            {error && <p className="rounded-lg border border-red-300/25 bg-red-500/15 p-2 text-sm text-red-100">{error}</p>}
-            <Button type="submit" className="h-11 w-full bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-950/20 hover:bg-cyan-200" disabled={loading || !email}>
+            {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
+            <Button type="submit" className="h-11 w-full bg-[#ea580c] text-white shadow-lg shadow-orange-200/70 hover:bg-[#f97316]" disabled={loading || !email}>
               {loading && <Loader2 className="size-4 animate-spin" />}
               {t(locale, "login.sendCode")}
             </Button>
@@ -151,17 +152,17 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 disabled={loading}
               >
                 <InputOTPGroup className="gap-2">
-                  <InputOTPSlot index={0} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
-                  <InputOTPSlot index={1} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
-                  <InputOTPSlot index={2} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
-                  <InputOTPSlot index={3} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
-                  <InputOTPSlot index={4} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
-                  <InputOTPSlot index={5} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={0} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={1} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={2} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={3} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={4} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={5} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
                 </InputOTPGroup>
               </InputOTP>
-              {error && <p className="rounded-lg border border-red-300/25 bg-red-500/15 p-2 text-sm text-red-100">{error}</p>}
+              {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
               {loading && (
-                <p className="flex items-center gap-2 text-sm text-blue-50/70">
+                <p className="flex items-center gap-2 text-sm text-slate-500">
                   <Loader2 className="size-4 animate-spin" /> {t(locale, "login.verifying")}
                 </p>
               )}
@@ -175,7 +176,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                   setCode("")
                   setError("")
                 }}
-                className="flex items-center gap-1 text-blue-50/65 hover:text-cyan-100"
+                className="flex items-center gap-1 text-slate-500 hover:text-slate-950"
               >
                 <ArrowLeft className="size-4" /> {t(locale, "web.back")}
               </button>
@@ -183,7 +184,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 type="button"
                 onClick={sendCode}
                 disabled={countdown > 0 || loading}
-                className="text-cyan-200 disabled:cursor-not-allowed disabled:text-blue-50/40"
+                className="text-[#ea580c] disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 {countdown > 0 ? t(locale, "login.resendAfter", { seconds: countdown }) : t(locale, "login.resend")}
               </button>

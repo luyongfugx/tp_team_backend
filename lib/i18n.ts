@@ -2939,6 +2939,12 @@ Object.assign(dictionaries.en, {
   "home.orbit.location": "Location",
   "home.orbit.time": "Time",
   "home.orbit.team": "Team",
+  "download.title": "Download Timeprint Camera",
+  "download.subtitle": "Available on iOS and Android devices",
+  "download.downloadApk": "Download Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Or scan the QR code",
 })
 
 Object.assign(dictionaries["zh-Hans"], {
@@ -2957,6 +2963,12 @@ Object.assign(dictionaries["zh-Hans"], {
   "home.orbit.location": "位置",
   "home.orbit.time": "时间",
   "home.orbit.team": "团队",
+  "download.title": "下载 Timeprint 相机",
+  "download.subtitle": "适用于 iOS 和 Android 设备",
+  "download.downloadApk": "下载 Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "或扫描二维码",
 })
 
 Object.assign(dictionaries["zh-Hant"], {
@@ -2975,6 +2987,12 @@ Object.assign(dictionaries["zh-Hant"], {
   "home.orbit.location": "位置",
   "home.orbit.time": "時間",
   "home.orbit.team": "團隊",
+  "download.title": "下載 Timeprint 相機",
+  "download.subtitle": "適用於 iOS 和 Android 裝置",
+  "download.downloadApk": "下載 Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "或掃描 QR 碼",
 })
 
 Object.assign(dictionaries.ja, {
@@ -2993,6 +3011,12 @@ Object.assign(dictionaries.ja, {
   "home.orbit.location": "場所",
   "home.orbit.time": "時間",
   "home.orbit.team": "チーム",
+  "download.title": "Timeprint カメラをダウンロード",
+  "download.subtitle": "iOSとAndroidデバイスで利用可能",
+  "download.downloadApk": "Androidをダウンロード",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "またはQRコードをスキャン",
 })
 
 Object.assign(dictionaries.ko, {
@@ -3011,6 +3035,12 @@ Object.assign(dictionaries.ko, {
   "home.orbit.location": "위치",
   "home.orbit.time": "시간",
   "home.orbit.team": "팀",
+  "download.title": "Timeprint 카메라 다운로드",
+  "download.subtitle": "iOS 및 Android 기기에서 사용 가능",
+  "download.downloadApk": "Android 다운로드",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "또는 QR 코드 스캔",
 })
 
 Object.assign(dictionaries.ru, {
@@ -3029,6 +3059,12 @@ Object.assign(dictionaries.ru, {
   "home.orbit.location": "Место",
   "home.orbit.time": "Время",
   "home.orbit.team": "Команда",
+  "download.title": "Скачать Timeprint Camera",
+  "download.subtitle": "Доступно для устройств iOS и Android",
+  "download.downloadApk": "Скачать Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Или отсканируйте QR-код",
 })
 
 Object.assign(dictionaries.fa, {
@@ -3047,6 +3083,12 @@ Object.assign(dictionaries.fa, {
   "home.orbit.location": "مکان",
   "home.orbit.time": "زمان",
   "home.orbit.team": "تیم",
+  "download.title": "دانلود دوربین Timeprint",
+  "download.subtitle": "برای دستگاه‌های iOS و Android در دسترس است",
+  "download.downloadApk": "دانلود Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "یا کد QR را اسکن کنید",
 })
 
 Object.assign(dictionaries.hi, {
@@ -3065,6 +3107,12 @@ Object.assign(dictionaries.hi, {
   "home.orbit.location": "स्थान",
   "home.orbit.time": "समय",
   "home.orbit.team": "टीम",
+  "download.title": "Timeprint कैमरा डाउनलोड करें",
+  "download.subtitle": "iOS और Android डिवाइस पर उपलब्ध",
+  "download.downloadApk": "Android डाउनलोड करें",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "या QR कोड स्कैन करें",
 })
 
 Object.assign(dictionaries.nl, {
@@ -3083,6 +3131,363 @@ Object.assign(dictionaries.nl, {
   "home.orbit.location": "Locatie",
   "home.orbit.time": "Tijd",
   "home.orbit.team": "Team",
+  "download.title": "Timeprint Camera downloaden",
+  "download.subtitle": "Beschikbaar op iOS- en Android-apparaten",
+  "download.downloadApk": "Android downloaden",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Of scan de QR-code",
+})
+
+Object.assign(dictionaries.vi, {
+  "home.eyebrow": "Không gian nhóm Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Ảnh hiện trường có watermark thời gian và vị trí, được sắp xếp theo nhóm, dự án, thành viên và ngày.",
+  "home.description": "Chụp ảnh công việc với thời gian chính xác, vị trí GPS và watermark, rồi xem ảnh gốc trong TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Ảnh chụp màn hình ứng dụng Timeprint Camera",
+  "home.feature.authentic.title": "Ảnh có thể xác minh",
+  "home.feature.authentic.desc": "Dữ liệu thời gian, vị trí và watermark giúp hồ sơ hiện trường đáng tin cậy hơn.",
+  "home.feature.gps.title": "Dấu bản đồ GPS",
+  "home.feature.gps.desc": "Vĩ độ, kinh độ và địa chỉ chính xác được lưu cùng từng ảnh.",
+  "home.feature.team.title": "Không gian nhóm",
+  "home.feature.team.desc": "Xem ảnh theo nhóm, dự án, thành viên và ngày từ một bảng quản trị.",
+  "home.orbit.location": "Vị trí",
+  "home.orbit.time": "Thời gian",
+  "home.orbit.team": "Nhóm",
+})
+
+Object.assign(dictionaries.th, {
+  "home.eyebrow": "พื้นที่ทีม Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "ภาพภาคสนามพร้อมลายน้ำเวลาและตำแหน่ง จัดเรียงตามทีม โปรเจกต์ สมาชิก และวัน",
+  "home.description": "ถ่ายภาพงานพร้อมเวลา ตำแหน่ง GPS และลายน้ำที่แม่นยำ แล้วดูภาพต้นฉบับใน TeamSpace",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "ภาพหน้าจอแอป Timeprint Camera",
+  "home.feature.authentic.title": "ภาพที่ตรวจสอบได้",
+  "home.feature.authentic.desc": "ข้อมูลเวลา ตำแหน่ง และลายน้ำช่วยให้บันทึกภาคสนามน่าเชื่อถือขึ้น",
+  "home.feature.gps.title": "ตราประทับแผนที่ GPS",
+  "home.feature.gps.desc": "ละติจูด ลองจิจูด และที่อยู่ที่แม่นยำถูกบันทึกไปกับทุกภาพ",
+  "home.feature.team.title": "พื้นที่ทำงานทีม",
+  "home.feature.team.desc": "ดูภาพตามทีม โปรเจกต์ สมาชิก และวันที่จากคอนโซลผู้ดูแลเดียว",
+  "home.orbit.location": "ตำแหน่ง",
+  "home.orbit.time": "เวลา",
+  "home.orbit.team": "ทีม",
+})
+
+Object.assign(dictionaries.id, {
+  "home.eyebrow": "Ruang Tim Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Foto lapangan dengan watermark waktu dan lokasi, tersusun menurut tim, proyek, anggota, dan hari.",
+  "home.description": "Ambil foto kerja dengan waktu akurat, lokasi GPS, dan watermark, lalu tinjau gambar asli di TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Tangkapan layar aplikasi Timeprint Camera",
+  "home.feature.authentic.title": "Foto terverifikasi",
+  "home.feature.authentic.desc": "Data waktu, lokasi, dan watermark membuat catatan lapangan lebih tepercaya.",
+  "home.feature.gps.title": "Stempel peta GPS",
+  "home.feature.gps.desc": "Lintang, bujur, dan konteks alamat yang tepat tersimpan bersama setiap foto.",
+  "home.feature.team.title": "Ruang kerja tim",
+  "home.feature.team.desc": "Jelajahi foto menurut tim, proyek, anggota, dan tanggal dari satu konsol admin.",
+  "home.orbit.location": "Lokasi",
+  "home.orbit.time": "Waktu",
+  "home.orbit.team": "Tim",
+})
+
+Object.assign(dictionaries.ms, {
+  "home.eyebrow": "Ruang Pasukan Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Foto lapangan dengan tanda air masa dan lokasi, disusun mengikut pasukan, projek, ahli dan hari.",
+  "home.description": "Ambil foto kerja dengan masa tepat, lokasi GPS dan tanda air, kemudian semak imej asal dalam TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Tangkapan skrin aplikasi Timeprint Camera",
+  "home.feature.authentic.title": "Foto boleh disahkan",
+  "home.feature.authentic.desc": "Data masa, lokasi dan tanda air menjadikan rekod lapangan lebih dipercayai.",
+  "home.feature.gps.title": "Cop peta GPS",
+  "home.feature.gps.desc": "Latitud, longitud dan alamat yang tepat disimpan bersama setiap foto.",
+  "home.feature.team.title": "Ruang kerja pasukan",
+  "home.feature.team.desc": "Lihat foto mengikut pasukan, projek, ahli dan tarikh daripada satu konsol pentadbir.",
+  "home.orbit.location": "Lokasi",
+  "home.orbit.time": "Masa",
+  "home.orbit.team": "Pasukan",
+})
+
+Object.assign(dictionaries.es, {
+  "home.eyebrow": "Espacio de equipo Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Fotos de campo con marcas de agua de hora y ubicación, organizadas por equipos, proyectos, miembros y días.",
+  "home.description": "Captura fotos de trabajo con hora exacta, ubicación GPS y marca de agua, y revisa la imagen original en TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Captura de pantalla de la app Timeprint Camera",
+  "home.feature.authentic.title": "Fotos verificables",
+  "home.feature.authentic.desc": "Los datos de hora, ubicación y marca de agua hacen que los registros de campo sean más fiables.",
+  "home.feature.gps.title": "Sellos de mapa GPS",
+  "home.feature.gps.desc": "La latitud, longitud y dirección precisas se guardan con cada foto.",
+  "home.feature.team.title": "Espacio de trabajo",
+  "home.feature.team.desc": "Explora fotos por equipo, proyecto, miembro y fecha desde una sola consola.",
+  "home.orbit.location": "Ubicación",
+  "home.orbit.time": "Hora",
+  "home.orbit.team": "Equipo",
+})
+
+Object.assign(dictionaries.pt, {
+  "home.eyebrow": "Espaço de equipe Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Fotos de campo com marcas d'água de hora e localização, organizadas por equipes, projetos, membros e dias.",
+  "home.description": "Capture fotos de trabalho com hora exata, localização GPS e marca d'água, depois revise a imagem original no TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Captura de tela do app Timeprint Camera",
+  "home.feature.authentic.title": "Fotos verificáveis",
+  "home.feature.authentic.desc": "Dados de hora, localização e marca d'água tornam os registros de campo mais confiáveis.",
+  "home.feature.gps.title": "Carimbos de mapa GPS",
+  "home.feature.gps.desc": "Latitude, longitude e endereço precisos são salvos com cada foto.",
+  "home.feature.team.title": "Espaço de equipe",
+  "home.feature.team.desc": "Veja fotos por equipe, projeto, membro e data em um único console.",
+  "home.orbit.location": "Localização",
+  "home.orbit.time": "Hora",
+  "home.orbit.team": "Equipe",
+})
+
+Object.assign(dictionaries.ar, {
+  "home.eyebrow": "مساحة فريق Timeprint",
+  "home.title": "كاميرا Timeprint",
+  "home.subtitle": "صور ميدانية بعلامات مائية للوقت والموقع، منظمة حسب الفرق والمشاريع والأعضاء والأيام.",
+  "home.description": "التقط صور عمل بوقت دقيق وموقع GPS وعلامة مائية، ثم راجع الصورة الأصلية في TeamSpace.",
+  "home.product": "كاميرا Timeprint",
+  "home.screenshotAlt": "لقطة شاشة لتطبيق Timeprint Camera",
+  "home.feature.authentic.title": "صور قابلة للتحقق",
+  "home.feature.authentic.desc": "بيانات الوقت والموقع والعلامة المائية تجعل سجلات الموقع أكثر موثوقية.",
+  "home.feature.gps.title": "طوابع خريطة GPS",
+  "home.feature.gps.desc": "يتم حفظ خط العرض وخط الطول والعنوان الدقيق مع كل صورة.",
+  "home.feature.team.title": "مساحة عمل الفريق",
+  "home.feature.team.desc": "تصفح الصور حسب الفريق والمشروع والعضو والتاريخ من لوحة إدارة واحدة.",
+  "home.orbit.location": "الموقع",
+  "home.orbit.time": "الوقت",
+  "home.orbit.team": "الفريق",
+})
+
+Object.assign(dictionaries.de, {
+  "home.eyebrow": "Timeprint TeamSpace",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Einsatzfotos mit Zeit- und Standort-Wasserzeichen, organisiert nach Teams, Projekten, Mitgliedern und Tagen.",
+  "home.description": "Erfasse Arbeitsfotos mit genauer Zeit, GPS-Standort und Wasserzeichen und prüfe die Originalbilder in TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Screenshot der Timeprint Camera App",
+  "home.feature.authentic.title": "Prüfbare Fotos",
+  "home.feature.authentic.desc": "Zeit-, Standort- und Wasserzeichendaten machen Vor-Ort-Nachweise vertrauenswürdiger.",
+  "home.feature.gps.title": "GPS-Kartenstempel",
+  "home.feature.gps.desc": "Genaue Breite, Länge und Adresse werden mit jedem Foto gespeichert.",
+  "home.feature.team.title": "Team-Arbeitsbereich",
+  "home.feature.team.desc": "Durchsuche Fotos nach Team, Projekt, Mitglied und Datum in einer Admin-Konsole.",
+  "home.orbit.location": "Standort",
+  "home.orbit.time": "Zeit",
+  "home.orbit.team": "Team",
+})
+
+Object.assign(dictionaries.fr, {
+  "home.eyebrow": "Espace d'équipe Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Photos de terrain avec filigranes d'heure et de lieu, organisées par équipes, projets, membres et jours.",
+  "home.description": "Capturez des photos de travail avec heure précise, position GPS et filigrane, puis consultez l'image originale dans TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Capture d'écran de l'application Timeprint Camera",
+  "home.feature.authentic.title": "Photos vérifiables",
+  "home.feature.authentic.desc": "Les données d'heure, de lieu et de filigrane rendent les relevés terrain plus fiables.",
+  "home.feature.gps.title": "Tampons GPS",
+  "home.feature.gps.desc": "Latitude, longitude et adresse précises sont enregistrées avec chaque photo.",
+  "home.feature.team.title": "Espace d'équipe",
+  "home.feature.team.desc": "Parcourez les photos par équipe, projet, membre et date depuis une seule console.",
+  "home.orbit.location": "Lieu",
+  "home.orbit.time": "Heure",
+  "home.orbit.team": "Équipe",
+})
+
+Object.assign(dictionaries.it, {
+  "home.eyebrow": "Spazio team Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Foto sul campo con filigrane di ora e posizione, organizzate per team, progetti, membri e giorni.",
+  "home.description": "Scatta foto di lavoro con ora precisa, posizione GPS e filigrana, poi rivedi l'immagine originale in TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Screenshot dell'app Timeprint Camera",
+  "home.feature.authentic.title": "Foto verificabili",
+  "home.feature.authentic.desc": "Dati di ora, posizione e filigrana rendono i registri sul campo più affidabili.",
+  "home.feature.gps.title": "Timbri mappa GPS",
+  "home.feature.gps.desc": "Latitudine, longitudine e indirizzo precisi vengono salvati con ogni foto.",
+  "home.feature.team.title": "Spazio di lavoro team",
+  "home.feature.team.desc": "Sfoglia foto per team, progetto, membro e data da una sola console.",
+  "home.orbit.location": "Posizione",
+  "home.orbit.time": "Ora",
+  "home.orbit.team": "Team",
+})
+
+Object.assign(dictionaries.uk, {
+  "home.eyebrow": "Простір команди Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Польові фото з водяними знаками часу й місця, впорядковані за командами, проєктами, учасниками та днями.",
+  "home.description": "Знімайте робочі фото з точним часом, GPS-локацією і водяним знаком, а потім переглядайте оригінали в TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Знімок екрана застосунку Timeprint Camera",
+  "home.feature.authentic.title": "Перевірювані фото",
+  "home.feature.authentic.desc": "Час, місце та водяний знак роблять записи з об'єкта надійнішими.",
+  "home.feature.gps.title": "GPS-позначки",
+  "home.feature.gps.desc": "Точні широта, довгота та адреса зберігаються разом із кожним фото.",
+  "home.feature.team.title": "Командний простір",
+  "home.feature.team.desc": "Переглядайте фото за командою, проєктом, учасником і датою з однієї консолі.",
+  "home.orbit.location": "Місце",
+  "home.orbit.time": "Час",
+  "home.orbit.team": "Команда",
+})
+
+Object.assign(dictionaries.ro, {
+  "home.eyebrow": "Spațiul echipei Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Fotografii de teren cu filigrane de timp și locație, organizate pe echipe, proiecte, membri și zile.",
+  "home.description": "Capturează fotografii de lucru cu oră exactă, locație GPS și filigran, apoi verifică imaginea originală în TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Captură de ecran a aplicației Timeprint Camera",
+  "home.feature.authentic.title": "Fotografii verificabile",
+  "home.feature.authentic.desc": "Datele de timp, locație și filigran fac înregistrările de teren mai de încredere.",
+  "home.feature.gps.title": "Marcaje GPS pe hartă",
+  "home.feature.gps.desc": "Latitudinea, longitudinea și adresa exacte sunt salvate cu fiecare fotografie.",
+  "home.feature.team.title": "Spațiu de lucru al echipei",
+  "home.feature.team.desc": "Răsfoiește fotografii după echipă, proiect, membru și dată dintr-o singură consolă.",
+  "home.orbit.location": "Locație",
+  "home.orbit.time": "Timp",
+  "home.orbit.team": "Echipă",
+})
+
+Object.assign(dictionaries.zu, {
+  "home.eyebrow": "Indawo Yeqembu ye-Timeprint",
+  "home.title": "Timeprint Camera",
+  "home.subtitle": "Izithombe zasensimini ezinophawu lwesikhathi nendawo, zihlelwe ngamaqembu, amaphrojekthi, amalungu nezinsuku.",
+  "home.description": "Thatha izithombe zomsebenzi ngesikhathi esinembile, indawo ye-GPS nophawu, bese ubuka isithombe sokuqala ku-TeamSpace.",
+  "home.product": "Timeprint Camera",
+  "home.screenshotAlt": "Isithombe-skrini sohlelo lwe-Timeprint Camera",
+  "home.feature.authentic.title": "Izithombe eziqinisekisekayo",
+  "home.feature.authentic.desc": "Idatha yesikhathi, indawo nophawu yenza amarekhodi asensimini athembeke kakhulu.",
+  "home.feature.gps.title": "Izimpawu zemephu ye-GPS",
+  "home.feature.gps.desc": "Ububanzi, ubude bendawo nekheli kugcinwa nesithombe ngasinye.",
+  "home.feature.team.title": "Indawo yokusebenza yeqembu",
+  "home.feature.team.desc": "Buka izithombe ngeqembu, iphrojekthi, ilungu nosuku kukhonsoli eyodwa.",
+  "home.orbit.location": "Indawo",
+  "home.orbit.time": "Isikhathi",
+  "home.orbit.team": "Iqembu",
+})
+
+Object.assign(dictionaries.vi, {
+  "download.title": "Tải xuống Timeprint Camera",
+  "download.subtitle": "Có sẵn trên thiết bị iOS và Android",
+  "download.downloadApk": "Tải Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Hoặc quét mã QR",
+})
+
+Object.assign(dictionaries.th, {
+  "download.title": "ดาวน์โหลด Timeprint Camera",
+  "download.subtitle": "ใช้งานได้บนอุปกรณ์ iOS และ Android",
+  "download.downloadApk": "ดาวน์โหลด Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "หรือสแกน QR Code",
+})
+
+Object.assign(dictionaries.id, {
+  "download.title": "Unduh Timeprint Camera",
+  "download.subtitle": "Tersedia di perangkat iOS dan Android",
+  "download.downloadApk": "Unduh Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Atau pindai kode QR",
+})
+
+Object.assign(dictionaries.ms, {
+  "download.title": "Muat Turun Timeprint Camera",
+  "download.subtitle": "Tersedia pada peranti iOS dan Android",
+  "download.downloadApk": "Muat turun Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Atau imbas kod QR",
+})
+
+Object.assign(dictionaries.es, {
+  "download.title": "Descargar Timeprint Camera",
+  "download.subtitle": "Disponible en dispositivos iOS y Android",
+  "download.downloadApk": "Descargar Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "O escanea el código QR",
+})
+
+Object.assign(dictionaries.pt, {
+  "download.title": "Baixar Timeprint Camera",
+  "download.subtitle": "Disponível em dispositivos iOS e Android",
+  "download.downloadApk": "Baixar Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Ou escaneie o código QR",
+})
+
+Object.assign(dictionaries.ar, {
+  "download.title": "تحميل Timeprint Camera",
+  "download.subtitle": "متاح على أجهزة iOS و Android",
+  "download.downloadApk": "تحميل Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "أو امسح رمز QR",
+})
+
+Object.assign(dictionaries.de, {
+  "download.title": "Timeprint Camera herunterladen",
+  "download.subtitle": "Verfügbar auf iOS- und Android-Geräten",
+  "download.downloadApk": "Android herunterladen",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Oder QR-Code scannen",
+})
+
+Object.assign(dictionaries.fr, {
+  "download.title": "Télécharger Timeprint Camera",
+  "download.subtitle": "Disponible sur les appareils iOS et Android",
+  "download.downloadApk": "Télécharger Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Ou scannez le code QR",
+})
+
+Object.assign(dictionaries.it, {
+  "download.title": "Scarica Timeprint Camera",
+  "download.subtitle": "Disponibile su dispositivi iOS e Android",
+  "download.downloadApk": "Scarica Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Oppure scansiona il codice QR",
+})
+
+Object.assign(dictionaries.uk, {
+  "download.title": "Завантажити Timeprint Camera",
+  "download.subtitle": "Доступно для пристроїв iOS та Android",
+  "download.downloadApk": "Завантажити Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Або відскануйте QR-код",
+})
+
+Object.assign(dictionaries.ro, {
+  "download.title": "Descarcă Timeprint Camera",
+  "download.subtitle": "Disponibil pe dispozitive iOS și Android",
+  "download.downloadApk": "Descarcă Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Sau scanează codul QR",
+})
+
+Object.assign(dictionaries.zu, {
+  "download.title": "Landa i-Timeprint Camera",
+  "download.subtitle": "Iyatholakala kumadivayisi e-iOS ne-Android",
+  "download.downloadApk": "Landa i-Android",
+  "download.appStore": "App Store",
+  "download.googlePlay": "Google Play",
+  "download.scanQR": "Noma skena ikhodi ye-QR",
 })
 
 for (const locale of supportedLocales) {
