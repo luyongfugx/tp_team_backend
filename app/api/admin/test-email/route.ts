@@ -1,21 +1,20 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateCode } from "@/lib/auth"
 import { localeFromRequest } from "@/lib/i18n"
 import { sendTeamInviteEmail, sendVerificationEmail } from "@/lib/mail"
-import { bad, EMAIL_RE, normalizeEmail, ok, readBody, requireUser } from "@/app/api/_utils/api"
+import { badFor, EMAIL_RE, normalizeEmail, ok, readBody, requireUser, serverError } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
 
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
-    if (!user) return bad("未授权或登录已过期", 401)
-    if (!isSuperAdmin(user)) return bad("无总管理员权限", 403)
+    if (!user) return badFor(req, "未授权或登录已过期", 401)
+    if (!isSuperAdmin(user)) return badFor(req, "无总管理员权限", 403)
 
     const body = await readBody(req)
     const locale = localeFromRequest(req, body)
     const email = normalizeEmail(body.email)
-    if (!email || !EMAIL_RE.test(email)) return bad("请输入有效的邮箱地址")
+    if (!email || !EMAIL_RE.test(email)) return badFor(req, "请输入有效的邮箱地址")
 
     const type = typeof body.type === "string" ? body.type : ""
     if (type === "verification") {
@@ -48,9 +47,9 @@ export async function POST(req: Request) {
       return ok({ type, email, groupID: linkGroupID, inviteCode, result })
     }
 
-    return bad("邮件类型不正确")
+    return badFor(req, "邮件类型不正确")
   } catch (err) {
     console.log("[app/admin/test-email] error:", err)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return serverError(req)
   }
 }

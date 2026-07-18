@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { generateCode } from "@/lib/auth"
 import { localeFromRequest } from "@/lib/i18n"
 import { sendTeamInviteEmail } from "@/lib/mail"
-import { asStringArray, bad, EMAIL_RE, normalizeEmail, ok, readBody, requireTeamManager, requireUser, roleIDToRole } from "@/app/api/_utils/api"
+import { asStringArray, badFor, EMAIL_RE, normalizeEmail, ok, readBody, requireTeamManager, requireUser, roleIDToRole, serverError } from "@/app/api/_utils/api"
+import { isSuperAdmin } from "@/app/api/_utils/admin"
 
 async function createInviteCode() {
   for (let index = 0; index < 20; index += 1) {
@@ -21,11 +21,11 @@ async function createInviteCode() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
-    if (!user) return bad("未授权或登录已过期", 401)
+    if (!user) return badFor(req, "未授权或登录已过期", 401)
     const body = await readBody(req)
     const locale = localeFromRequest(req, body)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
-    if (!(await requireTeamManager(groupID, user.id))) return bad("无团队管理权限", 403)
+    if (!isSuperAdmin(user) && !(await requireTeamManager(groupID, user.id))) return badFor(req, "无团队管理权限", 403)
     const team = await prisma.team.findFirst({
       where: { groupID, deletedAt: null },
       select: {
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         _count: { select: { members: true, photos: true } },
       },
     })
-    if (!team) return bad("团队不存在")
+    if (!team) return badFor(req, "团队不存在")
 
     const emails = asStringArray(body.emails).map(normalizeEmail)
     const invalidEmails = emails.filter((email) => !EMAIL_RE.test(email))
@@ -120,6 +120,6 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     console.log("[app/group/user/invite/email] error:", err)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return serverError(req)
   }
 }

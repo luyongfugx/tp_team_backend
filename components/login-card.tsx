@@ -11,15 +11,16 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { Mail, ArrowLeft, Loader2 } from "lucide-react"
-import { clientLocale, t } from "@/lib/i18n"
+import { clientLocale, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 
 type Step = "email" | "code"
 
 interface LoginCardProps {
   onSuccess: (data: { token: string; expiresAt: string; user: { id: string; email: string } }) => void
+  className?: string
 }
 
-export function LoginCard({ onSuccess }: LoginCardProps) {
+export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   const [locale, setLocale] = useState("zh-Hans")
   const [step, setStep] = useState<Step>("email")
   const [email, setEmail] = useState("")
@@ -30,6 +31,11 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
 
   useEffect(() => {
     setLocale(clientLocale())
+    function handleLocaleChange(event: Event) {
+      setLocale(resolveLocale((event as CustomEvent).detail))
+    }
+    window.addEventListener(LOCALE_CHANGE_EVENT, handleLocaleChange)
+    return () => window.removeEventListener(LOCALE_CHANGE_EVENT, handleLocaleChange)
   }, [])
 
   useEffect(() => {
@@ -68,7 +74,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
       const res = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: submitCode }),
+        body: JSON.stringify({ email, code: submitCode, locale }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -85,15 +91,17 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className={`w-full max-w-sm border-cyan-200/20 bg-[#15206f]/72 text-white shadow-2xl shadow-slate-950/35 backdrop-blur-xl ring-cyan-200/15 ${className}`}>
       <CardHeader className="space-y-2">
-        <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Mail className="size-5" />
+        <div className="flex items-center gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-200 ring-1 ring-cyan-200/25">
+            <Mail className="size-5" />
+          </div>
+          <CardTitle className="text-xl text-white">
+            {step === "email" ? t(locale, "login.titleEmail") : t(locale, "login.titleCode")}
+          </CardTitle>
         </div>
-        <CardTitle className="text-xl">
-          {step === "email" ? t(locale, "login.titleEmail") : t(locale, "login.titleCode")}
-        </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-blue-50/70">
           {step === "email"
             ? t(locale, "login.descEmail")
             : t(locale, "login.descCode", { email })}
@@ -110,7 +118,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="email">{t(locale, "login.emailLabel")}</Label>
+              <Label htmlFor="email" className="text-blue-50/85">{t(locale, "login.emailLabel")}：</Label>
               <Input
                 id="email"
                 type="email"
@@ -119,10 +127,11 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
+                className="h-11 border-cyan-100/20 bg-white/12 px-3 text-white placeholder:text-blue-100/45 focus-visible:border-cyan-200/70 focus-visible:ring-cyan-300/25"
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || !email}>
+            {error && <p className="rounded-lg border border-red-300/25 bg-red-500/15 p-2 text-sm text-red-100">{error}</p>}
+            <Button type="submit" className="h-11 w-full bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-950/20 hover:bg-cyan-200" disabled={loading || !email}>
               {loading && <Loader2 className="size-4 animate-spin" />}
               {t(locale, "login.sendCode")}
             </Button>
@@ -141,18 +150,18 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                 }}
                 disabled={loading}
               >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={0} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={1} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={2} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={3} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={4} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
+                  <InputOTPSlot index={5} className="rounded-lg border border-cyan-100/20 bg-white/12 text-white data-[active=true]:border-cyan-200/70 data-[active=true]:ring-cyan-300/25" />
                 </InputOTPGroup>
               </InputOTP>
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p className="rounded-lg border border-red-300/25 bg-red-500/15 p-2 text-sm text-red-100">{error}</p>}
               {loading && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 text-sm text-blue-50/70">
                   <Loader2 className="size-4 animate-spin" /> {t(locale, "login.verifying")}
                 </p>
               )}
@@ -166,7 +175,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                   setCode("")
                   setError("")
                 }}
-                className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-1 text-blue-50/65 hover:text-cyan-100"
               >
                 <ArrowLeft className="size-4" /> {t(locale, "web.back")}
               </button>
@@ -174,7 +183,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
                 type="button"
                 onClick={sendCode}
                 disabled={countdown > 0 || loading}
-                className="text-primary disabled:text-muted-foreground disabled:cursor-not-allowed"
+                className="text-cyan-200 disabled:cursor-not-allowed disabled:text-blue-50/40"
               >
                 {countdown > 0 ? t(locale, "login.resendAfter", { seconds: countdown }) : t(locale, "login.resend")}
               </button>

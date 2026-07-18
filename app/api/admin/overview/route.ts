@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { bad, jsonSafe, ok, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
+import { badFor, jsonSafe, ok, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
 import { localeFromRequest, t } from "@/lib/i18n"
 
@@ -8,11 +8,13 @@ export async function GET(req: Request) {
   try {
     const locale = localeFromRequest(req)
     const user = await requireUser(req)
-    if (!user) return bad("未授权或登录已过期", 401)
+    if (!user) return badFor(req, "未授权或登录已过期", 401)
 
     const superAdmin = isSuperAdmin(user)
     const teams = await prisma.team.findMany({
-      where: superAdmin ? { deletedAt: null } : { ownerID: user.id, deletedAt: null },
+      where: superAdmin
+        ? { deletedAt: null }
+        : { deletedAt: null, members: { some: { userID: user.id } } },
       include: {
         owner: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
         members: {
@@ -72,35 +74,53 @@ export async function GET(req: Request) {
           projectCount: teams.reduce((sum, team) => sum + team._count.projects, 0),
           photoCount,
         },
-        teams: teams.map((team) => ({
-          groupID: team.groupID,
-          groupName: team.groupName,
-          owner: team.owner,
-          createdAt: team.createdAt,
-          memberNum: team._count.members,
-          projectNum: team._count.projects,
-          photoNum: team._count.photos,
-          members: team.members.map((member) => ({
-            userID: member.userID,
-            email: member.user.email,
-            userName: member.user.userName,
-            shortName: member.user.shortName,
-            avatar: member.user.avatar,
-            role: roleToName(member.role, locale),
-            roleID: roleToID(member.role),
-            joinedAt: member.joinedAt,
-          })),
-          projects: team.projects.map((project) => ({
-            projectID: project.projectID,
-            projectName: project.projectName,
-            photoCount: project._count.photos,
-            memberCount: project._count.members,
-            latestPhotoTimestamp: project.latestPhotoTimestamp,
-            latestPhotoSmallURL: project.latestPhotoSmallURL,
-            createdAt: project.createdAt,
-          })),
-          photos: team.photos,
-        })),
+        teams: teams.map((team) => {
+          const currentMember = team.members.find((member) => member.userID === user.id)
+          return {
+            groupID: team.groupID,
+            groupName: team.groupName,
+            owner: team.owner,
+            createdAt: team.createdAt,
+            currentMember: currentMember
+              ? {
+                  userID: currentMember.userID,
+                  role: roleToName(currentMember.role, locale),
+                  roleID: roleToID(currentMember.role),
+                }
+              : null,
+            memberNum: team._count.members,
+            projectNum: team._count.projects,
+            photoNum: team._count.photos,
+            members: team.members.map((member) => ({
+              userID: member.userID,
+              email: member.user.email,
+              userName: member.user.userName,
+              shortName: member.user.shortName,
+              avatar: member.user.avatar,
+              role: roleToName(member.role, locale),
+              roleID: roleToID(member.role),
+              joinedAt: member.joinedAt,
+            })),
+            projects: team.projects.map((project) => ({
+              projectID: project.projectID,
+              projectName: project.projectName,
+              photoCount: project._count.photos,
+              memberCount: project._count.members,
+              latestPhotoTimestamp: project.latestPhotoTimestamp,
+              latestPhotoSmallURL: project.latestPhotoSmallURL,
+              addressInfo: {
+                lat: project.lat,
+                lng: project.lng,
+                address: project.address,
+                circle: project.circle,
+                distanceUnit: project.distanceUnit,
+                removeAddress: project.removeAddress,
+              },
+              createdAt: project.createdAt,
+            })),
+            photos: team.photos,
+          }
+        }),
       }),
     )
   } catch (err) {

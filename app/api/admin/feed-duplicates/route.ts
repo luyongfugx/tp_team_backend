@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { bad, canManage, jsonSafe, ok, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { badFor, canManage, jsonSafe, ok, readBody, requireTeamMember, requireUser, serverError } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
 import { detachPhotosFromFeeds } from "@/app/api/_utils/feed"
 import { resolvePhotoURL, thumbnailPhotoURL } from "@/app/web/photo-url"
@@ -149,18 +148,18 @@ export async function POST(req: Request) {
   try {
     const body = await readBody(req)
     const feedID = typeof body.feedID === "string" ? body.feedID.trim() : ""
-    if (!feedID) return bad("请输入 feedID")
+    if (!feedID) return badFor(req, "请输入 feedID")
 
     const result = await assertCanManageFeed(req, feedID)
-    if ("error" in result) return bad(result.error, result.status)
+    if ("error" in result) return badFor(req, result.error, result.status)
 
     if (body.action === "delete") {
       const photoID = typeof body.photoID === "string" ? body.photoID.trim() : ""
-      if (!photoID) return bad("请输入 photoID")
+      if (!photoID) return badFor(req, "请输入 photoID")
       const groups = duplicateGroups(result.feed)
       const group = groups.find((item) => item.photos.some((photo) => photo.photoID === photoID))
-      if (!group) return bad("该照片不在重复组内，不能通过此页面删除")
-      if (group.keepPhotoID === photoID) return bad("保留照片不能删除，请删除重复项")
+      if (!group) return badFor(req, "该照片不在重复组内，不能通过此页面删除")
+      if (group.keepPhotoID === photoID) return badFor(req, "保留照片不能删除，请删除重复项")
 
       await prisma.photo.update({
         where: { photoID },
@@ -197,6 +196,6 @@ export async function POST(req: Request) {
     }))
   } catch (err) {
     console.log("[app/admin/feed-duplicates] error:", err)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return serverError(req)
   }
 }

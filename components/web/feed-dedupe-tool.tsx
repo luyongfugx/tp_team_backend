@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { clientLocale, t } from "@/lib/i18n"
 
 type Auth = {
   token: string
@@ -60,16 +61,17 @@ function shortID(value: string) {
   return `${value.slice(0, 7)}...${value.slice(-6)}`
 }
 
-async function readError(res: Response) {
+async function readError(res: Response, locale: string) {
   try {
     const data = await res.json()
-    return typeof data.error === "string" ? data.error : "请求失败"
+    return typeof data.error === "string" ? data.error : t(locale, "dedupe.requestFailed")
   } catch {
-    return "请求失败"
+    return t(locale, "dedupe.requestFailed")
   }
 }
 
 export function FeedDedupeTool() {
+  const [locale, setLocale] = useState("zh-Hans")
   const [auth, setAuth] = useState<Auth | null>(null)
   const [feedID, setFeedID] = useState("")
   const [feed, setFeed] = useState<FeedResult | null>(null)
@@ -79,6 +81,7 @@ export function FeedDedupeTool() {
   const [deletingPhotoID, setDeletingPhotoID] = useState("")
 
   useEffect(() => {
+    setLocale(clientLocale())
     setAuth(readAuth())
   }, [])
 
@@ -88,7 +91,7 @@ export function FeedDedupeTool() {
     setLoading(true)
     try {
       if (!auth?.token) {
-        setError("请先在后台首页登录，再打开这个页面")
+        setError(t(locale, "dedupe.loginFirst"))
         return
       }
       const res = await fetch("/api/admin/feed-duplicates", {
@@ -96,19 +99,20 @@ export function FeedDedupeTool() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${auth.token}`,
+          "x-locale": locale,
         },
         body: JSON.stringify({ feedID: nextFeedID.trim() }),
       })
       if (!res.ok) {
-        setError(await readError(res))
+        setError(await readError(res, locale))
         setFeed(null)
         return
       }
       const data = await res.json()
       setFeed(data.feed)
-      setMessage(data.feed?.duplicateGroups?.length ? "已找到重复照片" : "这个 feed 暂未发现重复照片")
+      setMessage(data.feed?.duplicateGroups?.length ? t(locale, "dedupe.foundDuplicates") : t(locale, "dedupe.noDuplicatesInFeed"))
     } catch {
-      setError("网络错误，请稍后再试")
+      setError(t(locale, "common.networkError"))
     } finally {
       setLoading(false)
     }
@@ -116,7 +120,7 @@ export function FeedDedupeTool() {
 
   async function deletePhoto(photoID: string) {
     if (!auth?.token || !feed) return
-    if (!window.confirm(`确认软删除照片 ${photoID}？`)) return
+    if (!window.confirm(t(locale, "dedupe.confirmDelete", { photoID }))) return
     setError("")
     setMessage("")
     setDeletingPhotoID(photoID)
@@ -126,18 +130,19 @@ export function FeedDedupeTool() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${auth.token}`,
+          "x-locale": locale,
         },
         body: JSON.stringify({ action: "delete", feedID: feed.feedID, photoID }),
       })
       if (!res.ok) {
-        setError(await readError(res))
+        setError(await readError(res, locale))
         return
       }
       const data = await res.json()
       setFeed(data.feed)
-      setMessage(`已软删除 ${photoID}`)
+      setMessage(t(locale, "dedupe.deletedPhoto", { photoID }))
     } catch {
-      setError("网络错误，请稍后再试")
+      setError(t(locale, "common.networkError"))
     } finally {
       setDeletingPhotoID("")
     }
@@ -147,14 +152,14 @@ export function FeedDedupeTool() {
     <main className="min-h-svh bg-background p-4 md:p-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">TeamSpace 调试工具</p>
-          <h1 className="text-2xl font-semibold tracking-normal">Feed 重复照片处理</h1>
+          <p className="text-sm text-muted-foreground">{t(locale, "dedupe.toolLabel")}</p>
+          <h1 className="text-2xl font-semibold tracking-normal">{t(locale, "dedupe.title")}</h1>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>查询 Feed</CardTitle>
-            <CardDescription>输入 feedID，系统会按 mediaID、ossFileName、largeURL 查找同一 feed 内的重复照片。</CardDescription>
+            <CardTitle>{t(locale, "dedupe.queryTitle")}</CardTitle>
+            <CardDescription>{t(locale, "dedupe.queryDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -175,12 +180,12 @@ export function FeedDedupeTool() {
               </div>
               <Button type="submit" disabled={loading || !feedID.trim()}>
                 {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-                查询
+                {t(locale, "dedupe.query")}
               </Button>
             </form>
             {!auth?.token && (
               <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                当前页面未读取到登录 token。请先访问首页登录后台，再回来使用此工具。
+                {t(locale, "dedupe.noToken")}
               </div>
             )}
             {error && (
@@ -204,19 +209,19 @@ export function FeedDedupeTool() {
               <CardTitle>{feed.groupName}</CardTitle>
               <CardDescription>
                 feedID: {feed.feedID} · groupID: {feed.groupID}
-                {feed.projectName ? ` · 项目: ${feed.projectName}` : ""} · 照片数: {feed.photoCount}
+                {feed.projectName ? ` · ${t(locale, "dedupe.project")}: ${feed.projectName}` : ""} · {t(locale, "dedupe.photoCount")}: {feed.photoCount}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {feed.duplicateGroups.length === 0 ? (
                 <div className="rounded-lg border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-                  没有发现重复照片。
+                  {t(locale, "dedupe.noDuplicatePhotos")}
                 </div>
               ) : (
                 feed.duplicateGroups.map((group) => (
                   <div key={group.fingerprint} className="rounded-lg border p-4">
                     <div className="mb-4 flex flex-col gap-1">
-                      <div className="text-sm font-medium">重复组 · {group.duplicateCount} 张可删除</div>
+                      <div className="text-sm font-medium">{t(locale, "dedupe.groupSummary", { count: group.duplicateCount })}</div>
                       <div className="break-all text-xs text-muted-foreground">{group.label}</div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -226,14 +231,14 @@ export function FeedDedupeTool() {
                             {photo.thumbnailURL ? (
                               <img src={photo.thumbnailURL} alt={photo.localPhotoName || photo.photoID} className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">无缩略图</div>
+                              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t(locale, "dedupe.noThumbnail")}</div>
                             )}
                           </div>
                           <div className="space-y-2 p-3">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-mono text-xs" title={photo.photoID}>{shortID(photo.photoID)}</span>
                               {photo.keep ? (
-                                <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs text-emerald-700">保留</span>
+                                <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs text-emerald-700">{t(locale, "dedupe.keep")}</span>
                               ) : (
                                 <Button
                                   type="button"
@@ -243,14 +248,14 @@ export function FeedDedupeTool() {
                                   onClick={() => deletePhoto(photo.photoID)}
                                 >
                                   {deletingPhotoID === photo.photoID ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                                  删除
+                                  {t(locale, "dedupe.delete")}
                                 </Button>
                               )}
                             </div>
                             <div className="space-y-1 text-xs text-muted-foreground">
-                              <div>拍摄时间：{photo.takePhotoFormatTime}</div>
-                              <div>用户：{photo.userName || photo.userID}</div>
-                              <div className="truncate" title={photo.ossFileName}>文件：{photo.ossFileName}</div>
+                              <div>{t(locale, "dedupe.takenAt")}：{photo.takePhotoFormatTime}</div>
+                              <div>{t(locale, "dedupe.user")}：{photo.userName || photo.userID}</div>
+                              <div className="truncate" title={photo.ossFileName}>{t(locale, "dedupe.file")}：{photo.ossFileName}</div>
                               {photo.mediaID && <div className="truncate" title={photo.mediaID}>mediaID：{photo.mediaID}</div>}
                             </div>
                           </div>
