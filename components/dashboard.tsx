@@ -170,6 +170,15 @@ function menuButtonClass(active: boolean, collapsed: boolean) {
   ].join(" ")
 }
 
+function CollapsedTooltip({ collapsed, label }: { collapsed: boolean; label: string }) {
+  if (!collapsed) return null
+  return (
+    <span className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition group-hover:opacity-100">
+      {label}
+    </span>
+  )
+}
+
 function EmptyState({ children }: { children: React.ReactNode }) {
   return <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">{children}</div>
 }
@@ -755,35 +764,47 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   return (
     <div className="flex min-h-svh w-full overflow-hidden bg-background">
       <aside className={`${collapsed ? "w-16" : "w-60"} flex shrink-0 flex-col border-r bg-sidebar transition-[width] duration-200`}>
-        <div className="flex h-16 items-center justify-between border-b px-3">
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="truncate font-semibold">Timeprint</div>
-              <div className="truncate text-xs text-sidebar-foreground/60">{isSuperAdmin ? t(locale, "dashboard.superAdminShort") : t(locale, "dashboard.teamAdminShort")}</div>
+        <div className={`flex h-16 items-center border-b ${collapsed ? "justify-between px-1.5" : "justify-between px-3"}`}>
+          <div className={`flex min-w-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+            <img src="/logo.png" alt="Timeprint" className={`${collapsed ? "size-7 rounded-md" : "size-8 rounded-lg"} shrink-0 object-contain`} />
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="truncate font-semibold">Timeprint</div>
+                <div className="truncate text-xs text-sidebar-foreground/60">{isSuperAdmin ? t(locale, "dashboard.superAdminShort") : t(locale, "dashboard.teamAdminShort")}</div>
+              </div>
+            )}
             </div>
-          )}
-          <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label={t(locale, "dashboard.collapseMenu")}>
+          <Button variant="ghost" size={collapsed ? "icon-sm" : "icon"} onClick={() => setCollapsed((value) => !value)} aria-label={t(locale, "dashboard.collapseMenu")}>
             {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
           </Button>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">
-          <button type="button" className={menuButtonClass(activeMenu === "teams", collapsed)} onClick={openTeams} title={t(locale, "dashboard.myTeams")}>
-            <Building2 className="size-4" />
-            {!collapsed && <span>{t(locale, "dashboard.myTeams")}</span>}
-          </button>
-          <button type="button" className={menuButtonClass(activeMenu === "settings", collapsed)} onClick={openSettings} title={t(locale, "dashboard.settings")}>
-            <Settings className="size-4" />
-            {!collapsed && <span>{t(locale, "dashboard.settings")}</span>}
-          </button>
+          <div className="group relative">
+            <button type="button" className={menuButtonClass(activeMenu === "teams", collapsed)} onClick={openTeams} title={t(locale, "dashboard.myTeams")}>
+              <Building2 className="size-4" />
+              {!collapsed && <span>{t(locale, "dashboard.myTeams")}</span>}
+            </button>
+            <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.myTeams")} />
+          </div>
+          <div className="group relative">
+            <button type="button" className={menuButtonClass(activeMenu === "settings", collapsed)} onClick={openSettings} title={t(locale, "dashboard.settings")}>
+              <Settings className="size-4" />
+              {!collapsed && <span>{t(locale, "dashboard.settings")}</span>}
+            </button>
+            <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.settings")} />
+          </div>
         </nav>
 
         <div className="border-t p-3">
           {!collapsed && <div className="mb-3 truncate text-xs text-sidebar-foreground/60">{user.email}</div>}
-          <Button onClick={logout} variant="outline" className="w-full" size={collapsed ? "icon" : "default"} title={t(locale, "dashboard.logout")}>
-            <LogOut className="size-4" />
-            {!collapsed && t(locale, "dashboard.logout")}
-          </Button>
+          <div className="group relative">
+            <Button onClick={logout} variant="outline" className="w-full" size={collapsed ? "icon" : "default"} title={t(locale, "dashboard.logout")}>
+              <LogOut className="size-4" />
+              {!collapsed && t(locale, "dashboard.logout")}
+            </Button>
+            <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.logout")} />
+          </div>
         </div>
       </aside>
 
