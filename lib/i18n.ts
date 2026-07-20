@@ -25,29 +25,31 @@ export const supportedLocales = [
 
 export type AppLocale = (typeof supportedLocales)[number]
 
-export const supportedLocaleOptions: Array<{ value: AppLocale; label: string }> = [
-  { value: "en", label: "English" },
-  { value: "zh-Hans", label: "中文" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
-  { value: "vi", label: "Tiếng Việt" },
-  { value: "th", label: "ไทย" },
-  { value: "id", label: "Bahasa Indonesia" },
-  { value: "ms", label: "Bahasa Melayu" },
-  { value: "es", label: "Español" },
-  { value: "pt", label: "Português" },
-  { value: "ar", label: "العربية" },
-  { value: "de", label: "Deutsch" },
-  { value: "fr", label: "Français" },
-  { value: "it", label: "Italiano" },
-  { value: "fa", label: "فارسی" },
-  { value: "ru", label: "Русский" },
-  { value: "uk", label: "Українська" },
-  { value: "hi", label: "हिन्दी" },
-  { value: "zu", label: "isiZulu" },
-  { value: "ro", label: "Română" },
-  { value: "nl", label: "Nederlands" },
-  { value: "zh-Hant", label: "繁體中文" },
+export type LocaleRegion = "asia" | "europe" | "africa"
+
+export const supportedLocaleOptions: Array<{ value: AppLocale; label: string; englishLabel: string; region: LocaleRegion; searchText: string }> = [
+  { value: "zh-Hans", label: "中文", englishLabel: "Chinese", region: "asia", searchText: "中文 简体中文 Chinese China zh zh-Hans" },
+  { value: "zh-Hant", label: "繁體中文", englishLabel: "Traditional Chinese", region: "asia", searchText: "繁體中文 繁体中文 Traditional Chinese Taiwan Hong Kong zh-Hant" },
+  { value: "ja", label: "日本語", englishLabel: "Japanese", region: "asia", searchText: "日本語 日语 Japanese Japan ja" },
+  { value: "ko", label: "한국어", englishLabel: "Korean", region: "asia", searchText: "한국어 韩语 Korean Korea ko" },
+  { value: "vi", label: "Tiếng Việt", englishLabel: "Vietnamese", region: "asia", searchText: "Tiếng Việt 越南语 Vietnamese Vietnam vi" },
+  { value: "th", label: "ไทย", englishLabel: "Thai", region: "asia", searchText: "ไทย 泰语 Thai Thailand th" },
+  { value: "id", label: "Bahasa Indonesia", englishLabel: "Indonesian", region: "asia", searchText: "Bahasa Indonesia 印度尼西亚语 Indonesian Indonesia id" },
+  { value: "ms", label: "Bahasa Melayu", englishLabel: "Malay", region: "asia", searchText: "Bahasa Melayu 马来语 Malay Malaysia ms" },
+  { value: "ar", label: "العربية", englishLabel: "Arabic", region: "asia", searchText: "العربية 阿拉伯语 Arabic Saudi Arabia ar" },
+  { value: "fa", label: "فارسی", englishLabel: "Persian", region: "asia", searchText: "فارسی 波斯语 Persian Iran fa" },
+  { value: "hi", label: "हिन्दी", englishLabel: "Hindi", region: "asia", searchText: "हिन्दी 印地语 Hindi India hi" },
+  { value: "en", label: "English", englishLabel: "English", region: "europe", searchText: "English 英语 United Kingdom Europe en" },
+  { value: "fr", label: "Français", englishLabel: "French", region: "europe", searchText: "Français 法语 French France fr" },
+  { value: "de", label: "Deutsch", englishLabel: "German", region: "europe", searchText: "Deutsch 德语 German Germany de" },
+  { value: "it", label: "Italiano", englishLabel: "Italian", region: "europe", searchText: "Italiano 意大利语 Italian Italy it" },
+  { value: "es", label: "Español", englishLabel: "Spanish", region: "europe", searchText: "Español 西班牙语 Spanish Spain es" },
+  { value: "pt", label: "Português", englishLabel: "Portuguese", region: "europe", searchText: "Português 葡萄牙语 Portuguese Portugal Brazil pt" },
+  { value: "ru", label: "Русский", englishLabel: "Russian", region: "europe", searchText: "Русский 俄语 Russian Russia ru" },
+  { value: "uk", label: "Українська", englishLabel: "Ukrainian", region: "europe", searchText: "Українська 乌克兰语 Ukrainian Ukraine uk" },
+  { value: "ro", label: "Română", englishLabel: "Romanian", region: "europe", searchText: "Română 罗马尼亚语 Romanian Romania ro" },
+  { value: "nl", label: "Nederlands", englishLabel: "Dutch", region: "europe", searchText: "Nederlands 荷兰语 Dutch Netherlands nl" },
+  { value: "zu", label: "isiZulu", englishLabel: "Zulu", region: "africa", searchText: "isiZulu 祖鲁语 Zulu South Africa zu" },
 ]
 
 export const LOCALE_STORAGE_KEY = "timeprint-locale"
@@ -3374,6 +3376,11 @@ Object.assign(dictionaries.zu, {
 })
 
 Object.assign(dictionaries.en, {
+  "language.searchPlaceholder": "Search languages",
+  "language.noResults": "No languages found",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Europe",
+  "language.region.africa": "Africa",
   "login.freeStart": "Start for free",
   "login.or": "or",
   "login.continue": "Continue",
@@ -3385,6 +3392,11 @@ Object.assign(dictionaries.en, {
 })
 
 Object.assign(dictionaries["zh-Hans"], {
+  "language.searchPlaceholder": "搜索语言",
+  "language.noResults": "没有找到语言",
+  "language.region.asia": "亚洲",
+  "language.region.europe": "欧洲",
+  "language.region.africa": "非洲",
   "login.freeStart": "免费开始使用",
   "login.or": "或",
   "login.continue": "继续使用",
@@ -3396,6 +3408,11 @@ Object.assign(dictionaries["zh-Hans"], {
 })
 
 Object.assign(dictionaries["zh-Hant"], {
+  "language.searchPlaceholder": "搜尋語言",
+  "language.noResults": "沒有找到語言",
+  "language.region.asia": "亞洲",
+  "language.region.europe": "歐洲",
+  "language.region.africa": "非洲",
   "login.freeStart": "免費開始使用",
   "login.or": "或",
   "login.continue": "繼續使用",
@@ -3407,6 +3424,11 @@ Object.assign(dictionaries["zh-Hant"], {
 })
 
 Object.assign(dictionaries.ja, {
+  "language.searchPlaceholder": "言語を検索",
+  "language.noResults": "言語が見つかりません",
+  "language.region.asia": "アジア",
+  "language.region.europe": "ヨーロッパ",
+  "language.region.africa": "アフリカ",
   "login.freeStart": "無料で始める",
   "login.or": "または",
   "login.continue": "続行",
@@ -3418,6 +3440,11 @@ Object.assign(dictionaries.ja, {
 })
 
 Object.assign(dictionaries.ko, {
+  "language.searchPlaceholder": "언어 검색",
+  "language.noResults": "언어를 찾을 수 없습니다",
+  "language.region.asia": "아시아",
+  "language.region.europe": "유럽",
+  "language.region.africa": "아프리카",
   "login.freeStart": "무료로 시작하기",
   "login.or": "또는",
   "login.continue": "계속 사용",
@@ -3429,6 +3456,11 @@ Object.assign(dictionaries.ko, {
 })
 
 Object.assign(dictionaries.vi, {
+  "language.searchPlaceholder": "Tìm ngôn ngữ",
+  "language.noResults": "Không tìm thấy ngôn ngữ",
+  "language.region.asia": "Châu Á",
+  "language.region.europe": "Châu Âu",
+  "language.region.africa": "Châu Phi",
   "login.freeStart": "Bắt đầu miễn phí",
   "login.or": "hoặc",
   "login.continue": "Tiếp tục",
@@ -3440,6 +3472,11 @@ Object.assign(dictionaries.vi, {
 })
 
 Object.assign(dictionaries.th, {
+  "language.searchPlaceholder": "ค้นหาภาษา",
+  "language.noResults": "ไม่พบภาษา",
+  "language.region.asia": "เอเชีย",
+  "language.region.europe": "ยุโรป",
+  "language.region.africa": "แอฟริกา",
   "login.freeStart": "เริ่มใช้ฟรี",
   "login.or": "หรือ",
   "login.continue": "ดำเนินการต่อ",
@@ -3451,6 +3488,11 @@ Object.assign(dictionaries.th, {
 })
 
 Object.assign(dictionaries.id, {
+  "language.searchPlaceholder": "Cari bahasa",
+  "language.noResults": "Bahasa tidak ditemukan",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Eropa",
+  "language.region.africa": "Afrika",
   "login.freeStart": "Mulai gratis",
   "login.or": "atau",
   "login.continue": "Lanjutkan",
@@ -3462,6 +3504,11 @@ Object.assign(dictionaries.id, {
 })
 
 Object.assign(dictionaries.ms, {
+  "language.searchPlaceholder": "Cari bahasa",
+  "language.noResults": "Tiada bahasa ditemui",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Eropah",
+  "language.region.africa": "Afrika",
   "login.freeStart": "Mula percuma",
   "login.or": "atau",
   "login.continue": "Teruskan",
@@ -3473,6 +3520,11 @@ Object.assign(dictionaries.ms, {
 })
 
 Object.assign(dictionaries.es, {
+  "language.searchPlaceholder": "Buscar idioma",
+  "language.noResults": "No se encontraron idiomas",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Europa",
+  "language.region.africa": "África",
   "login.freeStart": "Empieza gratis",
   "login.or": "o",
   "login.continue": "Continuar",
@@ -3484,6 +3536,11 @@ Object.assign(dictionaries.es, {
 })
 
 Object.assign(dictionaries.pt, {
+  "language.searchPlaceholder": "Pesquisar idiomas",
+  "language.noResults": "Nenhum idioma encontrado",
+  "language.region.asia": "Ásia",
+  "language.region.europe": "Europa",
+  "language.region.africa": "África",
   "login.freeStart": "Comece grátis",
   "login.or": "ou",
   "login.continue": "Continuar",
@@ -3495,6 +3552,11 @@ Object.assign(dictionaries.pt, {
 })
 
 Object.assign(dictionaries.ar, {
+  "language.searchPlaceholder": "ابحث عن لغة",
+  "language.noResults": "لم يتم العثور على لغات",
+  "language.region.asia": "آسيا",
+  "language.region.europe": "أوروبا",
+  "language.region.africa": "أفريقيا",
   "login.freeStart": "ابدأ مجانًا",
   "login.or": "أو",
   "login.continue": "متابعة",
@@ -3506,6 +3568,11 @@ Object.assign(dictionaries.ar, {
 })
 
 Object.assign(dictionaries.de, {
+  "language.searchPlaceholder": "Sprachen suchen",
+  "language.noResults": "Keine Sprachen gefunden",
+  "language.region.asia": "Asien",
+  "language.region.europe": "Europa",
+  "language.region.africa": "Afrika",
   "login.freeStart": "Kostenlos starten",
   "login.or": "oder",
   "login.continue": "Weiter",
@@ -3517,6 +3584,11 @@ Object.assign(dictionaries.de, {
 })
 
 Object.assign(dictionaries.fr, {
+  "language.searchPlaceholder": "Rechercher une langue",
+  "language.noResults": "Aucune langue trouvée",
+  "language.region.asia": "Asie",
+  "language.region.europe": "Europe",
+  "language.region.africa": "Afrique",
   "login.freeStart": "Commencer gratuitement",
   "login.or": "ou",
   "login.continue": "Continuer",
@@ -3528,6 +3600,11 @@ Object.assign(dictionaries.fr, {
 })
 
 Object.assign(dictionaries.it, {
+  "language.searchPlaceholder": "Cerca lingua",
+  "language.noResults": "Nessuna lingua trovata",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Europa",
+  "language.region.africa": "Africa",
   "login.freeStart": "Inizia gratis",
   "login.or": "oppure",
   "login.continue": "Continua",
@@ -3539,6 +3616,11 @@ Object.assign(dictionaries.it, {
 })
 
 Object.assign(dictionaries.fa, {
+  "language.searchPlaceholder": "جستجوی زبان",
+  "language.noResults": "زبانی پیدا نشد",
+  "language.region.asia": "آسیا",
+  "language.region.europe": "اروپا",
+  "language.region.africa": "آفریقا",
   "login.freeStart": "رایگان شروع کنید",
   "login.or": "یا",
   "login.continue": "ادامه",
@@ -3550,6 +3632,11 @@ Object.assign(dictionaries.fa, {
 })
 
 Object.assign(dictionaries.ru, {
+  "language.searchPlaceholder": "Поиск языков",
+  "language.noResults": "Языки не найдены",
+  "language.region.asia": "Азия",
+  "language.region.europe": "Европа",
+  "language.region.africa": "Африка",
   "login.freeStart": "Начать бесплатно",
   "login.or": "или",
   "login.continue": "Продолжить",
@@ -3561,6 +3648,11 @@ Object.assign(dictionaries.ru, {
 })
 
 Object.assign(dictionaries.uk, {
+  "language.searchPlaceholder": "Пошук мов",
+  "language.noResults": "Мови не знайдено",
+  "language.region.asia": "Азія",
+  "language.region.europe": "Європа",
+  "language.region.africa": "Африка",
   "login.freeStart": "Почати безкоштовно",
   "login.or": "або",
   "login.continue": "Продовжити",
@@ -3572,6 +3664,11 @@ Object.assign(dictionaries.uk, {
 })
 
 Object.assign(dictionaries.hi, {
+  "language.searchPlaceholder": "भाषा खोजें",
+  "language.noResults": "कोई भाषा नहीं मिली",
+  "language.region.asia": "एशिया",
+  "language.region.europe": "यूरोप",
+  "language.region.africa": "अफ्रीका",
   "login.freeStart": "मुफ़्त शुरू करें",
   "login.or": "या",
   "login.continue": "जारी रखें",
@@ -3583,6 +3680,11 @@ Object.assign(dictionaries.hi, {
 })
 
 Object.assign(dictionaries.zu, {
+  "language.searchPlaceholder": "Sesha ulimi",
+  "language.noResults": "Azikho izilimi ezitholakele",
+  "language.region.asia": "I-Asia",
+  "language.region.europe": "IYurophu",
+  "language.region.africa": "I-Afrika",
   "login.freeStart": "Qala mahhala",
   "login.or": "noma",
   "login.continue": "Qhubeka",
@@ -3594,6 +3696,11 @@ Object.assign(dictionaries.zu, {
 })
 
 Object.assign(dictionaries.ro, {
+  "language.searchPlaceholder": "Caută limbi",
+  "language.noResults": "Nu s-au găsit limbi",
+  "language.region.asia": "Asia",
+  "language.region.europe": "Europa",
+  "language.region.africa": "Africa",
   "login.freeStart": "Începe gratuit",
   "login.or": "sau",
   "login.continue": "Continuă",
@@ -3605,6 +3712,11 @@ Object.assign(dictionaries.ro, {
 })
 
 Object.assign(dictionaries.nl, {
+  "language.searchPlaceholder": "Talen zoeken",
+  "language.noResults": "Geen talen gevonden",
+  "language.region.asia": "Azië",
+  "language.region.europe": "Europa",
+  "language.region.africa": "Afrika",
   "login.freeStart": "Gratis beginnen",
   "login.or": "of",
   "login.continue": "Doorgaan",
