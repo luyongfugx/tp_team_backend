@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server"
 import { createSession } from "@/lib/auth"
 import { verifyGoogleIdentityToken } from "@/lib/google-auth"
 import { prisma } from "@/lib/prisma"
-import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
+import { bad, badFor, EMAIL_RE, normalizeEmail, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 
 function nameFromBody(body: Record<string, unknown>, tokenName?: string) {
@@ -20,7 +19,7 @@ export async function POST(req: Request) {
         : typeof body.idToken === "string"
           ? body.idToken.trim()
           : ""
-    if (!identityToken) return bad("缺少 Google identityToken")
+    if (!identityToken) return badFor(req, "缺少 Google identityToken")
 
     const googlePayload = await verifyGoogleIdentityToken({
       identityToken,
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
 
     const googleUserID = googlePayload.sub
     const email = normalizeEmail(googlePayload.email)
-    if (!email || !EMAIL_RE.test(email)) return bad("Google 返回的邮箱格式不正确")
+    if (!email || !EMAIL_RE.test(email)) return badFor(req, "Google 返回的邮箱格式不正确")
 
     const userName = nameFromBody(body, googlePayload.name)
     const avatar = typeof body.avatar === "string" && body.avatar ? body.avatar : googlePayload.picture
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
           } as never,
         })
 
-    const { token } = await createSession(user.id, appInstanceID)
+    const { token, expiresAt } = await createSession(user.id, appInstanceID)
     if (!existing) await createDefaultTeamIfNeeded(user)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
@@ -71,19 +70,22 @@ export async function POST(req: Request) {
     })
 
     return ok({
+      success: true,
       userID: user.id,
       userName: user.userName,
       avatar: user.avatar,
       shortName: user.shortName,
       ownerTeamCount,
       token,
+      expiresAt: expiresAt.toISOString(),
       email: user.email,
+      user: { id: user.id, email: user.email },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
     })
   } catch (err) {
     console.log("[app/user/login/google] error:", err)
     if (err instanceof Error) return bad(err.message)
-    return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
+    return serverError(req)
   }
 }

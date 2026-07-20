@@ -160,6 +160,26 @@ const apiErrorMessages: Record<string, Partial<Record<AppLocale, string>> & { en
     "zh-Hans": "创建者需要先转让团队",
     "zh-Hant": "建立者需要先轉讓團隊",
   },
+  "缺少 Google identityToken": {
+    en: "Missing Google identity token",
+    "zh-Hans": "缺少 Google identityToken",
+    "zh-Hant": "缺少 Google identityToken",
+  },
+  "Google 返回的邮箱格式不正确": {
+    en: "Google returned an invalid email address",
+    "zh-Hans": "Google 返回的邮箱格式不正确",
+    "zh-Hant": "Google 傳回的電子郵件格式不正確",
+  },
+  "Google 登录未配置 GOOGLE_CLIENT_IDS": {
+    en: "Google sign-in is not configured",
+    "zh-Hans": "Google 登录未配置 GOOGLE_CLIENT_IDS",
+    "zh-Hant": "Google 登入未設定 GOOGLE_CLIENT_IDS",
+  },
+  "Google 登录失败": {
+    en: "Google sign-in failed",
+    "zh-Hans": "Google 登录失败",
+    "zh-Hant": "Google 登入失敗",
+  },
 }
 
 Object.assign(apiErrorMessages["参数不正确"], {

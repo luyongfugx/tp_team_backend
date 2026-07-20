@@ -3373,6 +3373,248 @@ Object.assign(dictionaries.zu, {
   "home.orbit.team": "Iqembu",
 })
 
+Object.assign(dictionaries.en, {
+  "login.freeStart": "Start for free",
+  "login.or": "or",
+  "login.continue": "Continue",
+  "login.emailLogin": "Email verification code login",
+  "login.sendingEmailCode": "Sending email verification code...",
+  "login.googleLoading": "Signing in with Google...",
+  "login.googleUnavailable": "Google sign-in is not configured",
+  "login.googleFailed": "Google sign-in failed",
+})
+
+Object.assign(dictionaries["zh-Hans"], {
+  "login.freeStart": "免费开始使用",
+  "login.or": "或",
+  "login.continue": "继续使用",
+  "login.emailLogin": "邮箱验证码登陆",
+  "login.sendingEmailCode": "正在发送邮箱验证码",
+  "login.googleLoading": "正在使用 Google 登录...",
+  "login.googleUnavailable": "Google 登录未配置",
+  "login.googleFailed": "Google 登录失败",
+})
+
+Object.assign(dictionaries["zh-Hant"], {
+  "login.freeStart": "免費開始使用",
+  "login.or": "或",
+  "login.continue": "繼續使用",
+  "login.emailLogin": "電子郵件驗證碼登入",
+  "login.sendingEmailCode": "正在傳送電子郵件驗證碼",
+  "login.googleLoading": "正在使用 Google 登入...",
+  "login.googleUnavailable": "Google 登入未設定",
+  "login.googleFailed": "Google 登入失敗",
+})
+
+Object.assign(dictionaries.ja, {
+  "login.freeStart": "無料で始める",
+  "login.or": "または",
+  "login.continue": "続行",
+  "login.emailLogin": "メール認証コードでログイン",
+  "login.sendingEmailCode": "メール認証コードを送信中...",
+  "login.googleLoading": "Googleでログイン中...",
+  "login.googleUnavailable": "Googleログインが設定されていません",
+  "login.googleFailed": "Googleログインに失敗しました",
+})
+
+Object.assign(dictionaries.ko, {
+  "login.freeStart": "무료로 시작하기",
+  "login.or": "또는",
+  "login.continue": "계속 사용",
+  "login.emailLogin": "이메일 인증 코드 로그인",
+  "login.sendingEmailCode": "이메일 인증 코드를 보내는 중...",
+  "login.googleLoading": "Google로 로그인 중...",
+  "login.googleUnavailable": "Google 로그인이 설정되지 않았습니다",
+  "login.googleFailed": "Google 로그인 실패",
+})
+
+Object.assign(dictionaries.vi, {
+  "login.freeStart": "Bắt đầu miễn phí",
+  "login.or": "hoặc",
+  "login.continue": "Tiếp tục",
+  "login.emailLogin": "Đăng nhập bằng mã email",
+  "login.sendingEmailCode": "Đang gửi mã xác minh email...",
+  "login.googleLoading": "Đang đăng nhập bằng Google...",
+  "login.googleUnavailable": "Chưa cấu hình đăng nhập Google",
+  "login.googleFailed": "Đăng nhập Google thất bại",
+})
+
+Object.assign(dictionaries.th, {
+  "login.freeStart": "เริ่มใช้ฟรี",
+  "login.or": "หรือ",
+  "login.continue": "ดำเนินการต่อ",
+  "login.emailLogin": "เข้าสู่ระบบด้วยรหัสอีเมล",
+  "login.sendingEmailCode": "กำลังส่งรหัสยืนยันอีเมล...",
+  "login.googleLoading": "กำลังเข้าสู่ระบบด้วย Google...",
+  "login.googleUnavailable": "ยังไม่ได้ตั้งค่า Google Login",
+  "login.googleFailed": "เข้าสู่ระบบ Google ไม่สำเร็จ",
+})
+
+Object.assign(dictionaries.id, {
+  "login.freeStart": "Mulai gratis",
+  "login.or": "atau",
+  "login.continue": "Lanjutkan",
+  "login.emailLogin": "Login kode email",
+  "login.sendingEmailCode": "Mengirim kode verifikasi email...",
+  "login.googleLoading": "Masuk dengan Google...",
+  "login.googleUnavailable": "Login Google belum dikonfigurasi",
+  "login.googleFailed": "Login Google gagal",
+})
+
+Object.assign(dictionaries.ms, {
+  "login.freeStart": "Mula percuma",
+  "login.or": "atau",
+  "login.continue": "Teruskan",
+  "login.emailLogin": "Log masuk kod e-mel",
+  "login.sendingEmailCode": "Sedang menghantar kod pengesahan e-mel...",
+  "login.googleLoading": "Sedang log masuk dengan Google...",
+  "login.googleUnavailable": "Log masuk Google belum dikonfigurasi",
+  "login.googleFailed": "Log masuk Google gagal",
+})
+
+Object.assign(dictionaries.es, {
+  "login.freeStart": "Empieza gratis",
+  "login.or": "o",
+  "login.continue": "Continuar",
+  "login.emailLogin": "Iniciar con código por email",
+  "login.sendingEmailCode": "Enviando código de verificación por email...",
+  "login.googleLoading": "Iniciando sesión con Google...",
+  "login.googleUnavailable": "El inicio con Google no está configurado",
+  "login.googleFailed": "Error al iniciar sesión con Google",
+})
+
+Object.assign(dictionaries.pt, {
+  "login.freeStart": "Comece grátis",
+  "login.or": "ou",
+  "login.continue": "Continuar",
+  "login.emailLogin": "Login com código por e-mail",
+  "login.sendingEmailCode": "Enviando código de verificação por e-mail...",
+  "login.googleLoading": "Entrando com Google...",
+  "login.googleUnavailable": "Login com Google não configurado",
+  "login.googleFailed": "Falha no login com Google",
+})
+
+Object.assign(dictionaries.ar, {
+  "login.freeStart": "ابدأ مجانًا",
+  "login.or": "أو",
+  "login.continue": "متابعة",
+  "login.emailLogin": "تسجيل الدخول برمز البريد",
+  "login.sendingEmailCode": "جار إرسال رمز التحقق بالبريد...",
+  "login.googleLoading": "جار تسجيل الدخول باستخدام Google...",
+  "login.googleUnavailable": "لم يتم إعداد تسجيل الدخول عبر Google",
+  "login.googleFailed": "فشل تسجيل الدخول عبر Google",
+})
+
+Object.assign(dictionaries.de, {
+  "login.freeStart": "Kostenlos starten",
+  "login.or": "oder",
+  "login.continue": "Weiter",
+  "login.emailLogin": "Login mit E-Mail-Code",
+  "login.sendingEmailCode": "E-Mail-Bestätigungscode wird gesendet...",
+  "login.googleLoading": "Anmeldung mit Google...",
+  "login.googleUnavailable": "Google-Anmeldung ist nicht konfiguriert",
+  "login.googleFailed": "Google-Anmeldung fehlgeschlagen",
+})
+
+Object.assign(dictionaries.fr, {
+  "login.freeStart": "Commencer gratuitement",
+  "login.or": "ou",
+  "login.continue": "Continuer",
+  "login.emailLogin": "Connexion par code e-mail",
+  "login.sendingEmailCode": "Envoi du code de vérification e-mail...",
+  "login.googleLoading": "Connexion avec Google...",
+  "login.googleUnavailable": "La connexion Google n'est pas configurée",
+  "login.googleFailed": "Échec de la connexion Google",
+})
+
+Object.assign(dictionaries.it, {
+  "login.freeStart": "Inizia gratis",
+  "login.or": "oppure",
+  "login.continue": "Continua",
+  "login.emailLogin": "Accesso con codice email",
+  "login.sendingEmailCode": "Invio del codice di verifica email...",
+  "login.googleLoading": "Accesso con Google...",
+  "login.googleUnavailable": "Accesso Google non configurato",
+  "login.googleFailed": "Accesso Google non riuscito",
+})
+
+Object.assign(dictionaries.fa, {
+  "login.freeStart": "رایگان شروع کنید",
+  "login.or": "یا",
+  "login.continue": "ادامه",
+  "login.emailLogin": "ورود با کد ایمیل",
+  "login.sendingEmailCode": "در حال ارسال کد تأیید ایمیل...",
+  "login.googleLoading": "در حال ورود با Google...",
+  "login.googleUnavailable": "ورود با Google پیکربندی نشده است",
+  "login.googleFailed": "ورود با Google ناموفق بود",
+})
+
+Object.assign(dictionaries.ru, {
+  "login.freeStart": "Начать бесплатно",
+  "login.or": "или",
+  "login.continue": "Продолжить",
+  "login.emailLogin": "Вход по коду из email",
+  "login.sendingEmailCode": "Отправка кода подтверждения email...",
+  "login.googleLoading": "Вход через Google...",
+  "login.googleUnavailable": "Вход через Google не настроен",
+  "login.googleFailed": "Не удалось войти через Google",
+})
+
+Object.assign(dictionaries.uk, {
+  "login.freeStart": "Почати безкоштовно",
+  "login.or": "або",
+  "login.continue": "Продовжити",
+  "login.emailLogin": "Вхід за кодом з email",
+  "login.sendingEmailCode": "Надсилання коду підтвердження email...",
+  "login.googleLoading": "Вхід через Google...",
+  "login.googleUnavailable": "Вхід через Google не налаштовано",
+  "login.googleFailed": "Не вдалося увійти через Google",
+})
+
+Object.assign(dictionaries.hi, {
+  "login.freeStart": "मुफ़्त शुरू करें",
+  "login.or": "या",
+  "login.continue": "जारी रखें",
+  "login.emailLogin": "ईमेल कोड लॉगिन",
+  "login.sendingEmailCode": "ईमेल सत्यापन कोड भेजा जा रहा है...",
+  "login.googleLoading": "Google से लॉग इन हो रहा है...",
+  "login.googleUnavailable": "Google लॉगिन कॉन्फ़िगर नहीं है",
+  "login.googleFailed": "Google लॉगिन विफल रहा",
+})
+
+Object.assign(dictionaries.zu, {
+  "login.freeStart": "Qala mahhala",
+  "login.or": "noma",
+  "login.continue": "Qhubeka",
+  "login.emailLogin": "Ngena ngekhodi ye-imeyili",
+  "login.sendingEmailCode": "Kuthunyelwa ikhodi yokuqinisekisa ye-imeyili...",
+  "login.googleLoading": "Ingena nge-Google...",
+  "login.googleUnavailable": "Ukungena nge-Google akukalungiswa",
+  "login.googleFailed": "Ukungena nge-Google kwehlulekile",
+})
+
+Object.assign(dictionaries.ro, {
+  "login.freeStart": "Începe gratuit",
+  "login.or": "sau",
+  "login.continue": "Continuă",
+  "login.emailLogin": "Autentificare cu cod e-mail",
+  "login.sendingEmailCode": "Se trimite codul de verificare e-mail...",
+  "login.googleLoading": "Autentificare cu Google...",
+  "login.googleUnavailable": "Autentificarea Google nu este configurată",
+  "login.googleFailed": "Autentificarea Google a eșuat",
+})
+
+Object.assign(dictionaries.nl, {
+  "login.freeStart": "Gratis beginnen",
+  "login.or": "of",
+  "login.continue": "Doorgaan",
+  "login.emailLogin": "Inloggen met e-mailcode",
+  "login.sendingEmailCode": "E-mailverificatiecode verzenden...",
+  "login.googleLoading": "Inloggen met Google...",
+  "login.googleUnavailable": "Google-login is niet geconfigureerd",
+  "login.googleFailed": "Inloggen met Google mislukt",
+})
+
 Object.assign(dictionaries.vi, {
   "download.title": "Tải xuống Timeprint Camera",
   "download.subtitle": "Có sẵn trên thiết bị iOS và Android",
