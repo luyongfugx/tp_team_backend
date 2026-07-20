@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Globe2, Search } from "lucide-react"
 import { type AppLocale, setClientLocale, supportedLocaleOptions, t, type LocaleRegion } from "@/lib/i18n"
 
-const localeRegionOrder: LocaleRegion[] = ["asia", "europe", "africa"]
+const localeRegionOrder: LocaleRegion[] = ["asia", "europe", "africa", "northAmerica", "southAmerica", "oceania"]
 
 export function LanguageSwitcher({
   locale,
@@ -84,8 +84,8 @@ export function LanguageSwitcher({
               <div className="px-2 py-6 text-center text-sm text-muted-foreground">{t(locale, "language.noResults")}</div>
             )}
             {groupedOptions.map((group) => (
-              <section key={group.region} className="py-1">
-                <div className="px-1 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <section key={group.region} className="py-1.5">
+                <div className="mb-1 flex items-center rounded-md border-l-4 border-orange-500 bg-orange-50 px-2.5 py-1.5 text-sm font-semibold text-orange-950 shadow-sm">
                   {t(locale, `language.region.${group.region}`)}
                 </div>
                 <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-6">
