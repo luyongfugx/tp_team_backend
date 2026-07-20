@@ -138,10 +138,6 @@ function formatDate(value: string | number | null | undefined, locale: string) {
   return date.toLocaleString(localeDateCode(resolveLocale(locale)))
 }
 
-function teamAddress(team: TeamInfo) {
-  return team.projects.find((project) => project.addressInfo?.address)?.addressInfo?.address
-}
-
 function ownerName(team: TeamInfo) {
   return team.owner.userName || team.owner.email
 }
@@ -215,11 +211,13 @@ function StatItem({
   label,
   value,
   onClick,
+  valueClassName = "truncate text-xl font-semibold",
 }: {
   icon: React.ReactNode
   label: string
   value: string | number
   onClick?: () => void
+  valueClassName?: string
 }) {
   const Component = onClick ? "button" : "div"
   return (
@@ -235,7 +233,7 @@ function StatItem({
         </span>
         {onClick && <ArrowRight className="size-4 shrink-0" />}
       </div>
-      <div className="mt-2 truncate text-xl font-semibold">{value}</div>
+      <div className={`mt-2 ${valueClassName}`}>{value}</div>
     </Component>
   )
 }
@@ -915,7 +913,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   <CardTitle className="text-lg">{selectedTeam.groupName}</CardTitle>
                   <CardDescription>{t(locale, "dashboard.createdByAt", { owner: ownerName(selectedTeam), time: formatDate(selectedTeam.createdAt, locale) })}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <StatItem
                     icon={<Users className="size-4" />}
                     label={t(locale, "dashboard.memberCountLabel")}
@@ -935,7 +933,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                     onClick={() => openTeamPhotos(selectedTeam.groupID)}
                   />
                   <StatItem icon={<Building2 className="size-4" />} label={t(locale, "dashboard.teamName")} value={selectedTeam.groupName} />
-                  <StatItem icon={<MapPin className="size-4" />} label={t(locale, "dashboard.address")} value={teamAddress(selectedTeam) || t(locale, "dashboard.noAddress")} />
                 </CardContent>
               </Card>
 
@@ -1122,7 +1119,12 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   <StatItem icon={<Users className="size-4" />} label={t(locale, "dashboard.memberCountLabel")} value={selectedProject.memberCount} />
                   <StatItem icon={<Camera className="size-4" />} label={t(locale, "dashboard.photoCountLabel")} value={selectedProject.photoCount} />
                   <StatItem icon={<FolderKanban className="size-4" />} label={t(locale, "dashboard.createdAt")} value={formatDate(selectedProject.createdAt, locale)} />
-                  <StatItem icon={<MapPin className="size-4" />} label={t(locale, "dashboard.address")} value={selectedProject.addressInfo?.address || t(locale, "dashboard.noAddress")} />
+                  <StatItem
+                    icon={<MapPin className="size-4" />}
+                    label={t(locale, "dashboard.address")}
+                    value={selectedProject.addressInfo?.address || t(locale, "dashboard.noAddress")}
+                    valueClassName="whitespace-normal break-words text-sm font-semibold text-foreground"
+                  />
                 </CardContent>
               </Card>
               <Card className="rounded-lg">
