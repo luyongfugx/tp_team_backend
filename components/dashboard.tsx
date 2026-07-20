@@ -56,7 +56,7 @@ type TeamInfo = {
   groupName: string
   owner: { id: string; email: string; userName: string | null; avatar: string | null }
   createdAt: string
-  currentMember: { userID: string; role: string; roleID: number } | null
+  currentMember: { userID: string; role: string; roleID: number; photoCount: number } | null
   memberNum: number
   projectNum: number
   photoNum: number
@@ -81,6 +81,7 @@ type TeamMember = {
   avatar: string | null
   role: string
   roleID: number
+  photoCount: number
   joinedAt: string
 }
 
@@ -463,6 +464,11 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     if (!selectedTeam || view.type !== "member") return null
     return selectedTeam.members.find((member) => member.userID === view.userID) || null
   }, [selectedTeam, view])
+  const selectedCurrentMember = useMemo(() => {
+    if (!selectedTeam) return null
+    return selectedTeam.members.find((member) => member.userID === selectedTeam.currentMember?.userID) || null
+  }, [selectedTeam])
+  const isRegularTeamMember = Boolean(selectedTeam && !canManageTeam(selectedTeam, isSuperAdmin))
   const teamPageCount = Math.max(1, Math.ceil((overview?.teams.length || 0) / TEAM_PAGE_SIZE))
   const currentTeamPage = Math.min(teamPage, teamPageCount)
   const pagedTeams = useMemo(() => {
@@ -549,10 +555,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
 
   function openTeamFromList(team: TeamInfo) {
     setActiveMenu("teams")
-    if (!canManageTeam(team, isSuperAdmin) && team.currentMember?.userID) {
-      setView({ type: "member", teamID: team.groupID, userID: team.currentMember.userID })
-      return
-    }
     setView({ type: "team", teamID: team.groupID, tab: "projects" })
   }
 
@@ -928,9 +930,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   />
                   <StatItem
                     icon={<Camera className="size-4" />}
-                    label={t(locale, "dashboard.photoCountLabel")}
-                    value={selectedTeam.photoNum}
-                    onClick={() => openTeamPhotos(selectedTeam.groupID)}
+                    label={isRegularTeamMember ? t(locale, "dashboard.myTeamPhotoCountLabel") : t(locale, "dashboard.photoCountLabel")}
+                    value={isRegularTeamMember ? selectedTeam.currentMember?.photoCount ?? selectedCurrentMember?.photoCount ?? 0 : selectedTeam.photoNum}
+                    onClick={() =>
+                      isRegularTeamMember && selectedTeam.currentMember?.userID
+                        ? setView({ type: "member", teamID: selectedTeam.groupID, userID: selectedTeam.currentMember.userID })
+                        : openTeamPhotos(selectedTeam.groupID)
+                    }
                   />
                   <StatItem icon={<Building2 className="size-4" />} label={t(locale, "dashboard.teamName")} value={selectedTeam.groupName} />
                 </CardContent>
@@ -961,7 +967,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                     t(locale, "dashboard.memberCountLabel"),
                     t(locale, "dashboard.photoCountLabel"),
                     t(locale, "dashboard.createdAt"),
-                    t(locale, "dashboard.actions"),
+                    ...(!isRegularTeamMember ? [t(locale, "dashboard.actions")] : []),
                   ]}>
                     {selectedTeam.projects.map((project) => (
                       <tr key={project.projectID} className="hover:bg-muted/40">
@@ -970,11 +976,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                         <td className="px-4 py-3">{project.memberCount}</td>
                         <td className="px-4 py-3">{project.photoCount}</td>
                         <td className="px-4 py-3 text-muted-foreground">{formatDate(project.createdAt, locale)}</td>
-                        <td className="px-4 py-3">
-                          <Button variant="outline" size="sm" onClick={() => setView({ type: "project", teamID: selectedTeam.groupID, projectID: project.projectID })}>
-                            {t(locale, "dashboard.view")}
-                          </Button>
-                        </td>
+                        {!isRegularTeamMember && (
+                          <td className="px-4 py-3">
+                            <Button variant="outline" size="sm" onClick={() => setView({ type: "project", teamID: selectedTeam.groupID, projectID: project.projectID })}>
+                              {t(locale, "dashboard.view")}
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </DataTable>
@@ -1013,7 +1021,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                     t(locale, "dashboard.email"),
                     t(locale, "dashboard.role"),
                     t(locale, "dashboard.joinedAt"),
-                    t(locale, "dashboard.actions"),
+                    ...(!isRegularTeamMember ? [t(locale, "dashboard.actions")] : []),
                   ]}>
                     {selectedTeam.members.map((member) => (
                       <tr key={member.userID} className="hover:bg-muted/40">
@@ -1021,24 +1029,26 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                         <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
                         <td className="px-4 py-3">{roleNameFromID(member.roleID, locale)}</td>
                         <td className="px-4 py-3 text-muted-foreground">{formatDate(member.joinedAt, locale)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setView({ type: "member", teamID: selectedTeam.groupID, userID: member.userID })}>
-                              {t(locale, "dashboard.view")}
-                            </Button>
-                            {canManageTeam(selectedTeam, isSuperAdmin) && member.userID !== user.id && member.roleID !== 1 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deleteTeamMember(selectedTeam, member)}
-                                disabled={memberActionLoading === member.userID}
-                              >
-                                <Trash2 className="size-4" />
-                                {memberActionLoading === member.userID ? t(locale, "dashboard.deleting") : t(locale, "dashboard.delete")}
+                        {!isRegularTeamMember && (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setView({ type: "member", teamID: selectedTeam.groupID, userID: member.userID })}>
+                                {t(locale, "dashboard.view")}
                               </Button>
-                            )}
-                          </div>
-                        </td>
+                              {canManageTeam(selectedTeam, isSuperAdmin) && member.userID !== user.id && member.roleID !== 1 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteTeamMember(selectedTeam, member)}
+                                  disabled={memberActionLoading === member.userID}
+                                >
+                                  <Trash2 className="size-4" />
+                                  {memberActionLoading === member.userID ? t(locale, "dashboard.deleting") : t(locale, "dashboard.delete")}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </DataTable>
@@ -1178,14 +1188,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             <div className="space-y-4">
               <Button
                 variant="ghost"
-                onClick={() =>
-                  canManageTeam(selectedTeam, isSuperAdmin)
-                    ? setView({ type: "team", teamID: selectedTeam.groupID, tab: "members" })
-                    : setView({ type: "teams" })
-                }
+                onClick={() => setView({ type: "team", teamID: selectedTeam.groupID, tab: "members" })}
               >
                 <ArrowLeft className="size-4" />
-                {canManageTeam(selectedTeam, isSuperAdmin) ? t(locale, "dashboard.backTeamDetail") : t(locale, "dashboard.backTeamList")}
+                {t(locale, "dashboard.backTeamDetail")}
               </Button>
               <Card className="rounded-lg">
                 <CardHeader>

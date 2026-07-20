@@ -86,6 +86,7 @@ export async function GET(req: Request) {
                   userID: currentMember.userID,
                   role: roleToName(currentMember.role, locale),
                   roleID: roleToID(currentMember.role),
+                  photoCount: currentMember.photoCount,
                 }
               : null,
             memberNum: team._count.members,
@@ -99,6 +100,7 @@ export async function GET(req: Request) {
               avatar: member.user.avatar,
               role: roleToName(member.role, locale),
               roleID: roleToID(member.role),
+              photoCount: member.photoCount,
               joinedAt: member.joinedAt,
             })),
             projects: team.projects.map((project) => ({
