@@ -7,57 +7,71 @@ import { localeFromRequest, t } from "@/lib/i18n"
 export async function GET(req: Request) {
   try {
     const locale = localeFromRequest(req)
+    const url = new URL(req.url)
+    const requestedPage = Number(url.searchParams.get("page") || "1")
+    const requestedPageSize = Number(url.searchParams.get("pageSize") || "30")
+    const pageSize = Number.isFinite(requestedPageSize) && requestedPageSize > 0 ? Math.min(Math.floor(requestedPageSize), 30) : 30
+    const page = Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1
+    const skip = (page - 1) * pageSize
     const user = await requireUser(req)
     if (!user) return badFor(req, "未授权或登录已过期", 401)
 
     const superAdmin = isSuperAdmin(user)
-    const teams = await prisma.team.findMany({
-      where: superAdmin
-        ? { deletedAt: null }
-        : { deletedAt: null, members: { some: { userID: user.id } } },
-      include: {
-        owner: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
-        members: {
-          include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
-          orderBy: { joinedAt: "asc" },
-        },
-        projects: {
-          where: { deletedAt: null },
-          orderBy: { createdAt: "desc" },
-          include: { _count: { select: { members: true, photos: true } } },
-        },
-        photos: {
-          where: { deletedAt: null },
-          orderBy: { createdAt: "desc" },
-          take: 12,
-          select: {
-            photoID: true,
-            projectID: true,
-            userID: true,
-            mediaType: true,
-            timestamp: true,
-            takePhotoFormatTime: true,
-            smallURL: true,
-            largeURL: true,
-            userName: true,
-            userAvatar: true,
-            projectName: true,
-            location: true,
-            createdAt: true,
+    const teamWhere = superAdmin
+      ? { deletedAt: null }
+      : { deletedAt: null, members: { some: { userID: user.id } } }
+    const relatedTeamWhere = superAdmin ? {} : { team: teamWhere }
+    const [totalTeamCount, teams] = await Promise.all([
+      prisma.team.count({ where: teamWhere }),
+      prisma.team.findMany({
+        where: teamWhere,
+        include: {
+          owner: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
+          members: {
+            include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
+            orderBy: { joinedAt: "asc" },
+          },
+          projects: {
+            where: { deletedAt: null },
+            orderBy: { createdAt: "desc" },
+          },
+          photos: {
+            where: { deletedAt: null },
+            orderBy: { createdAt: "desc" },
+            take: 12,
+            select: {
+              photoID: true,
+              projectID: true,
+              userID: true,
+              mediaType: true,
+              timestamp: true,
+              takePhotoFormatTime: true,
+              smallURL: true,
+              largeURL: true,
+              userName: true,
+              userAvatar: true,
+              projectName: true,
+              location: true,
+              createdAt: true,
+            },
           },
         },
-        _count: { select: { members: true, projects: true, photos: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+    ])
 
     const teamIDs = teams.map((team) => team.groupID)
-    const userCount = superAdmin
-      ? await prisma.user.count({ where: { deletedAt: null } })
-      : await prisma.teamMember
-          .findMany({ where: { groupID: { in: teamIDs } }, select: { userID: true }, distinct: ["userID"] })
-          .then((items) => items.length)
-    const photoCount = await prisma.photo.count({ where: { groupID: { in: teamIDs }, deletedAt: null } })
+    const [userCount, projectCount, photoCount] = await Promise.all([
+      superAdmin
+        ? prisma.user.count({ where: { deletedAt: null } })
+        : prisma.teamMember
+            .findMany({ where: { team: teamWhere }, select: { userID: true }, distinct: ["userID"] })
+            .then((items) => items.length),
+      prisma.project.count({ where: { deletedAt: null, ...relatedTeamWhere } }),
+      prisma.photo.count({ where: { deletedAt: null, ...relatedTeamWhere } }),
+    ])
     const teamPhotoCounts = await prisma.photo.groupBy({
       by: ["groupID"],
       where: { groupID: { in: teamIDs }, deletedAt: null },
@@ -87,10 +101,16 @@ export async function GET(req: Request) {
           avatar: user.avatar,
         },
         summary: {
-          teamCount: teams.length,
+          teamCount: totalTeamCount,
           userCount,
-          projectCount: teams.reduce((sum, team) => sum + team.projects.length, 0),
+          projectCount,
           photoCount,
+        },
+        pagination: {
+          page,
+          pageSize,
+          totalCount: totalTeamCount,
+          totalPages: Math.max(1, Math.ceil(totalTeamCount / pageSize)),
         },
         teams: teams.map((team) => {
           const currentMember = team.members.find((member) => member.userID === user.id)
@@ -107,7 +127,7 @@ export async function GET(req: Request) {
                   photoCount: memberPhotoCountByID.get(`${team.groupID}:${currentMember.userID}`) || 0,
                 }
               : null,
-            memberNum: team._count.members,
+            memberNum: team.members.length,
             projectNum: team.projects.length,
             photoNum: teamPhotoCountByID.get(team.groupID) || 0,
             members: team.members.map((member) => ({
@@ -125,7 +145,6 @@ export async function GET(req: Request) {
               projectID: project.projectID,
               projectName: project.projectName,
               photoCount: projectPhotoCountByID.get(project.projectID) || 0,
-              memberCount: project._count.members,
               latestPhotoTimestamp: project.latestPhotoTimestamp,
               latestPhotoSmallURL: project.latestPhotoSmallURL,
               addressInfo: {

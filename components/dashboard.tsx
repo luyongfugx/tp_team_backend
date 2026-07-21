@@ -34,7 +34,7 @@ interface DashboardProps {
 }
 
 type AdminRole = "SUPER_ADMIN" | "TEAM_OWNER"
-const TEAM_PAGE_SIZE = 50
+const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 type MainMenu = "teams" | "settings"
 type DetailView =
@@ -48,6 +48,7 @@ type Overview = {
   role: AdminRole
   currentUser: { id: string; email: string; userName: string | null; avatar: string | null }
   summary: { teamCount: number; userCount: number; projectCount: number; photoCount: number }
+  pagination: { page: number; pageSize: number; totalCount: number; totalPages: number }
   teams: TeamInfo[]
 }
 
@@ -89,7 +90,6 @@ type TeamProject = {
   projectID: number
   projectName: string
   photoCount: number
-  memberCount: number
   latestPhotoSmallURL: string | null
   latestPhotoTimestamp?: number | null
   createdAt: string
@@ -483,19 +483,17 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     return []
   }, [selectedTeam, selectedProject, selectedMember, teamPhotos, view])
   const activePhotoIndex = activePhoto ? activePhotoList.findIndex((photo) => photo.photoID === activePhoto.photoID) : -1
-  const teamPageCount = Math.max(1, Math.ceil((overview?.teams.length || 0) / TEAM_PAGE_SIZE))
-  const currentTeamPage = Math.min(teamPage, teamPageCount)
-  const pagedTeams = useMemo(() => {
-    if (!overview) return []
-    const start = (currentTeamPage - 1) * TEAM_PAGE_SIZE
-    return overview.teams.slice(start, start + TEAM_PAGE_SIZE)
-  }, [currentTeamPage, overview])
+  const teamPageCount = Math.max(1, overview?.pagination.totalPages || 1)
+  const currentTeamPage = overview?.pagination.page || teamPage
 
   async function loadOverview() {
     setLoading(true)
     setMessage("")
     try {
-      const res = await fetch("/api/admin/overview", {
+      const url = new URL("/api/admin/overview", window.location.origin)
+      url.searchParams.set("page", String(teamPage))
+      url.searchParams.set("pageSize", String(TEAM_PAGE_SIZE))
+      const res = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
       })
       const data = await res.json()
@@ -726,7 +724,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   useEffect(() => {
     loadOverview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, locale])
+  }, [token, locale, teamPage])
 
   useEffect(() => {
     setTeamPhotos({})
@@ -853,19 +851,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 t(locale, "dashboard.teamName"),
                 t(locale, "dashboard.createdAt"),
                 t(locale, "dashboard.ownerName"),
-                t(locale, "dashboard.memberCountLabel"),
-                t(locale, "dashboard.projectCountLabel"),
-                t(locale, "dashboard.photoCountLabel"),
                 t(locale, "dashboard.actions"),
               ]}>
-                {pagedTeams.map((team) => (
+                {overview.teams.map((team) => (
                   <tr key={team.groupID} className="hover:bg-muted/40">
                     <td className="px-4 py-3 font-medium">{team.groupName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(team.createdAt, locale)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{ownerName(team)}</td>
-                    <td className="px-4 py-3">{team.memberNum}</td>
-                    <td className="px-4 py-3">{team.projectNum}</td>
-                    <td className="px-4 py-3">{team.photoNum}</td>
                     <td className="px-4 py-3">
                       <Button variant="outline" size="sm" onClick={() => openTeamFromList(team)}>
                         {t(locale, "dashboard.view")}
@@ -874,15 +866,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   </tr>
                 ))}
               </DataTable>
-              {overview.teams.length === 0 && <EmptyState>{t(locale, "dashboard.noTeams")}</EmptyState>}
-              {overview.teams.length > 0 && (
+              {overview.pagination.totalCount === 0 && <EmptyState>{t(locale, "dashboard.noTeams")}</EmptyState>}
+              {overview.pagination.totalCount > 0 && (
                 <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                   <span>
                     {t(locale, "dashboard.teamListPageSummary", {
                       page: currentTeamPage,
                       totalPages: teamPageCount,
-                      count: overview.teams.length,
-                      pageSize: TEAM_PAGE_SIZE,
+                      count: overview.pagination.totalCount,
+                      pageSize: overview.pagination.pageSize,
                     })}
                   </span>
                   <div className="flex items-center gap-2">
@@ -1144,8 +1136,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   <CardTitle className="text-lg">{selectedProject.projectName}</CardTitle>
                   <CardDescription>{selectedTeam.groupName}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <StatItem icon={<Users className="size-4" />} label={t(locale, "dashboard.memberCountLabel")} value={selectedProject.memberCount} />
+                <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <StatItem icon={<Camera className="size-4" />} label={t(locale, "dashboard.photoCountLabel")} value={selectedProject.photoCount} />
                   <StatItem icon={<FolderKanban className="size-4" />} label={t(locale, "dashboard.createdAt")} value={formatDate(selectedProject.createdAt, locale)} />
                   <StatItem
