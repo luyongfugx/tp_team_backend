@@ -25776,6 +25776,8 @@ Object.assign(dictionaries["zu-ZA"], { "dashboard.myTeamPhotoCountLabel": "Isiba
 
 for (const locale of supportedLocales) {
   dictionaries[locale] = { ...dictionaries.en, ...dictionaries[locale] }
+  dictionaries[locale]["dashboard.previousPhoto"] = dictionaries[locale]["dashboard.prevPage"]
+  dictionaries[locale]["dashboard.nextPhoto"] = dictionaries[locale]["dashboard.nextPage"]
 }
 
 function normalizeLocaleToken(value: string) {

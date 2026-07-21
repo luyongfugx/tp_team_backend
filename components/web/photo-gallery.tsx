@@ -230,6 +230,7 @@ export function WebPhotoGallery({
                       )}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-2">
                         <p className="truncate text-xs font-medium text-white/90">{photo.timeText}</p>
+                        <p className="truncate text-xs text-white/75">{photo.userName || ""}</p>
                       </div>
                       <a
                         href={photo.downloadURL}

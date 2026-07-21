@@ -313,7 +313,7 @@ function PhotoDayGrid({
                 )}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-2">
                   <p className="truncate text-xs font-medium text-white">{photo.timeText}</p>
-                  <p className="truncate text-xs text-white/75">{photo.projectName || photo.userName || photo.location || ""}</p>
+                  <p className="truncate text-xs text-white/75">{photo.userName || t(locale, "dashboard.notSet")}</p>
                 </div>
                 <a
                   href={photo.downloadURL}
@@ -469,6 +469,20 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     return selectedTeam.members.find((member) => member.userID === selectedTeam.currentMember?.userID) || null
   }, [selectedTeam])
   const isRegularTeamMember = Boolean(selectedTeam && !canManageTeam(selectedTeam, isSuperAdmin))
+  const activePhotoList = useMemo(() => {
+    if (!selectedTeam) return []
+    if (view.type === "teamPhotos") {
+      return teamPhotos[photoCacheKey(selectedTeam.groupID)]?.days.flatMap((day) => day.photos) || []
+    }
+    if (view.type === "project" && selectedProject) {
+      return teamPhotos[photoCacheKey(selectedTeam.groupID, { projectID: selectedProject.projectID })]?.days.flatMap((day) => day.photos) || []
+    }
+    if (view.type === "member" && selectedMember) {
+      return teamPhotos[photoCacheKey(selectedTeam.groupID, { userID: selectedMember.userID })]?.days.flatMap((day) => day.photos) || []
+    }
+    return []
+  }, [selectedTeam, selectedProject, selectedMember, teamPhotos, view])
+  const activePhotoIndex = activePhoto ? activePhotoList.findIndex((photo) => photo.photoID === activePhoto.photoID) : -1
   const teamPageCount = Math.max(1, Math.ceil((overview?.teams.length || 0) / TEAM_PAGE_SIZE))
   const currentTeamPage = Math.min(teamPage, teamPageCount)
   const pagedTeams = useMemo(() => {
@@ -556,6 +570,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   function openTeamFromList(team: TeamInfo) {
     setActiveMenu("teams")
     setView({ type: "team", teamID: team.groupID, tab: "projects" })
+  }
+
+  function showAdjacentPhoto(direction: -1 | 1) {
+    if (!activePhoto || activePhotoList.length <= 1) return
+    const currentIndex = activePhotoIndex >= 0 ? activePhotoIndex : 0
+    const nextIndex = (currentIndex + direction + activePhotoList.length) % activePhotoList.length
+    setActivePhoto(activePhotoList[nextIndex])
   }
 
   function photoIDsForKey(key: string) {
@@ -964,7 +985,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   <DataTable columns={[
                     t(locale, "dashboard.projectName"),
                     t(locale, "dashboard.address"),
-                    t(locale, "dashboard.memberCountLabel"),
                     t(locale, "dashboard.photoCountLabel"),
                     t(locale, "dashboard.createdAt"),
                     ...(!isRegularTeamMember ? [t(locale, "dashboard.actions")] : []),
@@ -973,7 +993,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                       <tr key={project.projectID} className="hover:bg-muted/40">
                         <td className="px-4 py-3 font-medium">{project.projectName}</td>
                         <td className="px-4 py-3 text-muted-foreground">{project.addressInfo?.address || t(locale, "dashboard.noAddress")}</td>
-                        <td className="px-4 py-3">{project.memberCount}</td>
                         <td className="px-4 py-3">{project.photoCount}</td>
                         <td className="px-4 py-3 text-muted-foreground">{formatDate(project.createdAt, locale)}</td>
                         {!isRegularTeamMember && (
@@ -1287,7 +1306,27 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {t(locale, "web.download")}
               </a>
             </div>
-            <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-4">
+            <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-4">
+              {activePhotoList.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => showAdjacentPhoto(-1)}
+                    className="absolute left-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/90 text-black shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:left-6"
+                    aria-label={t(locale, "dashboard.previousPhoto")}
+                  >
+                    <ChevronLeft className="size-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => showAdjacentPhoto(1)}
+                    className="absolute right-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/90 text-black shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-6"
+                    aria-label={t(locale, "dashboard.nextPhoto")}
+                  >
+                    <ChevronRight className="size-6" />
+                  </button>
+                </>
+              )}
               {activePhoto.imageURL ? (
                 <img
                   src={activePhoto.imageURL}

@@ -58,6 +58,24 @@ export async function GET(req: Request) {
           .findMany({ where: { groupID: { in: teamIDs } }, select: { userID: true }, distinct: ["userID"] })
           .then((items) => items.length)
     const photoCount = await prisma.photo.count({ where: { groupID: { in: teamIDs }, deletedAt: null } })
+    const teamPhotoCounts = await prisma.photo.groupBy({
+      by: ["groupID"],
+      where: { groupID: { in: teamIDs }, deletedAt: null },
+      _count: { _all: true },
+    })
+    const projectPhotoCounts = await prisma.photo.groupBy({
+      by: ["projectID"],
+      where: { groupID: { in: teamIDs }, projectID: { not: null }, deletedAt: null },
+      _count: { _all: true },
+    })
+    const memberPhotoCounts = await prisma.photo.groupBy({
+      by: ["groupID", "userID"],
+      where: { groupID: { in: teamIDs }, deletedAt: null },
+      _count: { _all: true },
+    })
+    const teamPhotoCountByID = new Map(teamPhotoCounts.map((item) => [item.groupID, item._count._all]))
+    const projectPhotoCountByID = new Map(projectPhotoCounts.map((item) => [item.projectID, item._count._all]))
+    const memberPhotoCountByID = new Map(memberPhotoCounts.map((item) => [`${item.groupID}:${item.userID}`, item._count._all]))
 
     return ok(
       jsonSafe({
@@ -71,7 +89,7 @@ export async function GET(req: Request) {
         summary: {
           teamCount: teams.length,
           userCount,
-          projectCount: teams.reduce((sum, team) => sum + team._count.projects, 0),
+          projectCount: teams.reduce((sum, team) => sum + team.projects.length, 0),
           photoCount,
         },
         teams: teams.map((team) => {
@@ -86,12 +104,12 @@ export async function GET(req: Request) {
                   userID: currentMember.userID,
                   role: roleToName(currentMember.role, locale),
                   roleID: roleToID(currentMember.role),
-                  photoCount: currentMember.photoCount,
+                  photoCount: memberPhotoCountByID.get(`${team.groupID}:${currentMember.userID}`) || 0,
                 }
               : null,
             memberNum: team._count.members,
-            projectNum: team._count.projects,
-            photoNum: team._count.photos,
+            projectNum: team.projects.length,
+            photoNum: teamPhotoCountByID.get(team.groupID) || 0,
             members: team.members.map((member) => ({
               userID: member.userID,
               email: member.user.email,
@@ -100,13 +118,13 @@ export async function GET(req: Request) {
               avatar: member.user.avatar,
               role: roleToName(member.role, locale),
               roleID: roleToID(member.role),
-              photoCount: member.photoCount,
+              photoCount: memberPhotoCountByID.get(`${team.groupID}:${member.userID}`) || 0,
               joinedAt: member.joinedAt,
             })),
             projects: team.projects.map((project) => ({
               projectID: project.projectID,
               projectName: project.projectName,
-              photoCount: project._count.photos,
+              photoCount: projectPhotoCountByID.get(project.projectID) || 0,
               memberCount: project._count.members,
               latestPhotoTimestamp: project.latestPhotoTimestamp,
               latestPhotoSmallURL: project.latestPhotoSmallURL,

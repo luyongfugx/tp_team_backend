@@ -8,6 +8,7 @@ const photoSelect = {
   photoID: true,
   timestamp: true,
   takePhotoFormatTime: true,
+  takePhotoTimezoneID: true,
   smallURL: true,
   largeURL: true,
   localPhotoName: true,
@@ -27,34 +28,76 @@ function photoDate(photo: { timestamp: bigint | number; takePhotoFormatTime: str
   return Number.isFinite(parsed) ? new Date(parsed) : photo.createdAt
 }
 
-function formatDate(date: Date, localeInput: string) {
+function parseOffsetMinutes(timeZone: string) {
+  const trimmed = timeZone.trim()
+  if (/^(GMT|UTC|Z)$/i.test(trimmed)) return 0
+  const match = trimmed.match(/^(?:GMT|UTC)?([+-])(\d{1,2})(?::?(\d{2}))?$/i)
+  if (!match) return null
+  const hours = Number(match[2])
+  const minutes = Number(match[3] ?? 0)
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return null
+  return (match[1] === "-" ? -1 : 1) * (hours * 60 + minutes)
+}
+
+function validIanaTimeZone(timeZone: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date())
+    return true
+  } catch {
+    return false
+  }
+}
+
+function photoTimeZone(timeZone: string | null | undefined) {
+  const value = typeof timeZone === "string" && timeZone.trim() ? timeZone.trim() : ""
+  if (value && (parseOffsetMinutes(value) != null || validIanaTimeZone(value))) return value
+  return "Asia/Shanghai"
+}
+
+function formatInPhotoTimeZone(date: Date, localeInput: string, timeZoneInput: string, options: Intl.DateTimeFormatOptions) {
+  const offsetMinutes = parseOffsetMinutes(timeZoneInput)
+  const zonedDate = offsetMinutes == null ? date : new Date(date.getTime() + offsetMinutes * 60 * 1000)
+  const timeZone = offsetMinutes == null ? timeZoneInput : "UTC"
+  return new Intl.DateTimeFormat(localeDateCode(resolveLocale(localeInput)), {
+    timeZone,
+    ...options,
+  }).format(zonedDate)
+}
+
+function formatDate(date: Date, localeInput: string, timeZoneInput: string) {
   const locale = resolveLocale(localeInput)
   const dateLocale = localeDateCode(locale)
+  const offsetMinutes = parseOffsetMinutes(timeZoneInput)
+  const zonedDate = offsetMinutes == null ? date : new Date(date.getTime() + offsetMinutes * 60 * 1000)
+  const timeZone = offsetMinutes == null ? timeZoneInput : "UTC"
   if (locale === "zh-Hans" || locale === "zh-Hant") {
     const parts = new Intl.DateTimeFormat(dateLocale, {
-      timeZone: "Asia/Shanghai",
+      timeZone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).formatToParts(date)
+    }).formatToParts(zonedDate)
     const get = (type: string) => parts.find((part) => part.type === type)?.value || ""
     return `${get("year")} 年 ${get("month")} 月 ${get("day")} 日`
   }
   return new Intl.DateTimeFormat(dateLocale, {
-    timeZone: "Asia/Shanghai",
+    timeZone,
     year: "numeric",
     month: "short",
     day: "2-digit",
-  }).format(date)
+  }).format(zonedDate)
 }
 
-function formatTime(date: Date, localeInput: string) {
-  return new Intl.DateTimeFormat(localeDateCode(resolveLocale(localeInput)), {
-    timeZone: "Asia/Shanghai",
+function formatDateTime(date: Date, localeInput: string, timeZoneInput: string) {
+  return formatInPhotoTimeZone(date, localeInput, timeZoneInput, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
-  }).format(date)
+  })
 }
 
 export async function GET(req: Request) {
@@ -121,7 +164,8 @@ export async function GET(req: Request) {
     const grouped = new Map<string, Array<Record<string, unknown>>>()
     for (const photo of photos) {
       const date = photoDate(photo)
-      const dateText = formatDate(date, locale)
+      const timeZone = photoTimeZone(photo.takePhotoTimezoneID)
+      const dateText = formatDate(date, locale, timeZone)
       const imageURL = resolvePhotoURL(photo.largeURL || photo.smallURL)
       const items = grouped.get(dateText) || []
       items.push({
@@ -133,7 +177,8 @@ export async function GET(req: Request) {
         location: photo.location,
         userName: photo.userName,
         projectName: photo.projectName,
-        timeText: formatTime(date, locale),
+        timeText: formatDateTime(date, locale, timeZone),
+        timeZone,
       })
       grouped.set(dateText, items)
     }
