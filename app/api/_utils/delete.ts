@@ -7,6 +7,7 @@ type TxWithTeamInviteCode = Tx & {
   teamFeedPhoto: { deleteMany: (args: unknown) => Promise<unknown> }
   teamFeedComment: { deleteMany: (args: unknown) => Promise<unknown> }
   teamFeedLike: { deleteMany: (args: unknown) => Promise<unknown> }
+  teamSetting: { deleteMany: (args: unknown) => Promise<unknown> }
 }
 
 export async function deleteTeamData(tx: Tx, groupID: string) {
@@ -20,6 +21,7 @@ export async function deleteTeamData(tx: Tx, groupID: string) {
   await tx.photoShare.deleteMany({ where: { groupID } })
   await tx.photoPackageTask.deleteMany({ where: { groupID } })
   await tx.photoPdfSetting.deleteMany({ where: { groupID } })
+  await (tx as TxWithTeamInviteCode).teamSetting.deleteMany({ where: { groupID } })
   await tx.teamInviteLink.deleteMany({ where: { groupID } })
   await (tx as TxWithTeamInviteCode).teamInviteCode.deleteMany({ where: { groupID } })
   await tx.teamEmailInvite.deleteMany({ where: { groupID } })

@@ -1,7 +1,7 @@
 import { randomInt } from "crypto"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { bad, ok, readBody, requireTeamManager, requireUser, roleIDToRole, roleToID, roleToName } from "@/app/api/_utils/api"
+import { bad, ok, readBody, requireTeamMember, requireUser, roleIDToRole, roleToID, roleToName } from "@/app/api/_utils/api"
 
 type TeamInviteCodeDelegate = {
   findFirst: (args: unknown) => Promise<{
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     const body = await readBody(req)
     const groupID = typeof body.groupID === "string" ? body.groupID : ""
-    if (!(await requireTeamManager(groupID, user.id))) return bad("无团队管理权限", 403)
+    if (!(await requireTeamMember(groupID, user.id))) return bad("无团队访问权限", 403)
 
     const now = new Date()
     const existing = await teamInviteCode().findFirst({

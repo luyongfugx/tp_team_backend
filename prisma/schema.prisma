@@ -93,6 +93,7 @@ model Team {
   inviteCodes            TeamInviteCode[]
   emailInvites           TeamEmailInvite[]
   pdfSetting             PhotoPdfSetting?
+  settings               TeamSetting[]
   photos                 Photo[]
   feeds                  TeamFeed[]
   feedPhotos             TeamFeedPhoto[]
@@ -187,6 +188,20 @@ model PhotoPdfSetting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   team      Team     @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+}
+
+model TeamSetting {
+  id        String   @id @default(cuid())
+  groupID   String
+  name      String
+  value     Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+
+  @@unique([groupID, name])
+  @@index([groupID])
+  @@index([name])
 }
 
 model Project {

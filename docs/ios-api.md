@@ -737,6 +737,235 @@ POST group/user/setting/update
 }
 ```
 
+### 团队级设置
+
+团队级设置用于保存适用于整个团队的多项配置，例如“照片来源与上传权限”“自动保存到相册策略”等。每一项设置是一条记录，按 `groupID + name` 唯一。
+
+字段：
+
+|字段|说明|
+|---|---|
+|`id`|设置记录 ID|
+|`groupID`|所属团队 ID|
+|`name`|设置名称，客户端传入，建议使用英文 key，例如 `photoUploadPermission`|
+|`value`|设置值，JSON 类型，可以是 string、number、boolean、object、array 或 null|
+|`createdAt`|创建时间|
+|`updatedAt`|更新时间|
+
+`name` 规则：必须以英文字母开头，最多 64 个字符；允许英文字母、数字、下划线、点、冒号、短横线。
+
+这些接口使用固定响应格式：
+
+成功：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {}
+}
+```
+
+失败：
+
+```json
+{
+  "code": 400,
+  "message": "参数不正确",
+  "data": null
+}
+```
+
+权限：
+
+|接口|权限|
+|---|---|
+|`group/setting/list`|团队成员可读|
+|`group/setting/query`|团队成员可读|
+|`group/setting/create`|团队创建者 / 管理员|
+|`group/setting/update`|团队创建者 / 管理员|
+|`group/setting/delete`|团队创建者 / 管理员|
+
+#### 设置列表
+
+```text
+POST group/setting/list
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "names": ["photoUploadPermission", "autoSaveAlbum"]
+}
+```
+
+说明：`names` 可选；不传或为空时返回该团队所有设置。
+
+响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "settings": [
+      {
+        "id": "setting_xxx",
+        "groupID": "group_xxx",
+        "name": "photoUploadPermission",
+        "value": "timeprint_photo_only",
+        "createdAt": "2026-07-23T00:00:00.000Z",
+        "updatedAt": "2026-07-23T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+#### 查询单项设置
+
+```text
+POST group/setting/query
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "name": "photoUploadPermission"
+}
+```
+
+响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "setting": {
+      "id": "setting_xxx",
+      "groupID": "group_xxx",
+      "name": "photoUploadPermission",
+      "value": "timeprint_photo_only",
+      "createdAt": "2026-07-23T00:00:00.000Z",
+      "updatedAt": "2026-07-23T00:00:00.000Z"
+    }
+  }
+}
+```
+
+#### 创建设置
+
+```text
+POST group/setting/create
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "name": "photoUploadPermission",
+  "value": "timeprint_photo_only"
+}
+```
+
+说明：如果同一团队下 `name` 已存在，返回 `设置已存在`。需要允许覆盖时请使用更新接口。
+
+响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "setting": {
+      "id": "setting_xxx",
+      "groupID": "group_xxx",
+      "name": "photoUploadPermission",
+      "value": "timeprint_photo_only",
+      "createdAt": "2026-07-23T00:00:00.000Z",
+      "updatedAt": "2026-07-23T00:00:00.000Z"
+    }
+  }
+}
+```
+
+#### 更新设置
+
+```text
+POST group/setting/update
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "name": "photoUploadPermission",
+  "value": "timeprint_photo_only"
+}
+```
+
+说明：更新接口是 upsert 语义；如果记录不存在会自动创建。
+
+响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "setting": {
+      "id": "setting_xxx",
+      "groupID": "group_xxx",
+      "name": "photoUploadPermission",
+      "value": "timeprint_photo_only",
+      "createdAt": "2026-07-23T00:00:00.000Z",
+      "updatedAt": "2026-07-23T00:00:00.000Z"
+    }
+  }
+}
+```
+
+#### 删除设置
+
+```text
+POST group/setting/delete
+```
+
+请求：
+
+```json
+{
+  "groupID": "group_xxx",
+  "name": "photoUploadPermission"
+}
+```
+
+响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {}
+}
+```
+
+示例设置值：
+
+```json
+{
+  "photoUploadPermission": "timeprint_photo_only",
+  "autoSaveAlbum": "save_to_device"
+}
+```
+
 ### 退出团队
 
 ```text
