@@ -851,6 +851,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 t(locale, "dashboard.teamName"),
                 t(locale, "dashboard.createdAt"),
                 t(locale, "dashboard.ownerName"),
+                t(locale, "dashboard.memberCountLabel"),
                 t(locale, "dashboard.actions"),
               ]}>
                 {overview.teams.map((team) => (
@@ -858,6 +859,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                     <td className="px-4 py-3 font-medium">{team.groupName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(team.createdAt, locale)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{ownerName(team)}</td>
+                    <td className="px-4 py-3">{team.memberNum}</td>
                     <td className="px-4 py-3">
                       <Button variant="outline" size="sm" onClick={() => openTeamFromList(team)}>
                         {t(locale, "dashboard.view")}

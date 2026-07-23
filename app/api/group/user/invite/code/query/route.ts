@@ -49,6 +49,22 @@ type InviteWithTeam = {
   }
 }
 
+type TeamCodeInviteWithTeam = {
+  code: string
+  role: TeamRole
+  roleID: number
+  expiresAt: Date | null
+  disabledAt: Date | null
+  createdAt: Date
+  team: {
+    groupID: string
+    groupName: string
+    deletedAt: Date | null
+    owner: UserSummary
+    _count: { members: number }
+  }
+}
+
 async function queryInvite(code: string) {
   const invite = (await prisma.teamEmailInvite.findFirst({
     where: { inviteCode: code } as never,
@@ -105,6 +121,48 @@ async function queryInvite(code: string) {
   }
 }
 
+async function queryTeamCodeInvite(code: string) {
+  const invite = (await prisma.teamInviteCode.findFirst({
+    where: {
+      code,
+      disabledAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      team: { deletedAt: null },
+    } as never,
+    include: {
+      team: {
+        include: {
+          owner: { select: { id: true, userName: true, shortName: true, avatar: true, email: true } },
+          _count: { select: { members: true } },
+        },
+      },
+    },
+  })) as TeamCodeInviteWithTeam | null
+  if (!invite || invite.team.deletedAt) return null
+
+  return {
+    inviteCode: invite.code,
+    teamCode: invite.code,
+    inviteLinkWay: "TEAM_CODE",
+    role: roleToName(invite.role),
+    roleID: roleToID(invite.role),
+    isExpired: false,
+    isAccepted: false,
+    canJoin: true,
+    createdAt: invite.createdAt,
+    expiresAt: invite.expiresAt,
+    acceptedAt: null,
+    inviter: invite.team.owner,
+    invitedUser: null,
+    team: {
+      groupID: invite.team.groupID,
+      groupName: invite.team.groupName,
+      memberNum: invite.team._count.members,
+      owner: invite.team.owner,
+    },
+  }
+}
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders })
 }
@@ -114,7 +172,7 @@ export async function GET(req: Request) {
     const code = normalizeInviteCode(new URL(req.url).searchParams.get("code"))
     if (!code) return json({ error: "请输入有效的邀请码" }, 400)
 
-    const invite = await queryInvite(code)
+    const invite = (await queryInvite(code)) || (await queryTeamCodeInvite(code))
     if (!invite) return json({ error: "邀请不存在或已失效" }, 404)
     return json({ invite })
   } catch (err) {
@@ -129,7 +187,7 @@ export async function POST(req: Request) {
     const code = normalizeInviteCode(body.code)
     if (!code) return json({ error: "请输入有效的邀请码" }, 400)
 
-    const invite = await queryInvite(code)
+    const invite = (await queryInvite(code)) || (await queryTeamCodeInvite(code))
     if (!invite) return json({ error: "邀请不存在或已失效" }, 404)
     return json({ invite })
   } catch (err) {

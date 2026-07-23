@@ -1143,6 +1143,8 @@ POST group/user/invite/code/query
 }
 ```
 
+如果 `code` 命中团队码，响应中的 `inviteLinkWay` 为 `TEAM_CODE`，并同时返回 `inviteCode` 和 `teamCode`，二者值相同，客户端可继续使用 `inviteCode` 解码。
+
 响应：
 
 ```json

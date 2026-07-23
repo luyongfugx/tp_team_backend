@@ -4,6 +4,45 @@ import { badFor, jsonSafe, ok, requireUser, roleToID, roleToName } from "@/app/a
 import { isSuperAdmin } from "@/app/api/_utils/admin"
 import { localeFromRequest, t } from "@/lib/i18n"
 
+const TEAM_MEMBER_COUNT_CACHE_TTL_MS = 2 * 60 * 60 * 1000
+
+const globalForOverviewCache = globalThis as unknown as {
+  teamMemberCountCache: Map<string, { count: number; expiresAt: number }> | undefined
+}
+
+async function getTeamMemberCounts(groupIDs: string[]) {
+  const now = Date.now()
+  const cache = globalForOverviewCache.teamMemberCountCache ?? new Map<string, { count: number; expiresAt: number }>()
+  globalForOverviewCache.teamMemberCountCache = cache
+
+  const counts = new Map<string, number>()
+  const missingGroupIDs: string[] = []
+  for (const groupID of groupIDs) {
+    const cached = cache.get(groupID)
+    if (cached && cached.expiresAt > now) {
+      counts.set(groupID, cached.count)
+    } else {
+      missingGroupIDs.push(groupID)
+    }
+  }
+
+  if (missingGroupIDs.length > 0) {
+    const freshCounts = await prisma.teamMember.groupBy({
+      by: ["groupID"],
+      where: { groupID: { in: missingGroupIDs } },
+      _count: { _all: true },
+    })
+    const freshCountByGroupID = new Map(freshCounts.map((item) => [item.groupID, item._count._all]))
+    for (const groupID of missingGroupIDs) {
+      const count = freshCountByGroupID.get(groupID) || 0
+      counts.set(groupID, count)
+      cache.set(groupID, { count, expiresAt: now + TEAM_MEMBER_COUNT_CACHE_TTL_MS })
+    }
+  }
+
+  return counts
+}
+
 export async function GET(req: Request) {
   try {
     const locale = localeFromRequest(req)
@@ -90,6 +129,7 @@ export async function GET(req: Request) {
     const teamPhotoCountByID = new Map(teamPhotoCounts.map((item) => [item.groupID, item._count._all]))
     const projectPhotoCountByID = new Map(projectPhotoCounts.map((item) => [item.projectID, item._count._all]))
     const memberPhotoCountByID = new Map(memberPhotoCounts.map((item) => [`${item.groupID}:${item.userID}`, item._count._all]))
+    const teamMemberCountByID = await getTeamMemberCounts(teamIDs)
 
     return ok(
       jsonSafe({
@@ -127,7 +167,7 @@ export async function GET(req: Request) {
                   photoCount: memberPhotoCountByID.get(`${team.groupID}:${currentMember.userID}`) || 0,
                 }
               : null,
-            memberNum: team.members.length,
+            memberNum: teamMemberCountByID.get(team.groupID) ?? team.members.length,
             projectNum: team.projects.length,
             photoNum: teamPhotoCountByID.get(team.groupID) || 0,
             members: team.members.map((member) => ({
