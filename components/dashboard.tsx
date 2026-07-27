@@ -10,6 +10,7 @@ import {
   Download,
   FolderKanban,
   ImageOff,
+  Inbox,
   LogOut,
   Mail,
   MapPin,
@@ -36,7 +37,8 @@ interface DashboardProps {
 type AdminRole = "SUPER_ADMIN" | "TEAM_OWNER"
 const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
-type MainMenu = "teams" | "settings"
+const DELETE_REQUEST_PAGE_SIZE = 30
+type MainMenu = "teams" | "settings" | "deleteRequests"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -130,6 +132,22 @@ type TeamPhotosPayload = {
   pageSize: number
   totalPages: number
   days: TeamPhotoDay[]
+}
+
+type AccountDeletionRequest = {
+  id: string
+  email: string
+  status: string
+  locale: string | null
+  ip: string | null
+  userAgent: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+type AccountDeletionRequestsPayload = {
+  requests: AccountDeletionRequest[]
+  pagination: { page: number; pageSize: number; totalCount: number; totalPages: number }
 }
 
 function formatDate(value: string | number | null | undefined, locale: string) {
@@ -450,6 +468,9 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [downloadingZip, setDownloadingZip] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [memberActionLoading, setMemberActionLoading] = useState<"" | "invite" | string>("")
+  const [deleteRequests, setDeleteRequests] = useState<AccountDeletionRequestsPayload | null>(null)
+  const [deleteRequestPage, setDeleteRequestPage] = useState(1)
+  const [deleteRequestsLoading, setDeleteRequestsLoading] = useState(false)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
   const selectedTeam = useMemo(() => {
@@ -515,6 +536,31 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {})
     onLogout()
+  }
+
+  async function loadDeleteRequests(page = deleteRequestPage) {
+    if (!isSuperAdmin) return
+    setDeleteRequestsLoading(true)
+    setMessage("")
+    try {
+      const url = new URL("/api/admin/account-deletion-requests", window.location.origin)
+      url.searchParams.set("page", String(page))
+      url.searchParams.set("pageSize", String(DELETE_REQUEST_PAGE_SIZE))
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage(data.error || t(locale, "common.sendFailed"))
+        return
+      }
+      setDeleteRequests(data)
+      setDeleteRequestPage(data.pagination?.page || page)
+    } catch {
+      setMessage(t(locale, "common.networkError"))
+    } finally {
+      setDeleteRequestsLoading(false)
+    }
   }
 
   async function loadPhotos(teamID: string, options?: { projectID?: number; userID?: string; page?: number }) {
@@ -758,6 +804,12 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu, view, token, locale])
 
+  useEffect(() => {
+    if (activeMenu !== "deleteRequests" || !isSuperAdmin) return
+    loadDeleteRequests(deleteRequestPage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMenu, deleteRequestPage, token, locale, isSuperAdmin])
+
   function openTeams() {
     setActiveMenu("teams")
     setView({ type: "teams" })
@@ -767,8 +819,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setActiveMenu("settings")
   }
 
+  function openDeleteRequests() {
+    setActiveMenu("deleteRequests")
+    setView({ type: "teams" })
+  }
+
   const title =
-    activeMenu === "settings"
+    activeMenu === "deleteRequests"
+      ? t(locale, "dashboard.deleteRequests")
+      : activeMenu === "settings"
       ? t(locale, "dashboard.settings")
       : view.type === "team"
         ? selectedTeam?.groupName || t(locale, "dashboard.teamDetail")
@@ -806,6 +865,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             </button>
             <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.myTeams")} />
           </div>
+          {isSuperAdmin && (
+            <div className="group relative">
+              <button type="button" className={menuButtonClass(activeMenu === "deleteRequests", collapsed)} onClick={openDeleteRequests} title={t(locale, "dashboard.deleteRequests")}>
+                <Inbox className="size-4" />
+                {!collapsed && <span>{t(locale, "dashboard.deleteRequests")}</span>}
+              </button>
+              <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.deleteRequests")} />
+            </div>
+          )}
           <div className="group relative">
             <button type="button" className={menuButtonClass(activeMenu === "settings", collapsed)} onClick={openSettings} title={t(locale, "dashboard.settings")}>
               <Settings className="size-4" />
@@ -1274,6 +1342,70 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 <CardContent className="grid gap-3 sm:grid-cols-2">
                   <StatItem icon={<Mail className="size-4" />} label={t(locale, "dashboard.email")} value={overview.currentUser.email} />
                   <StatItem icon={<Users className="size-4" />} label={t(locale, "dashboard.username")} value={overview.currentUser.userName || t(locale, "dashboard.notSet")} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {!loading && overview && activeMenu === "deleteRequests" && isSuperAdmin && (
+            <div className="space-y-4">
+              <Card className="rounded-lg">
+                <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{t(locale, "dashboard.deleteRequests")}</CardTitle>
+                    <CardDescription>{t(locale, "dashboard.deleteRequestsDesc")}</CardDescription>
+                  </div>
+                  <Button onClick={() => loadDeleteRequests()} disabled={deleteRequestsLoading} variant="outline">
+                    <RefreshCw className={`size-4 ${deleteRequestsLoading ? "animate-spin" : ""}`} />
+                    {t(locale, "dashboard.refresh")}
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {deleteRequestsLoading && <div className="rounded-md border bg-background p-4 text-sm text-muted-foreground">{t(locale, "common.loading")}</div>}
+                  <DataTable columns={[
+                    t(locale, "dashboard.email"),
+                    t(locale, "dashboard.deleteRequestStatus"),
+                    t(locale, "dashboard.deleteRequestLocale"),
+                    t(locale, "dashboard.deleteRequestIP"),
+                    t(locale, "dashboard.createdAt"),
+                  ]}>
+                    {(deleteRequests?.requests || []).map((item) => (
+                      <tr key={item.id} className="hover:bg-muted/40">
+                        <td className="px-4 py-3 font-medium">{item.email}</td>
+                        <td className="px-4 py-3">{t(locale, `dashboard.deleteRequestStatus.${item.status.toLowerCase()}`)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{item.locale || "-"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{item.ip || "-"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatDate(item.createdAt, locale)}</td>
+                      </tr>
+                    ))}
+                  </DataTable>
+                  {!deleteRequestsLoading && (deleteRequests?.pagination.totalCount || 0) === 0 && <EmptyState>{t(locale, "dashboard.noDeleteRequests")}</EmptyState>}
+                  {deleteRequests && deleteRequests.pagination.totalCount > 0 && (
+                    <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                      <span>
+                        {t(locale, "dashboard.deleteRequestPageSummary", {
+                          page: deleteRequests.pagination.page,
+                          totalPages: deleteRequests.pagination.totalPages,
+                          count: deleteRequests.pagination.totalCount,
+                          pageSize: deleteRequests.pagination.pageSize,
+                        })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" disabled={deleteRequestsLoading || deleteRequests.pagination.page <= 1} onClick={() => setDeleteRequestPage(1)}>
+                          {t(locale, "dashboard.firstPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={deleteRequestsLoading || deleteRequests.pagination.page <= 1} onClick={() => setDeleteRequestPage((page) => Math.max(page - 1, 1))}>
+                          {t(locale, "dashboard.prevPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={deleteRequestsLoading || deleteRequests.pagination.page >= deleteRequests.pagination.totalPages} onClick={() => setDeleteRequestPage((page) => Math.min(page + 1, deleteRequests.pagination.totalPages))}>
+                          {t(locale, "dashboard.nextPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={deleteRequestsLoading || deleteRequests.pagination.page >= deleteRequests.pagination.totalPages} onClick={() => setDeleteRequestPage(deleteRequests.pagination.totalPages)}>
+                          {t(locale, "dashboard.lastPage")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

@@ -420,3 +420,18 @@ model PhotoPackageTask {
   @@index([groupID, packageType])
   @@index([packageStatus])
 }
+
+model AccountDeletionRequest {
+  id        String   @id @default(cuid())
+  email     String
+  status    String   @default("PENDING")
+  locale    String?
+  ip        String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
