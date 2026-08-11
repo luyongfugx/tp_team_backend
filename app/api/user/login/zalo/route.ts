@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       ? await prisma.user.update({
           where: { id: existing.id },
           data: {
+            email: null,
             zaloUserID,
             userName: existing.userName || userName || undefined,
             avatar: existing.avatar || avatar || undefined,
@@ -73,8 +74,8 @@ export async function POST(req: Request) {
       ownerTeamCount,
       token,
       expiresAt: expiresAt.toISOString(),
-      email: user.email || "",
-      user: { id: user.id, email: user.email || "" },
+      email: "",
+      user: { id: user.id, email: "" },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
       zaloUserID,
