@@ -1,45 +1,47 @@
 import { createSession } from "@/lib/auth"
-import { verifyGoogleIdentityToken } from "@/lib/google-auth"
 import { prisma } from "@/lib/prisma"
-import { bad, badFor, EMAIL_RE, normalizeEmail, ok, readBody, serverError } from "@/app/api/_utils/api"
+import { bad, badFor, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import {
+  assertZaloRedirectUri,
+  exchangeZaloCodeForToken,
+  fetchZaloProfile,
+  zaloAvatar,
+  zaloPlaceholderEmail,
+} from "@/lib/zalo-auth"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
 } from "@/lib/user-registration-metadata"
 
-function nameFromBody(body: Record<string, unknown>, tokenName?: string) {
-  if (typeof body.userName === "string" && body.userName.trim()) return body.userName.trim()
-  if (typeof body.fullName === "string" && body.fullName.trim()) return body.fullName.trim()
-  return tokenName?.trim() || undefined
+function readString(body: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = body[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+  return ""
 }
 
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
-    const identityToken =
-      typeof body.identityToken === "string"
-        ? body.identityToken.trim()
-        : typeof body.idToken === "string"
-          ? body.idToken.trim()
-          : ""
-    if (!identityToken) return badFor(req, "缺少 Google identityToken")
+    const code = readString(body, ["code", "authorizationCode", "oauthCode"])
+    const codeVerifier = readString(body, ["codeVerifier", "code_verifier"])
+    const redirectUri = readString(body, ["redirectUri", "redirect_uri"]) || undefined
+    if (!code) return badFor(req, "缺少 Zalo 授权 code")
+    if (!codeVerifier) return badFor(req, "缺少 Zalo codeVerifier")
+    assertZaloRedirectUri(redirectUri)
 
-    const googlePayload = await verifyGoogleIdentityToken({
-      identityToken,
-      nonce: typeof body.nonce === "string" ? body.nonce : undefined,
-    })
-
-    const googleUserID = googlePayload.sub
-    const email = normalizeEmail(googlePayload.email)
-    if (!email || !EMAIL_RE.test(email)) return badFor(req, "Google 返回的邮箱格式不正确")
-
-    const userName = nameFromBody(body, googlePayload.name)
-    const avatar = typeof body.avatar === "string" && body.avatar ? body.avatar : googlePayload.picture
+    const tokenResult = await exchangeZaloCodeForToken({ code, codeVerifier })
+    const profile = await fetchZaloProfile(tokenResult.access_token as string)
+    const zaloUserID = profile.id
+    const email = zaloPlaceholderEmail(zaloUserID)
+    const userName = typeof profile.name === "string" && profile.name.trim() ? profile.name.trim() : undefined
+    const avatar = zaloAvatar(profile)
     const appInstanceID = typeof body.appInstanceID === "string" ? body.appInstanceID : undefined
     const registrationMetadata = userRegistrationMetadataFromBody(body)
 
-    let existing = await prisma.user.findFirst({ where: { googleUserID } as never })
+    let existing = await prisma.user.findFirst({ where: { zaloUserID } as never })
     if (!existing) {
       existing = await prisma.user.findUnique({ where: { email } })
     }
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
       ? await prisma.user.update({
           where: { id: existing.id },
           data: {
-            googleUserID,
+            zaloUserID,
             userName: existing.userName || userName || undefined,
             avatar: existing.avatar || avatar || undefined,
             appInstanceID,
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
       : await prisma.user.create({
           data: {
             email,
-            googleUserID,
+            zaloUserID,
             userName,
             avatar,
             appInstanceID,
@@ -89,9 +91,10 @@ export async function POST(req: Request) {
       user: { id: user.id, email: user.email },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
+      zaloUserID,
     })
   } catch (err) {
-    console.log("[app/user/login/google] error:", err)
+    console.log("[app/user/login/zalo] error:", err)
     if (err instanceof Error) return bad(err.message)
     return serverError(req)
   }

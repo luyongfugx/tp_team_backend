@@ -2,6 +2,10 @@ import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { badFor, EMAIL_RE, normalizeEmail, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import {
+  fillMissingUserRegistrationMetadata,
+  userRegistrationMetadataFromBody,
+} from "@/lib/user-registration-metadata"
 
 const LOCAL_TEST_CODE = "888888"
 const SUPER_CODE_EMAIL = "gsr112@qq.com"
@@ -36,7 +40,8 @@ export async function POST(req: Request) {
     }
 
     const existing = await prisma.user.findUnique({ where: { email } })
-    const user = await prisma.user.upsert({
+    const registrationMetadata = userRegistrationMetadataFromBody(body)
+    let user = await prisma.user.upsert({
       where: { email },
       update: {
         userName: typeof body.userName === "string" ? body.userName : undefined,
@@ -48,8 +53,10 @@ export async function POST(req: Request) {
         userName: typeof body.userName === "string" ? body.userName : undefined,
         avatar: typeof body.avatar === "string" ? body.avatar : undefined,
         appInstanceID: typeof body.appInstanceID === "string" ? body.appInstanceID : undefined,
+        ...registrationMetadata,
       },
     })
+    user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token } = await createSession(
       user.id,

@@ -26009,6 +26009,85 @@ Object.assign(dictionaries["zh-Hans"], deleteAccountMessages["zh-Hans"])
 Object.assign(dictionaries["zh-Hant"], deleteAccountMessages["zh-Hant"])
 Object.assign(dictionaries["zh-HK"], deleteAccountMessages["zh-Hant"])
 
+const adminUserMessages: Record<string, Messages> = {
+  en: {
+    "dashboard.usersDesc": "Search and review all registered users.",
+    "dashboard.userSearchPlaceholder": "Search email, username, ID, Google ID, or Apple ID",
+    "dashboard.search": "Search",
+    "dashboard.clearSearch": "Clear",
+    "dashboard.noUsers": "No users found",
+    "dashboard.userPageSummary": "Page {page} / {totalPages} · {count} users · up to {pageSize} per page",
+    "dashboard.userDetail": "User details",
+    "dashboard.userDetailDesc": "All stored fields for this user account.",
+    "dashboard.backUserList": "Back to users",
+    "dashboard.shortName": "Short name",
+    "dashboard.avatar": "Avatar",
+    "dashboard.selectedGroupID": "Selected team ID",
+    "dashboard.selectedProjectID": "Selected project ID",
+    "dashboard.deletedAt": "Deleted at",
+    "dashboard.updatedAt": "Updated at",
+    "dashboard.ownedTeams": "Owned teams",
+    "dashboard.joinedTeams": "Joined teams",
+    "dashboard.projectMemberships": "Project memberships",
+    "dashboard.sessions": "Sessions",
+    "dashboard.fieldName": "Field",
+    "dashboard.fieldValue": "Value",
+  },
+  "zh-Hans": {
+    "dashboard.usersDesc": "搜索并查看所有已注册用户。",
+    "dashboard.userSearchPlaceholder": "搜索邮箱、用户名、ID、Google ID 或 Apple ID",
+    "dashboard.search": "搜索",
+    "dashboard.clearSearch": "清空",
+    "dashboard.noUsers": "暂无用户",
+    "dashboard.userPageSummary": "第 {page} / {totalPages} 页 · 共 {count} 个用户 · 每页最多 {pageSize} 个",
+    "dashboard.userDetail": "用户详情",
+    "dashboard.userDetailDesc": "该用户账号已存储的所有字段信息。",
+    "dashboard.backUserList": "返回用户列表",
+    "dashboard.shortName": "短名称",
+    "dashboard.avatar": "头像",
+    "dashboard.selectedGroupID": "当前选择团队 ID",
+    "dashboard.selectedProjectID": "当前选择项目 ID",
+    "dashboard.deletedAt": "删除时间",
+    "dashboard.updatedAt": "更新时间",
+    "dashboard.ownedTeams": "创建团队数",
+    "dashboard.joinedTeams": "加入团队数",
+    "dashboard.projectMemberships": "项目成员数",
+    "dashboard.sessions": "会话数",
+    "dashboard.fieldName": "字段",
+    "dashboard.fieldValue": "值",
+  },
+  "zh-Hant": {
+    "dashboard.usersDesc": "搜尋並查看所有已註冊使用者。",
+    "dashboard.userSearchPlaceholder": "搜尋電子郵件、使用者名稱、ID、Google ID 或 Apple ID",
+    "dashboard.search": "搜尋",
+    "dashboard.clearSearch": "清空",
+    "dashboard.noUsers": "暫無使用者",
+    "dashboard.userPageSummary": "第 {page} / {totalPages} 頁 · 共 {count} 個使用者 · 每頁最多 {pageSize} 個",
+    "dashboard.userDetail": "使用者詳情",
+    "dashboard.userDetailDesc": "該使用者帳號已儲存的所有欄位資訊。",
+    "dashboard.backUserList": "返回使用者列表",
+    "dashboard.shortName": "短名稱",
+    "dashboard.avatar": "頭像",
+    "dashboard.selectedGroupID": "目前選擇團隊 ID",
+    "dashboard.selectedProjectID": "目前選擇專案 ID",
+    "dashboard.deletedAt": "刪除時間",
+    "dashboard.updatedAt": "更新時間",
+    "dashboard.ownedTeams": "建立團隊數",
+    "dashboard.joinedTeams": "加入團隊數",
+    "dashboard.projectMemberships": "專案成員數",
+    "dashboard.sessions": "工作階段數",
+    "dashboard.fieldName": "欄位",
+    "dashboard.fieldValue": "值",
+  },
+}
+
+for (const locale of supportedLocales) {
+  Object.assign(dictionaries[locale], adminUserMessages.en)
+}
+Object.assign(dictionaries["zh-Hans"], adminUserMessages["zh-Hans"])
+Object.assign(dictionaries["zh-Hant"], adminUserMessages["zh-Hant"])
+Object.assign(dictionaries["zh-HK"], adminUserMessages["zh-Hant"])
+
 function normalizeLocaleToken(value: string) {
   return value.trim().split(";")[0]?.toLowerCase().replace("_", "-") || ""
 }

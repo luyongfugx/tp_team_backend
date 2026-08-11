@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, ok, readBody, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
+import { fillMissingUserRegistrationMetadata } from "@/lib/user-registration-metadata"
 
 type TeamCodeInvite = {
   groupID: string
@@ -26,10 +27,11 @@ function normalizeTeamCode(value: unknown) {
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser(req)
+    let user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
 
     const body = await readBody(req)
+    user = await fillMissingUserRegistrationMetadata(user, body)
     const teamCode = normalizeTeamCode(body.teamCode ?? body.code)
     if (!teamCode) return bad("请输入有效的团队码")
 

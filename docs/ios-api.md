@@ -288,6 +288,78 @@ GOOGLE_CLIENT_IDS=web-client-id.apps.googleusercontent.com,ios-client-id.apps.go
 
 建议优先配置 Web application 类型的 server client ID，并在 iOS `Info.plist` 的 `GIDServerClientID` 中使用同一个值。
 
+### Zalo 账户登录
+
+```text
+POST user/login/zalo
+```
+
+请求：
+
+```json
+{
+  "code": "zalo-oauth-code",
+  "codeVerifier": "pkce-code-verifier",
+  "redirectUri": "timeprint://auth/zalo",
+  "appInstanceID": "ios-device-instance-id",
+  "platform": "ios",
+  "device_id": "device-unique-id",
+  "App-UUID": "device-unique-id",
+  "App-Version": "1.2.3",
+  "versionCode": "123",
+  "device model": "iPhone16,2",
+  "realTimeZone": "Asia/Shanghai",
+  "systemTimeZone": "Asia/Shanghai",
+  "countryCode": "CN",
+  "appLan": "zh-Hans",
+  "fullapplan": "zh-Hans"
+}
+```
+
+字段说明：
+
+|字段|说明|
+|---|---|
+|`code` / `authorizationCode` / `oauthCode`|必填，Zalo SDK/OAuth 登录成功后返回的 authorization code。后端只信这个 code，不信客户端直接传的 Zalo user id|
+|`codeVerifier` / `code_verifier`|必填，客户端发起 Zalo OAuth PKCE 时生成的 code verifier|
+|`redirectUri` / `redirect_uri`|可选；如果服务端配置了 `ZALO_REDIRECT_URIS`，传入值必须在白名单中|
+|`appInstanceID`|可选，设备实例 ID|
+|`platform`、`device_id`、`App-UUID`、`App-Version`、`versionCode`、`device model`、`realTimeZone`、`systemTimeZone`、`countryCode`、`appLan`、`fullapplan`|可选，注册设备/版本/语言信息；后端仅在用户对应字段为空时补写|
+
+响应：
+
+```json
+{
+  "success": true,
+  "userID": "user_xxx",
+  "userName": "Zalo User",
+  "avatar": "https://...",
+  "shortName": null,
+  "ownerTeamCount": 1,
+  "token": "login-token",
+  "email": "zalo_123456789@zalo.local",
+  "isNewUser": false,
+  "groupID": "group_xxx",
+  "zaloUserID": "123456789"
+}
+```
+
+Zalo 通常不返回邮箱。为兼容当前数据库 `email @unique` 结构，服务端会使用占位邮箱：
+
+```text
+zalo_<zaloUserID>@zalo.local
+```
+
+服务端会用 `code + codeVerifier + ZALO_APP_ID + ZALO_APP_SECRET` 向 Zalo 换取 access token，再用 access token 拉取 Zalo 用户资料。客户端不要直接提交 `zaloUserID` 作为登录凭据。
+
+服务端环境变量：
+
+```text
+ZALO_APP_ID=your-zalo-app-id
+ZALO_APP_SECRET=your-zalo-secret-key
+ZALO_REDIRECT_URIS=timeprint://auth/zalo,https://your-domain.com/auth/zalo/callback
+```
+
 ### 刷新 token
 
 ```text

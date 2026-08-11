@@ -4,6 +4,10 @@ import { createSession } from "@/lib/auth"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 import { apiErrorMessage, serverError } from "@/app/api/_utils/api"
 import { localeFromRequest } from "@/lib/i18n"
+import {
+  fillMissingUserRegistrationMetadata,
+  userRegistrationMetadataFromBody,
+} from "@/lib/user-registration-metadata"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const LOCAL_TEST_CODE = "888888"
@@ -59,11 +63,13 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
 
     // 用户不存在则创建（首次登录即注册）
-    const user = await prisma.user.upsert({
+    const registrationMetadata = userRegistrationMetadataFromBody(body)
+    let user = await prisma.user.upsert({
       where: { email: normalizedEmail },
       update: {},
-      create: { email: normalizedEmail },
+      create: { email: normalizedEmail, ...registrationMetadata },
     })
+    user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token, expiresAt } = await createSession(user.id)
     if (!existing) await createDefaultTeamIfNeeded(user)

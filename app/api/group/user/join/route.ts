@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody, requireUser } from "@/app/api/_utils/api"
+import {
+  fillMissingUserRegistrationMetadata,
+  userRegistrationMetadataFromBody,
+} from "@/lib/user-registration-metadata"
 
 export async function POST(req: Request) {
   try {
@@ -43,6 +47,7 @@ export async function POST(req: Request) {
         return bad("验证码错误或已过期")
       }
       await prisma.verificationCode.update({ where: { id: code.id }, data: { consumed: true } })
+      const registrationMetadata = userRegistrationMetadataFromBody(body)
       user = await prisma.user.upsert({
         where: { email },
         update: {
@@ -53,9 +58,11 @@ export async function POST(req: Request) {
           email,
           userName: typeof body.userName === "string" ? body.userName : undefined,
           avatar: typeof body.avatar === "string" ? body.avatar : undefined,
+          ...registrationMetadata,
         },
       })
     }
+    user = await fillMissingUserRegistrationMetadata(user, body)
     if (emailInvite && emailInvite.email !== user.email) return bad("邀请邮箱与当前账号不匹配", 403)
 
     await prisma.$transaction([

@@ -5,18 +5,23 @@ import { getApps, initializeApp } from "firebase/app"
 import { getAnalytics, isSupported } from "firebase/analytics"
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB5GDUvXQQK0126IZaokBT57vHyEbGhDKg",
-  authDomain: "team-web-4f79d.firebaseapp.com",
-  projectId: "team-web-4f79d",
-  storageBucket: "team-web-4f79d.firebasestorage.app",
-  messagingSenderId: "649651524454",
-  appId: "1:649651524454:web:9d6f59ad06be592c276ea7",
-  measurementId: "G-Z9HJ16FDTS",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+}
+
+function hasFirebaseConfig() {
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.appId && firebaseConfig.measurementId)
 }
 
 export function FirebaseAnalytics() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return
+    if (!hasFirebaseConfig()) return
 
     let mounted = true
     isSupported()

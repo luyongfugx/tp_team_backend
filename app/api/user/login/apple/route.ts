@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { verifyAppleIdentityToken } from "@/lib/apple-auth"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import {
+  fillMissingUserRegistrationMetadata,
+  userRegistrationMetadataFromBody,
+} from "@/lib/user-registration-metadata"
 
 function nameFromBody(body: Record<string, unknown>) {
   if (typeof body.userName === "string" && body.userName.trim()) return body.userName.trim()
@@ -35,6 +39,7 @@ export async function POST(req: Request) {
     const userName = nameFromBody(body)
     const avatar = typeof body.avatar === "string" ? body.avatar : undefined
     const appInstanceID = typeof body.appInstanceID === "string" ? body.appInstanceID : undefined
+    const registrationMetadata = userRegistrationMetadataFromBody(body)
 
     let existing = await prisma.user.findFirst({ where: { appleUserID } as never })
     if (!existing && email) {
@@ -43,7 +48,7 @@ export async function POST(req: Request) {
     }
     if (!existing && !email) return bad("首次 Apple 登录需要授权邮箱")
 
-    const user = existing
+    let user = existing
       ? await prisma.user.update({
           where: { id: existing.id },
           data: {
@@ -60,8 +65,10 @@ export async function POST(req: Request) {
             userName,
             avatar,
             appInstanceID,
+            ...registrationMetadata,
           } as never,
         })
+    user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token } = await createSession(user.id, appInstanceID)
     if (!existing) await createDefaultTeamIfNeeded(user)

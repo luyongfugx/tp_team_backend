@@ -12,12 +12,24 @@ model User {
   email                String            @unique
   appleUserID          String?           @unique
   googleUserID         String?           @unique
+  zaloUserID           String?           @unique
   userName             String?
   shortName            String?
   avatar               String?
   selectedGroupID      String?
   selectedProjectID    Int?
   appInstanceID        String?
+  appVersion           String?           @map("App-Version")
+  versionCode          String?
+  platform             String?
+  deviceId             String?           @map("device_id")
+  appUUID              String?           @map("App-UUID")
+  deviceModel          String?           @map("device model")
+  realTimeZone         String?
+  systemTimeZone       String?
+  countryCode          String?
+  appLan               String?
+  fullapplan           String?
   deletedAt            DateTime?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt

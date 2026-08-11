@@ -16,6 +16,7 @@ import {
   MapPin,
   RefreshCw,
   ArrowRight,
+  Search,
   Settings,
   Trash2,
   UserPlus,
@@ -38,7 +39,8 @@ type AdminRole = "SUPER_ADMIN" | "TEAM_OWNER"
 const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 const DELETE_REQUEST_PAGE_SIZE = 30
-type MainMenu = "teams" | "settings" | "deleteRequests"
+const ADMIN_USER_PAGE_SIZE = 30
+type MainMenu = "teams" | "settings" | "deleteRequests" | "adminUsers"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -150,6 +152,37 @@ type AccountDeletionRequestsPayload = {
   pagination: { page: number; pageSize: number; totalCount: number; totalPages: number }
 }
 
+type AdminUser = {
+  id: string
+  email: string
+  appleUserID: string | null
+  googleUserID: string | null
+  zaloUserID: string | null
+  userName: string | null
+  shortName: string | null
+  avatar: string | null
+  selectedGroupID: string | null
+  selectedProjectID: number | null
+  appInstanceID: string | null
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    ownedTeams: number
+    teamMemberships: number
+    projectMemberships: number
+    photos: number
+    sessions: number
+  }
+  [key: string]: unknown
+}
+
+type AdminUsersPayload = {
+  users: AdminUser[]
+  pagination: { page: number; pageSize: number; totalCount: number; totalPages: number }
+  search: string
+}
+
 function formatDate(value: string | number | null | undefined, locale: string) {
   if (!value) return "-"
   const date = typeof value === "number" ? new Date(value) : new Date(value)
@@ -223,6 +256,47 @@ function DataTable({
       </div>
     </div>
   )
+}
+
+function formatFieldValue(value: unknown, locale: string): string {
+  if (value == null || value === "") return "-"
+  if (typeof value === "string") {
+    if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return formatDate(value, locale)
+    return value
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  return JSON.stringify(value)
+}
+
+function userFieldLabel(field: string, locale: string) {
+  const labels: Record<string, string> = {
+    id: "ID",
+    email: t(locale, "dashboard.email"),
+    appleUserID: "Apple User ID",
+    googleUserID: "Google User ID",
+    zaloUserID: "Zalo User ID",
+    userName: t(locale, "dashboard.username"),
+    shortName: t(locale, "dashboard.shortName"),
+    avatar: t(locale, "dashboard.avatar"),
+    selectedGroupID: t(locale, "dashboard.selectedGroupID"),
+    selectedProjectID: t(locale, "dashboard.selectedProjectID"),
+    appInstanceID: "appInstanceID",
+    appVersion: "App-Version",
+    versionCode: "versionCode",
+    platform: "platform",
+    deviceId: "device_id",
+    appUUID: "App-UUID",
+    deviceModel: "device model",
+    realTimeZone: "realTimeZone",
+    systemTimeZone: "systemTimeZone",
+    countryCode: "countryCode",
+    appLan: "appLan",
+    fullapplan: "fullapplan",
+    deletedAt: t(locale, "dashboard.deletedAt"),
+    createdAt: t(locale, "dashboard.createdAt"),
+    updatedAt: t(locale, "dashboard.updatedAt"),
+  }
+  return labels[field] || field
 }
 
 function StatItem({
@@ -471,6 +545,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [deleteRequests, setDeleteRequests] = useState<AccountDeletionRequestsPayload | null>(null)
   const [deleteRequestPage, setDeleteRequestPage] = useState(1)
   const [deleteRequestsLoading, setDeleteRequestsLoading] = useState(false)
+  const [adminUsers, setAdminUsers] = useState<AdminUsersPayload | null>(null)
+  const [adminUserPage, setAdminUserPage] = useState(1)
+  const [adminUserSearch, setAdminUserSearch] = useState("")
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false)
+  const [selectedAdminUser, setSelectedAdminUser] = useState<AdminUser | null>(null)
+  const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
+  const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
   const selectedTeam = useMemo(() => {
@@ -560,6 +641,55 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       setMessage(t(locale, "common.networkError"))
     } finally {
       setDeleteRequestsLoading(false)
+    }
+  }
+
+  async function loadAdminUsers(page = adminUserPage, search = adminUserSearch) {
+    if (!isSuperAdmin) return
+    setAdminUsersLoading(true)
+    setMessage("")
+    try {
+      const url = new URL("/api/admin/users", window.location.origin)
+      url.searchParams.set("page", String(page))
+      url.searchParams.set("pageSize", String(ADMIN_USER_PAGE_SIZE))
+      if (search.trim()) url.searchParams.set("search", search.trim())
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage(data.error || t(locale, "common.sendFailed"))
+        return
+      }
+      setAdminUsers(data)
+      setAdminUserPage(data.pagination?.page || page)
+    } catch {
+      setMessage(t(locale, "common.networkError"))
+    } finally {
+      setAdminUsersLoading(false)
+    }
+  }
+
+  async function openAdminUserDetail(userID: string) {
+    if (!isSuperAdmin) return
+    setSelectedAdminUserID(userID)
+    setSelectedAdminUser(null)
+    setAdminUserDetailLoading(true)
+    setMessage("")
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userID)}`, {
+        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage(data.error || t(locale, "common.sendFailed"))
+        return
+      }
+      setSelectedAdminUser(data.user)
+    } catch {
+      setMessage(t(locale, "common.networkError"))
+    } finally {
+      setAdminUserDetailLoading(false)
     }
   }
 
@@ -810,6 +940,12 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu, deleteRequestPage, token, locale, isSuperAdmin])
 
+  useEffect(() => {
+    if (activeMenu !== "adminUsers" || !isSuperAdmin || selectedAdminUserID) return
+    loadAdminUsers(adminUserPage, adminUserSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMenu, adminUserPage, token, locale, isSuperAdmin, selectedAdminUserID])
+
   function openTeams() {
     setActiveMenu("teams")
     setView({ type: "teams" })
@@ -824,8 +960,35 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setView({ type: "teams" })
   }
 
+  function openAdminUsers() {
+    setActiveMenu("adminUsers")
+    setView({ type: "teams" })
+    setSelectedAdminUserID(null)
+    setSelectedAdminUser(null)
+  }
+
+  function refreshCurrentView() {
+    if (activeMenu === "adminUsers") {
+      if (selectedAdminUserID) {
+        openAdminUserDetail(selectedAdminUserID)
+      } else {
+        loadAdminUsers(adminUserPage, adminUserSearch)
+      }
+      return
+    }
+    if (activeMenu === "deleteRequests") {
+      loadDeleteRequests(deleteRequestPage)
+      return
+    }
+    loadOverview()
+  }
+
   const title =
-    activeMenu === "deleteRequests"
+    activeMenu === "adminUsers"
+      ? selectedAdminUserID
+        ? t(locale, "dashboard.userDetail")
+        : t(locale, "dashboard.users")
+      : activeMenu === "deleteRequests"
       ? t(locale, "dashboard.deleteRequests")
       : activeMenu === "settings"
       ? t(locale, "dashboard.settings")
@@ -867,6 +1030,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
           </div>
           {isSuperAdmin && (
             <div className="group relative">
+              <button type="button" className={menuButtonClass(activeMenu === "adminUsers", collapsed)} onClick={openAdminUsers} title={t(locale, "dashboard.users")}>
+                <Users className="size-4" />
+                {!collapsed && <span>{t(locale, "dashboard.users")}</span>}
+              </button>
+              <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.users")} />
+            </div>
+          )}
+          {isSuperAdmin && (
+            <div className="group relative">
               <button type="button" className={menuButtonClass(activeMenu === "deleteRequests", collapsed)} onClick={openDeleteRequests} title={t(locale, "dashboard.deleteRequests")}>
                 <Inbox className="size-4" />
                 {!collapsed && <span>{t(locale, "dashboard.deleteRequests")}</span>}
@@ -902,8 +1074,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             <p className="truncate text-xs text-muted-foreground">{activeMenu === "teams" ? t(locale, "dashboard.teamNavHint") : user.email}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button onClick={loadOverview} disabled={loading} variant="outline">
-              <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+            <Button onClick={refreshCurrentView} disabled={loading || adminUsersLoading || adminUserDetailLoading || deleteRequestsLoading} variant="outline">
+              <RefreshCw className={`size-4 ${loading || adminUsersLoading || adminUserDetailLoading || deleteRequestsLoading ? "animate-spin" : ""}`} />
               {t(locale, "dashboard.refresh")}
             </Button>
             <LanguageSwitcher locale={locale} onLocaleChange={setLocale} />
@@ -1327,6 +1499,170 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                     loading={photosLoading}
                     onPageChange={(page) => changePhotoPage(selectedTeam.groupID, page, { userID: selectedMember.userID })}
                   />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {!loading && overview && activeMenu === "adminUsers" && isSuperAdmin && !selectedAdminUserID && (
+            <div className="space-y-4">
+              <Card className="rounded-lg">
+                <CardHeader className="gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{t(locale, "dashboard.users")}</CardTitle>
+                    <CardDescription>{t(locale, "dashboard.usersDesc")}</CardDescription>
+                  </div>
+                  <Button onClick={() => loadAdminUsers(adminUserPage, adminUserSearch)} disabled={adminUsersLoading} variant="outline">
+                    <RefreshCw className={`size-4 ${adminUsersLoading ? "animate-spin" : ""}`} />
+                    {t(locale, "dashboard.refresh")}
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      setAdminUserPage(1)
+                      loadAdminUsers(1, adminUserSearch)
+                    }}
+                    className="flex flex-col gap-2 sm:flex-row"
+                  >
+                    <div className="relative min-w-0 flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={adminUserSearch}
+                        onChange={(event) => setAdminUserSearch(event.target.value)}
+                        placeholder={t(locale, "dashboard.userSearchPlaceholder")}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Button type="submit" disabled={adminUsersLoading}>
+                      <Search className="size-4" />
+                      {t(locale, "dashboard.search")}
+                    </Button>
+                    {adminUserSearch && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={adminUsersLoading}
+                        onClick={() => {
+                          setAdminUserSearch("")
+                          setAdminUserPage(1)
+                          loadAdminUsers(1, "")
+                        }}
+                      >
+                        {t(locale, "dashboard.clearSearch")}
+                      </Button>
+                    )}
+                  </form>
+
+                  {adminUsersLoading && <div className="rounded-md border bg-background p-4 text-sm text-muted-foreground">{t(locale, "common.loading")}</div>}
+                  <DataTable columns={[
+                    t(locale, "dashboard.email"),
+                    t(locale, "dashboard.username"),
+                    "platform",
+                    "App-Version",
+                    "countryCode",
+                    "appLan",
+                    t(locale, "dashboard.createdAt"),
+                    t(locale, "dashboard.actions"),
+                  ]}>
+                    {(adminUsers?.users || []).map((item) => (
+                      <tr key={item.id} className="hover:bg-muted/40">
+                        <td className="px-4 py-3 font-medium">{item.email}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{item.userName || item.shortName || "-"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatFieldValue(item.platform, locale)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatFieldValue(item.appVersion, locale)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatFieldValue(item.countryCode, locale)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatFieldValue(item.appLan, locale)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatDate(item.createdAt, locale)}</td>
+                        <td className="px-4 py-3">
+                          <Button variant="outline" size="sm" onClick={() => openAdminUserDetail(item.id)}>
+                            {t(locale, "dashboard.view")}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </DataTable>
+                  {!adminUsersLoading && (adminUsers?.pagination.totalCount || 0) === 0 && <EmptyState>{t(locale, "dashboard.noUsers")}</EmptyState>}
+                  {adminUsers && adminUsers.pagination.totalCount > 0 && (
+                    <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                      <span>
+                        {t(locale, "dashboard.userPageSummary", {
+                          page: adminUsers.pagination.page,
+                          totalPages: adminUsers.pagination.totalPages,
+                          count: adminUsers.pagination.totalCount,
+                          pageSize: adminUsers.pagination.pageSize,
+                        })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" disabled={adminUsersLoading || adminUsers.pagination.page <= 1} onClick={() => setAdminUserPage(1)}>
+                          {t(locale, "dashboard.firstPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={adminUsersLoading || adminUsers.pagination.page <= 1} onClick={() => setAdminUserPage((page) => Math.max(page - 1, 1))}>
+                          {t(locale, "dashboard.prevPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={adminUsersLoading || adminUsers.pagination.page >= adminUsers.pagination.totalPages} onClick={() => setAdminUserPage((page) => Math.min(page + 1, adminUsers.pagination.totalPages))}>
+                          {t(locale, "dashboard.nextPage")}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={adminUsersLoading || adminUsers.pagination.page >= adminUsers.pagination.totalPages} onClick={() => setAdminUserPage(adminUsers.pagination.totalPages)}>
+                          {t(locale, "dashboard.lastPage")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {!loading && overview && activeMenu === "adminUsers" && isSuperAdmin && selectedAdminUserID && (
+            <div className="space-y-4">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedAdminUserID(null)
+                  setSelectedAdminUser(null)
+                }}
+              >
+                <ArrowLeft className="size-4" />
+                {t(locale, "dashboard.backUserList")}
+              </Button>
+              <Card className="rounded-lg">
+                <CardHeader className="gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{selectedAdminUser?.email || t(locale, "dashboard.userDetail")}</CardTitle>
+                    <CardDescription>{t(locale, "dashboard.userDetailDesc")}</CardDescription>
+                  </div>
+                  <Button onClick={() => openAdminUserDetail(selectedAdminUserID)} disabled={adminUserDetailLoading} variant="outline">
+                    <RefreshCw className={`size-4 ${adminUserDetailLoading ? "animate-spin" : ""}`} />
+                    {t(locale, "dashboard.refresh")}
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {adminUserDetailLoading && <div className="rounded-md border bg-background p-4 text-sm text-muted-foreground">{t(locale, "common.loading")}</div>}
+                  {selectedAdminUser && (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        <StatItem icon={<Building2 className="size-4" />} label={t(locale, "dashboard.ownedTeams")} value={selectedAdminUser._count?.ownedTeams ?? 0} />
+                        <StatItem icon={<Users className="size-4" />} label={t(locale, "dashboard.joinedTeams")} value={selectedAdminUser._count?.teamMemberships ?? 0} />
+                        <StatItem icon={<FolderKanban className="size-4" />} label={t(locale, "dashboard.projectMemberships")} value={selectedAdminUser._count?.projectMemberships ?? 0} />
+                        <StatItem icon={<Camera className="size-4" />} label={t(locale, "dashboard.photoCountLabel")} value={selectedAdminUser._count?.photos ?? 0} />
+                        <StatItem icon={<Settings className="size-4" />} label={t(locale, "dashboard.sessions")} value={selectedAdminUser._count?.sessions ?? 0} />
+                      </div>
+                      <DataTable columns={[t(locale, "dashboard.fieldName"), t(locale, "dashboard.fieldValue")]}>
+                        {Object.entries(selectedAdminUser)
+                          .filter(([key]) => key !== "_count")
+                          .map(([key, value]) => (
+                            <tr key={key} className="hover:bg-muted/40">
+                              <td className="w-64 px-4 py-3 font-medium">{userFieldLabel(key, locale)}</td>
+                              <td className="px-4 py-3 text-muted-foreground">
+                                <span className="break-all">{formatFieldValue(value, locale)}</span>
+                              </td>
+                            </tr>
+                          ))}
+                      </DataTable>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
