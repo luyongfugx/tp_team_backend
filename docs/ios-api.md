@@ -298,9 +298,9 @@ POST user/login/zalo
 
 ```json
 {
-  "code": "zalo-oauth-code",
-  "codeVerifier": "pkce-code-verifier",
-  "redirectUri": "timeprint://auth/zalo",
+  "zaloUserID": "123456789",
+  "userName": "Zalo User",
+  "avatar": "https://...",
   "appInstanceID": "ios-device-instance-id",
   "platform": "ios",
   "device_id": "device-unique-id",
@@ -320,9 +320,9 @@ POST user/login/zalo
 
 |字段|说明|
 |---|---|
-|`code` / `authorizationCode` / `oauthCode`|必填，Zalo SDK/OAuth 登录成功后返回的 authorization code。后端只信这个 code，不信客户端直接传的 Zalo user id|
-|`codeVerifier` / `code_verifier`|必填，客户端发起 Zalo OAuth PKCE 时生成的 code verifier|
-|`redirectUri` / `redirect_uri`|可选；如果服务端配置了 `ZALO_REDIRECT_URIS`，传入值必须在白名单中|
+|`zaloUserID` / `zaloUserId` / `zalo_user_id` / `zaloID` / `id` / `userID`|必填，Zalo SDK 登录成功后返回的 Zalo 用户 ID|
+|`userName` / `name` / `zaloName`|可选，Zalo 用户昵称|
+|`avatar` / `picture` / `pictureUrl` / `avatarUrl` / `zaloAvatar`|可选，Zalo 用户头像 URL|
 |`appInstanceID`|可选，设备实例 ID|
 |`platform`、`device_id`、`App-UUID`、`App-Version`、`versionCode`、`device model`、`realTimeZone`、`systemTimeZone`、`countryCode`、`appLan`、`fullapplan`|可选，注册设备/版本/语言信息；后端仅在用户对应字段为空时补写|
 
@@ -350,7 +350,7 @@ Zalo 通常不返回邮箱。为兼容当前数据库 `email @unique` 结构，�
 zalo_<zaloUserID>@zalo.local
 ```
 
-服务端会用 `code + codeVerifier + ZALO_APP_ID + ZALO_APP_SECRET` 向 Zalo 换取 access token，再用 access token 拉取 Zalo 用户资料。客户端不要直接提交 `zaloUserID` 作为登录凭据。
+临时说明：由于当前服务端部署在新加坡，Zalo 对新加坡机器的 token 校验 / 用户资料请求存在拦截。当前 Zalo 登录暂时由 App 端完成 Zalo SDK 登录，后端直接兼容 App 传入的 Zalo 用户 ID、昵称和头像。
 
 服务端环境变量：
 

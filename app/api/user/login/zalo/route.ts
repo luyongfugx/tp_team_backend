@@ -2,13 +2,7 @@ import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, badFor, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
-import {
-  assertZaloRedirectUri,
-  exchangeZaloCodeForToken,
-  fetchZaloProfile,
-  zaloAvatar,
-  zaloPlaceholderEmail,
-} from "@/lib/zalo-auth"
+import { zaloPlaceholderEmail } from "@/lib/zalo-auth"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
@@ -25,19 +19,14 @@ function readString(body: Record<string, unknown>, keys: string[]) {
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
-    const code = readString(body, ["code", "authorizationCode", "oauthCode"])
-    const codeVerifier = readString(body, ["codeVerifier", "code_verifier"])
-    const redirectUri = readString(body, ["redirectUri", "redirect_uri"]) || undefined
-    if (!code) return badFor(req, "缺少 Zalo 授权 code")
-    if (!codeVerifier) return badFor(req, "缺少 Zalo codeVerifier")
-    assertZaloRedirectUri(redirectUri)
-
-    const tokenResult = await exchangeZaloCodeForToken({ code, codeVerifier })
-    const profile = await fetchZaloProfile(tokenResult.access_token as string)
-    const zaloUserID = profile.id
+    // Temporary Zalo compatibility path:
+    // Zalo blocks server-side token/profile requests from the Singapore server,
+    // so for now we trust the Zalo profile returned by the native app SDK.
+    const zaloUserID = readString(body, ["zaloUserID", "zaloUserId", "zalo_user_id", "zaloID", "id", "userID"])
+    if (!zaloUserID) return badFor(req, "缺少 Zalo 用户 ID")
     const email = zaloPlaceholderEmail(zaloUserID)
-    const userName = typeof profile.name === "string" && profile.name.trim() ? profile.name.trim() : undefined
-    const avatar = zaloAvatar(profile)
+    const userName = readString(body, ["userName", "name", "zaloName"]) || undefined
+    const avatar = readString(body, ["avatar", "picture", "pictureUrl", "avatarUrl", "zaloAvatar"]) || undefined
     const appInstanceID = typeof body.appInstanceID === "string" ? body.appInstanceID : undefined
     const registrationMetadata = userRegistrationMetadataFromBody(body)
 
