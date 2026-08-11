@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       avatar: user.avatar,
       shortName: user.shortName,
       token,
-      email: user.email,
+      email: user.email || "",
       groupID,
     })
   } catch (err) {

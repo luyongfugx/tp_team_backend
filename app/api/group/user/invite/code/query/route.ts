@@ -25,7 +25,7 @@ type UserSummary = {
   userName: string | null
   shortName: string | null
   avatar: string | null
-  email: string
+  email: string | null
 }
 
 type InviteWithTeam = {
@@ -104,7 +104,7 @@ async function queryInvite(code: string) {
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
     acceptedAt: invite.acceptedAt,
-    inviter: inviter ?? invite.team.owner,
+    inviter: inviter ? { ...inviter, email: inviter.email || "" } : { ...invite.team.owner, email: invite.team.owner.email || "" },
     invitedUser: invitedUser ?? {
       id: null,
       userName: null,
@@ -116,7 +116,7 @@ async function queryInvite(code: string) {
       groupID: invite.team.groupID,
       groupName: invite.team.groupName,
       memberNum: invite.team._count.members,
-      owner: invite.team.owner,
+      owner: { ...invite.team.owner, email: invite.team.owner.email || "" },
     },
   }
 }
@@ -152,13 +152,13 @@ async function queryTeamCodeInvite(code: string) {
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
     acceptedAt: null,
-    inviter: invite.team.owner,
+    inviter: { ...invite.team.owner, email: invite.team.owner.email || "" },
     invitedUser: null,
     team: {
       groupID: invite.team.groupID,
       groupName: invite.team.groupName,
       memberNum: invite.team._count.members,
-      owner: invite.team.owner,
+      owner: { ...invite.team.owner, email: invite.team.owner.email || "" },
     },
   }
 }

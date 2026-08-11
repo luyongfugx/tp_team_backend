@@ -20,7 +20,7 @@ export default async function UserPhotosPage({
   const { user, days, photoCount } = await getUserGallery(userID, locale)
   if (!user) notFound()
 
-  const displayName = user.userName || user.shortName || user.email.split("@")[0]
+  const displayName = user.userName || user.shortName || user.email?.split("@")[0] || "User"
 
   return (
     <WebPhotoGallery

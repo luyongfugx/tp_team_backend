@@ -21,7 +21,7 @@ type InviteWithTeam = {
       userName: string | null
       shortName: string | null
       avatar: string | null
-      email: string
+      email: string | null
     }
   }
 }
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
+    if (!user.email) return ok({ invites: [] })
 
     const now = new Date()
     const invites = (await prisma.teamEmailInvite.findMany({
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
           roleID: roleToID(invite.role),
           email: invite.email,
           memberNum: invite.team._count.members,
-          owner: invite.team.owner,
+          owner: { ...invite.team.owner, email: invite.team.owner.email || "" },
           expiresAt: invite.expiresAt,
           createdAt: invite.createdAt,
         })),

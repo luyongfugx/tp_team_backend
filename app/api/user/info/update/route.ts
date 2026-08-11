@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       userName: updated.userName,
       avatar: updated.avatar,
       shortName: updated.shortName,
-      email: updated.email,
+      email: updated.email || "",
       selectedGroupID: updatedUser.selectedGroupID ?? null,
       selectedProjectID: updatedUser.selectedProjectID ?? null,
     })

@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       success: true,
       token,
       expiresAt: expiresAt.toISOString(),
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email || "" },
     })
   } catch (err) {
     console.log("[v0] verify-code error:", err)

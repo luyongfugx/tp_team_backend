@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { bad, badFor, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
 import { localeFromRequest } from "@/lib/i18n"
-import { zaloPlaceholderEmail } from "@/lib/zalo-auth"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
@@ -26,16 +25,12 @@ export async function POST(req: Request) {
     // so for now we trust the Zalo profile returned by the native app SDK.
     const zaloUserID = readString(body, ["zaloUserID", "zaloUserId", "zalo_user_id", "zaloID", "id", "userID"])
     if (!zaloUserID) return badFor(req, "缺少 Zalo 用户 ID")
-    const email = zaloPlaceholderEmail(zaloUserID)
     const userName = readString(body, ["userName", "name", "zaloName"]) || undefined
     const avatar = readString(body, ["avatar", "picture", "pictureUrl", "avatarUrl", "zaloAvatar"]) || undefined
     const appInstanceID = typeof body.appInstanceID === "string" ? body.appInstanceID : undefined
     const registrationMetadata = userRegistrationMetadataFromBody(body)
 
     let existing = await prisma.user.findFirst({ where: { zaloUserID } as never })
-    if (!existing) {
-      existing = await prisma.user.findUnique({ where: { email } })
-    }
 
     let user = existing
       ? await prisma.user.update({
@@ -49,7 +44,7 @@ export async function POST(req: Request) {
         })
       : await prisma.user.create({
           data: {
-            email,
+            email: null,
             zaloUserID,
             userName,
             avatar,
@@ -78,8 +73,8 @@ export async function POST(req: Request) {
       ownerTeamCount,
       token,
       expiresAt: expiresAt.toISOString(),
-      email: user.email,
-      user: { id: user.id, email: user.email },
+      email: user.email || "",
+      user: { id: user.id, email: user.email || "" },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
       zaloUserID,

@@ -118,7 +118,7 @@ const teamNameTemplates: Record<AppLocale, (name: string) => string> = {
 }
 
 function defaultTeamName(user: Pick<User, "email" | "userName" | "shortName">, locale?: AppLocale | string) {
-  const name = user.userName?.trim() || user.shortName?.trim() || user.email.split("@")[0] || "User"
+  const name = user.userName?.trim() || user.shortName?.trim() || user.email?.split("@")[0] || "User"
   const resolved = resolveLocale(locale)
   return teamNameTemplates[resolved](name)
 }
@@ -133,15 +133,17 @@ export async function createDefaultTeamIfNeeded(
       where: { userID: user.id, team: { deletedAt: null } },
       select: { groupID: true },
     }),
-    prisma.teamEmailInvite.findFirst({
-      where: {
-        email: user.email,
-        acceptedAt: null,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        team: { deletedAt: null },
-      },
-      select: { id: true },
-    }),
+    user.email
+      ? prisma.teamEmailInvite.findFirst({
+          where: {
+            email: user.email,
+            acceptedAt: null,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            team: { deletedAt: null },
+          },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ])
 
   if (membership || pendingInvite) return null

@@ -45,13 +45,13 @@ export async function deleteUserData(tx: Tx, user: Pick<User, "id" | "email">) {
   await tx.teamMember.deleteMany({ where: { userID: user.id } })
   await tx.teamEmailInvite.deleteMany({
     where: {
-      OR: [{ inviterID: user.id }, { email: user.email }],
+      OR: user.email ? [{ inviterID: user.id }, { email: user.email }] : [{ inviterID: user.id }],
     } as never,
   })
   await (tx as TxWithTeamInviteCode).teamFeedLike.deleteMany({ where: { userID: user.id } })
   await (tx as TxWithTeamInviteCode).teamFeedComment.deleteMany({ where: { userID: user.id } })
   await (tx as TxWithTeamInviteCode).teamFeed.deleteMany({ where: { createdByUserID: user.id } })
   await tx.session.deleteMany({ where: { userId: user.id } })
-  await tx.verificationCode.deleteMany({ where: { email: user.email } })
+  if (user.email) await tx.verificationCode.deleteMany({ where: { email: user.email } })
   await tx.user.delete({ where: { id: user.id } })
 }

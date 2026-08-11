@@ -114,7 +114,8 @@ function mapRole(role: TeamRole, locale: AppLocale) {
   return { role: roleToName(role, locale), roleID: roleToID(role) }
 }
 
-async function pendingInviteForUser(user: { id: string; email: string }, locale: AppLocale) {
+async function pendingInviteForUser(user: { id: string; email: string | null }, locale: AppLocale) {
+  if (!user.email) return null
   const now = new Date()
   const invite = await prisma.teamEmailInvite.findFirst({
     where: {
@@ -279,7 +280,7 @@ export async function POST(req: Request) {
           userID: teamMember.userID,
           userName: teamMember.user.userName,
           shortName: teamMember.user.shortName,
-          email: teamMember.user.email,
+          email: teamMember.user.email || "",
           avatar: teamMember.user.avatar,
           ...mapRole(teamMember.role, locale),
           photoCount: teamMember.photoCount,

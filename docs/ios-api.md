@@ -337,18 +337,14 @@ POST user/login/zalo
   "shortName": null,
   "ownerTeamCount": 1,
   "token": "login-token",
-  "email": "zalo_123456789@zalo.local",
+  "email": "",
   "isNewUser": false,
   "groupID": "group_xxx",
   "zaloUserID": "123456789"
 }
 ```
 
-Zalo 通常不返回邮箱。为兼容当前数据库 `email @unique` 结构，服务端会使用占位邮箱：
-
-```text
-zalo_<zaloUserID>@zalo.local
-```
+Zalo 通常不返回邮箱。服务端不会生成占位邮箱，Zalo 用户的 `email` 存为空值；接口响应里的 `email` 返回空字符串 `""`。
 
 临时说明：由于当前服务端部署在新加坡，Zalo 对新加坡机器的 token 校验 / 用户资料请求存在拦截。当前 Zalo 登录暂时由 App 端完成 Zalo SDK 登录，后端直接兼容 App 传入的 Zalo 用户 ID、昵称和头像。
 

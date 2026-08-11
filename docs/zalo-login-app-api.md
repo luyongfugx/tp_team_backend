@@ -88,10 +88,10 @@ Content-Type: application/json
   "ownerTeamCount": 1,
   "token": "login-token",
   "expiresAt": "2026-09-10T12:00:00.000Z",
-  "email": "zalo_123456789@zalo.local",
+  "email": "",
   "user": {
     "id": "user_xxx",
-    "email": "zalo_123456789@zalo.local"
+    "email": ""
   },
   "isNewUser": false,
   "groupID": "group_xxx",
@@ -109,19 +109,7 @@ Authorization: Bearer <token>
 
 ## 8. 关于邮箱
 
-Zalo 通常不返回邮箱。为了兼容后端当前 `email` 唯一结构，服务端会自动生成占位邮箱：
-
-```text
-zalo_<zaloUserID>@zalo.local
-```
-
-例如：
-
-```text
-zalo_123456789@zalo.local
-```
-
-这个邮箱仅用于后端账号唯一标识兼容，不代表用户真实邮箱。
+Zalo 通常不返回邮箱。服务端不会再生成占位邮箱，Zalo 首次登录创建的用户 `email` 存为空值；接口响应里的 `email` 返回空字符串 `""`。
 
 ## 9. 错误响应
 

@@ -44,12 +44,6 @@ export function assertZaloRedirectUri(redirectUri?: string) {
   }
 }
 
-export function zaloPlaceholderEmail(zaloUserID: string) {
-  const safeID = zaloUserID.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")
-  if (!safeID) throw new Error("Zalo 用户 ID 不正确")
-  return `zalo_${safeID}@zalo.local`
-}
-
 export function zaloAvatar(profile: ZaloProfile) {
   if (typeof profile.picture === "string") return profile.picture
   return profile.picture?.data?.url

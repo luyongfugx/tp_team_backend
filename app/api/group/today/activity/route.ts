@@ -10,7 +10,7 @@ function mapMember(member: Prisma.TeamMemberGetPayload<{ include: { user: true }
     userID: member.userID,
     userName: member.user.userName,
     shortName: member.user.shortName,
-    email: member.user.email,
+    email: member.user.email || "",
     avatar: member.user.avatar,
     role: roleToName(member.role),
     roleID: roleToID(member.role),

@@ -87,8 +87,8 @@ export async function POST(req: Request) {
       ownerTeamCount,
       token,
       expiresAt: expiresAt.toISOString(),
-      email: user.email,
-      user: { id: user.id, email: user.email },
+      email: user.email || "",
+      user: { id: user.id, email: user.email || "" },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
     })

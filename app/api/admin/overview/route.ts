@@ -136,7 +136,7 @@ export async function GET(req: Request) {
         role: superAdmin ? "SUPER_ADMIN" : "TEAM_OWNER",
         currentUser: {
           id: user.id,
-          email: user.email,
+          email: user.email || "",
           userName: user.userName,
           avatar: user.avatar,
         },
@@ -172,7 +172,7 @@ export async function GET(req: Request) {
             photoNum: teamPhotoCountByID.get(team.groupID) || 0,
             members: team.members.map((member) => ({
               userID: member.userID,
-              email: member.user.email,
+              email: member.user.email || "",
               userName: member.user.userName,
               shortName: member.user.shortName,
               avatar: member.user.avatar,

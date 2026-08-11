@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       avatar: user.avatar,
       shortName: user.shortName,
       token,
-      email: user.email,
+      email: user.email || "",
       groupID: invite.groupID,
       groupName: invite.team.groupName,
       role: roleToName(invite.role),

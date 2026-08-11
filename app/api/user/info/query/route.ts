@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         userName: item.userName,
         shortName: item.shortName,
         avatar: item.avatar,
-        email: item.email,
+        email: item.email || "",
       })),
     })
   } catch (err) {

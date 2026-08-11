@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       shortName: user.shortName,
       ownerTeamCount,
       token,
-      email: user.email,
+      email: user.email || "",
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
     })

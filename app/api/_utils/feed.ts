@@ -329,7 +329,7 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
           userID: creator.id,
           userName: creator.userName,
           shortName: creator.shortName,
-          email: creator.email,
+          email: creator.email || "",
           avatar: creator.avatar,
         }
       : null,
@@ -340,7 +340,7 @@ export function mapFeed(item: Record<string, unknown>, currentUserID: string) {
         userID: user.id,
         userName: user.userName,
         shortName: user.shortName,
-        email: user.email,
+        email: typeof user.email === "string" ? user.email : "",
         avatar: user.avatar,
       })),
     latestComments: comments.map(mapComment),
@@ -390,7 +390,7 @@ export function mapComment(item: unknown) {
           userID: user.id,
           userName: user.userName,
           shortName: user.shortName,
-          email: user.email,
+          email: typeof user.email === "string" ? user.email : "",
           avatar: user.avatar,
         }
       : null,
