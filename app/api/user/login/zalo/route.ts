@@ -2,6 +2,7 @@ import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { bad, badFor, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import { localeFromRequest } from "@/lib/i18n"
 import { zaloPlaceholderEmail } from "@/lib/zalo-auth"
 import {
   fillMissingUserRegistrationMetadata,
@@ -19,6 +20,7 @@ function readString(body: Record<string, unknown>, keys: string[]) {
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     // Temporary Zalo compatibility path:
     // Zalo blocks server-side token/profile requests from the Singapore server,
     // so for now we trust the Zalo profile returned by the native app SDK.
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
     user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token, expiresAt } = await createSession(user.id, appInstanceID)
-    if (!existing) await createDefaultTeamIfNeeded(user)
+    if (!existing) await createDefaultTeamIfNeeded(user, locale)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })

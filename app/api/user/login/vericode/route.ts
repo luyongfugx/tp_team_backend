@@ -2,6 +2,7 @@ import { createSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { badFor, EMAIL_RE, normalizeEmail, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import { localeFromRequest } from "@/lib/i18n"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
@@ -19,6 +20,7 @@ function canUseLocalTestCode(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const email = normalizeEmail(body.email)
     const loginType = Number(body.loginType ?? 0)
     if (!email || !EMAIL_RE.test(email)) return badFor(req, "请输入有效的邮箱地址")
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
       user.id,
       typeof body.appInstanceID === "string" ? body.appInstanceID : undefined,
     )
-    if (!existing) await createDefaultTeamIfNeeded(user)
+    if (!existing) await createDefaultTeamIfNeeded(user, locale)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })

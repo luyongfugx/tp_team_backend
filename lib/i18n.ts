@@ -26110,6 +26110,9 @@ export function localeFromRequest(req: Request, body?: Record<string, unknown>) 
     body?.locale ||
       body?.language ||
       body?.lang ||
+      body?.appLan ||
+      body?.fullapplan ||
+      body?.fullAppLan ||
       req.headers.get("x-locale") ||
       req.headers.get("x-language") ||
       req.headers.get("accept-language"),

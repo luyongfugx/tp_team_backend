@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyAppleIdentityToken } from "@/lib/apple-auth"
 import { bad, EMAIL_RE, normalizeEmail, ok, readBody } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import { localeFromRequest } from "@/lib/i18n"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
@@ -24,6 +25,7 @@ function nameFromBody(body: Record<string, unknown>) {
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const identityToken = typeof body.identityToken === "string" ? body.identityToken.trim() : ""
     if (!identityToken) return bad("缺少 Apple identityToken")
     const applePayload = await verifyAppleIdentityToken({
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
     user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token } = await createSession(user.id, appInstanceID)
-    if (!existing) await createDefaultTeamIfNeeded(user)
+    if (!existing) await createDefaultTeamIfNeeded(user, locale)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })

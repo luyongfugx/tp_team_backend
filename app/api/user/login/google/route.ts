@@ -3,6 +3,7 @@ import { verifyGoogleIdentityToken } from "@/lib/google-auth"
 import { prisma } from "@/lib/prisma"
 import { bad, badFor, EMAIL_RE, normalizeEmail, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { createDefaultTeamIfNeeded } from "@/app/api/_utils/default-team"
+import { localeFromRequest } from "@/lib/i18n"
 import {
   fillMissingUserRegistrationMetadata,
   userRegistrationMetadataFromBody,
@@ -17,6 +18,7 @@ function nameFromBody(body: Record<string, unknown>, tokenName?: string) {
 export async function POST(req: Request) {
   try {
     const body = await readBody(req)
+    const locale = localeFromRequest(req, body)
     const identityToken =
       typeof body.identityToken === "string"
         ? body.identityToken.trim()
@@ -67,7 +69,7 @@ export async function POST(req: Request) {
     user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token, expiresAt } = await createSession(user.id, appInstanceID)
-    if (!existing) await createDefaultTeamIfNeeded(user)
+    if (!existing) await createDefaultTeamIfNeeded(user, locale)
     const ownerTeamCount = await prisma.team.count({
       where: { ownerID: user.id, deletedAt: null },
     })

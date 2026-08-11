@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     user = await fillMissingUserRegistrationMetadata(user, body)
 
     const { token, expiresAt } = await createSession(user.id)
-    if (!existing) await createDefaultTeamIfNeeded(user)
+    if (!existing) await createDefaultTeamIfNeeded(user, locale)
 
     return NextResponse.json({
       success: true,
