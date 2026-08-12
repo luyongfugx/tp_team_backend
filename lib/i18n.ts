@@ -1,3 +1,5 @@
+import { qrLoginTranslations } from "@/lib/qr-login-translations"
+
 export const supportedLocales = [
   "af",
   "ak",
@@ -4299,6 +4301,7 @@ Object.assign(dictionaries.zu, {
 
 for (const locale of supportedLocales) {
   dictionaries[locale] = dictionaries[locale] || {}
+  Object.assign(dictionaries[locale], qrLoginTranslations[locale])
 }
 
 // BEGIN GENERATED 112-LOCALE TRANSLATIONS

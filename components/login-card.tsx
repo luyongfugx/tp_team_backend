@@ -49,28 +49,6 @@ interface LoginCardProps {
   className?: string
 }
 
-function qrLoginText(locale: string, key: "button" | "title" | "desc" | "confirmed" | "expired" | "refresh") {
-  const zh = resolveLocale(locale).startsWith("zh")
-  const copy = zh
-    ? {
-        button: "使用 App 扫码登录",
-        title: "扫码登录",
-        desc: "请使用已登录的 Timeprint App 扫描二维码",
-        confirmed: "已确认，正在登录",
-        expired: "二维码已过期",
-        refresh: "刷新二维码",
-      }
-    : {
-        button: "Scan with the App",
-        title: "Scan to log in",
-        desc: "Scan this QR code with the signed-in Timeprint App",
-        confirmed: "Confirmed, logging in",
-        expired: "QR code expired",
-        refresh: "Refresh QR code",
-      }
-  return copy[key]
-}
-
 export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   const [locale, setLocale] = useState("zh-Hans")
   const [step, setStep] = useState<Step>("qrCode")
@@ -201,7 +179,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
             user: data.user || { id: data.userID, email: data.email || "" },
           })
         } else if (data.status === "expired" || data.status === "consumed") {
-          setError(qrLoginText(locale, "expired"))
+          setError(t(locale, "login.qrExpired"))
         } else if (data.status === "confirmed") {
           setQrConfirmed(true)
         }
@@ -300,10 +278,10 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     <Card className={`w-full max-w-sm border-orange-100 bg-white/90 text-slate-950 shadow-2xl shadow-orange-900/10 backdrop-blur-xl ring-orange-50 ${className}`}>
       <CardHeader className="space-y-2">
         <CardTitle className="text-3xl font-semibold text-slate-950">
-          {step === "email" ? t(locale, "login.freeStart") : step === "qrCode" ? qrLoginText(locale, "title") : t(locale, "login.titleCode")}
+          {step === "email" ? t(locale, "login.freeStart") : step === "qrCode" ? t(locale, "login.qrTitle") : t(locale, "login.titleCode")}
         </CardTitle>
         {step === "code" && <CardDescription className="text-slate-500">{t(locale, "login.descCode", { email })}</CardDescription>}
-        {step === "qrCode" && <CardDescription className="text-slate-500">{qrLoginText(locale, "desc")}</CardDescription>}
+        {step === "qrCode" && <CardDescription className="text-slate-500">{t(locale, "login.qrDescription")}</CardDescription>}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -366,7 +344,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 setError("")
               }}
             >
-              <QrCode className="size-4" /> {qrLoginText(locale, "button")}
+              <QrCode className="size-4" /> {t(locale, "login.qrButton")}
             </Button>
           </div>
         )}
@@ -375,19 +353,19 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
           <div className="space-y-4">
             <div className="mx-auto flex aspect-square w-[240px] items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-2">
               {qrImage ? (
-                <img src={qrImage} alt={qrLoginText(locale, "title")} className="size-full" />
+                <img src={qrImage} alt={t(locale, "login.qrTitle")} className="size-full" />
               ) : (
                 <Loader2 className="size-7 animate-spin text-[#ea580c]" />
               )}
             </div>
             {qrConfirmed && (
               <p className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                <Loader2 className="size-4 animate-spin" /> {qrLoginText(locale, "confirmed")}
+                <Loader2 className="size-4 animate-spin" /> {t(locale, "login.qrConfirmed")}
               </p>
             )}
             {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
             <Button type="button" variant="outline" className="h-10 w-full border-orange-200 text-[#ea580c] hover:bg-orange-50" onClick={() => setQrRefreshKey((value) => value + 1)}>
-              <RefreshCw className="size-4" /> {qrLoginText(locale, "refresh")}
+              <RefreshCw className="size-4" /> {t(locale, "login.qrRefresh")}
             </Button>
             <Button
               type="button"
