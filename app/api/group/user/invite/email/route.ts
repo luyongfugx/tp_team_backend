@@ -98,7 +98,7 @@ export async function POST(req: Request) {
         result: await sendTeamInviteEmail({
           email,
           groupName: team.groupName,
-          inviterName: user.userName || user.shortName || user.email,
+          inviterName: user.userName || user.shortName || user.email || "Timeprint",
           inviteCode: inviteCodes[email],
           memberCount: team._count.members + joinedEmails.length,
           photoCount: team._count.photos,

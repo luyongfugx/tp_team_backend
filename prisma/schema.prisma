@@ -34,6 +34,7 @@ model User {
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   sessions             Session[]
+  webLoginCodes        WebLoginCode[]
   ownedTeams           Team[]            @relation("TeamOwner")
   sentTeamEmailInvites TeamEmailInvite[] @relation("TeamEmailInviteInviter")
   teamMemberships      TeamMember[]
@@ -56,6 +57,20 @@ model VerificationCode {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model WebLoginCode {
+  id        String    @id @default(cuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code])
+  @@index([expiresAt])
 }
 
 model Session {

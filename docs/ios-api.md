@@ -36,6 +36,98 @@ x-sign-id: md5(email + signKey)
 
 如果服务端未配置 `EMAIL_SIGN_KEY`，签名不强制校验。
 
+## Web 登录码
+
+用于“App 已登录，Web 端输入账号标识 + 6 位数字码登录”的场景。
+
+### App 端生成 Web 登录码
+
+```text
+POST user/web-login/code/create
+Authorization: Bearer <App 登录 token>
+```
+
+请求 body 可以为空：
+
+```json
+{}
+```
+
+成功响应：
+
+```json
+{
+  "code": "123456",
+  "expiresAt": "2026-08-12T12:05:00.000Z",
+  "identifier": "zalo_user_id_or_email",
+  "email": "user@example.com",
+  "zaloUserID": "",
+  "userID": "backend_user_id"
+}
+```
+
+说明：
+
+|字段|说明|
+|---|---|
+|`code`|6 位数字 Web 登录码，默认 5 分钟有效|
+|`identifier`|推荐展示/传给 Web 的账号标识。Zalo 用户优先返回 `zaloUserID`，否则返回邮箱|
+|`email`|用户邮箱。Zalo 用户通常为空字符串|
+|`zaloUserID`|Zalo SDK 返回的用户 ID。非 Zalo 用户为空字符串|
+|`userID`|Timeprint 后端用户 ID，兜底使用|
+
+### Web 端使用登录码登录
+
+```text
+POST user/login/web-code
+```
+
+请求：
+
+```json
+{
+  "identifier": "zalo_user_id_or_email",
+  "code": "123456"
+}
+```
+
+也兼容字段名：
+
+|字段|说明|
+|---|---|
+|`identifier` / `account`|账号标识，推荐字段|
+|`email`|Google / Apple / 邮箱用户可以直接传邮箱|
+|`zaloUserID` / `zaloUserId` / `zalo_user_id` / `userID` / `userId`|Zalo 用户 ID 或后端用户 ID|
+
+成功响应与普通登录一致：
+
+```json
+{
+  "success": true,
+  "userID": "user_xxx",
+  "userName": "User",
+  "avatar": "https://...",
+  "shortName": null,
+  "ownerTeamCount": 1,
+  "token": "login-token",
+  "expiresAt": "2026-08-12T12:00:00.000Z",
+  "email": "user@example.com",
+  "user": {
+    "id": "user_xxx",
+    "email": "user@example.com"
+  },
+  "isNewUser": false,
+  "groupID": "group_xxx",
+  "zaloUserID": ""
+}
+```
+
+注意：
+
+- 每次生成新 Web 登录码，会自动作废该用户之前未使用的 Web 登录码。
+- Web 登录码使用成功后会立即失效，不能重复使用。
+- Zalo 用户的登录响应 `email` 为空字符串，Web 端应使用 `zaloUserID` 作为账号标识。
+
 ### 通用成功响应
 
 无返回数据时：

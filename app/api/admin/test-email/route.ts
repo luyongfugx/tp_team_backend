@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         : null
       const linkGroupID = team?.groupID || groupID || (typeof body.linkGroupID === "string" && body.linkGroupID.trim()) || "test-team"
       const groupName = team?.groupName || (typeof body.groupName === "string" && body.groupName.trim()) || "Timeprint Team"
-      const inviterName = (typeof body.inviterName === "string" && body.inviterName.trim()) || user.userName || user.email
+      const inviterName = (typeof body.inviterName === "string" && body.inviterName.trim()) || user.userName || user.email || "Timeprint"
       const inviteCode = typeof body.inviteCode === "string" && /^\d{6}$/.test(body.inviteCode) ? body.inviteCode : generateCode()
       const result = await sendTeamInviteEmail({
         email,

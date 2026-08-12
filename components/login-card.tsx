@@ -13,7 +13,7 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 
-type Step = "email" | "code"
+type Step = "email" | "code" | "webCode"
 
 declare global {
   interface Window {
@@ -48,11 +48,35 @@ interface LoginCardProps {
   className?: string
 }
 
+function appCodeText(locale: string, key: "button" | "title" | "desc" | "identifier" | "code" | "submit") {
+  const zh = resolveLocale(locale).startsWith("zh")
+  const copy = zh
+    ? {
+        button: "使用 App 登录码",
+        title: "App 登录码登录",
+        desc: "输入 App 中生成的账号标识和 6 位数字码",
+        identifier: "账号标识",
+        code: "6 位数字码",
+        submit: "登录 Web",
+      }
+    : {
+        button: "Use App login code",
+        title: "App login code",
+        desc: "Enter the account identifier and 6-digit code generated in the app",
+        identifier: "Account identifier",
+        code: "6-digit code",
+        submit: "Log in to Web",
+      }
+  return copy[key]
+}
+
 export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   const [locale, setLocale] = useState("zh-Hans")
   const [step, setStep] = useState<Step>("email")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
+  const [webIdentifier, setWebIdentifier] = useState("")
+  const [webCode, setWebCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [googleClientID, setGoogleClientID] = useState("")
@@ -169,6 +193,33 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     }
   }
 
+  async function verifyWebCode(submitCode = webCode) {
+    setError("")
+    setLoading(true)
+    try {
+      const res = await fetch("/api/user/login/web-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-locale": locale },
+        body: JSON.stringify({ identifier: webIdentifier, code: submitCode, locale }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || t(locale, "common.verifyFailed"))
+        setWebCode("")
+        return
+      }
+      onSuccess({
+        token: data.token,
+        expiresAt: data.expiresAt,
+        user: data.user || { id: data.userID, email: data.email || "" },
+      })
+    } catch {
+      setError(t(locale, "common.networkError"))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleGoogleCredential(response: { credential?: string }) {
     const identityToken = response.credential
     if (!identityToken) {
@@ -204,9 +255,10 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     <Card className={`w-full max-w-sm border-orange-100 bg-white/90 text-slate-950 shadow-2xl shadow-orange-900/10 backdrop-blur-xl ring-orange-50 ${className}`}>
       <CardHeader className="space-y-2">
         <CardTitle className="text-3xl font-semibold text-slate-950">
-          {step === "email" ? t(locale, "login.freeStart") : t(locale, "login.titleCode")}
+          {step === "email" ? t(locale, "login.freeStart") : step === "webCode" ? appCodeText(locale, "title") : t(locale, "login.titleCode")}
         </CardTitle>
         {step === "code" && <CardDescription className="text-slate-500">{t(locale, "login.descCode", { email })}</CardDescription>}
+        {step === "webCode" && <CardDescription className="text-slate-500">{appCodeText(locale, "desc")}</CardDescription>}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -259,7 +311,78 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 {loading ? t(locale, "login.sendingEmailCode") : t(locale, "login.emailLogin")}
               </Button>
             </form>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full border-orange-200 bg-white text-[#ea580c] hover:bg-orange-50 hover:text-[#c2410c]"
+              onClick={() => {
+                setStep("webCode")
+                setError("")
+              }}
+            >
+              {appCodeText(locale, "button")}
+            </Button>
           </div>
+        )}
+
+        {step === "webCode" && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              verifyWebCode()
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="webIdentifier" className="text-slate-700">{appCodeText(locale, "identifier")}：</Label>
+              <Input
+                id="webIdentifier"
+                value={webIdentifier}
+                onChange={(e) => setWebIdentifier(e.target.value)}
+                autoComplete="username"
+                required
+                className="h-11 border-slate-200 bg-white px-3 text-slate-950 placeholder:text-slate-400 focus-visible:border-orange-400 focus-visible:ring-orange-200/60"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="webCode" className="text-slate-700">{appCodeText(locale, "code")}：</Label>
+              <InputOTP
+                maxLength={6}
+                value={webCode}
+                onChange={(v) => {
+                  setWebCode(v)
+                  if (v.length === 6 && webIdentifier.trim()) verifyWebCode(v)
+                }}
+                disabled={loading}
+              >
+                <InputOTPGroup className="gap-2">
+                  <InputOTPSlot index={0} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={1} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={2} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={3} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={4} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={5} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
+            <Button type="submit" className="h-11 w-full bg-[#ea580c] text-white shadow-lg shadow-orange-200/70 hover:bg-[#f97316]" disabled={loading || !webIdentifier || webCode.length !== 6}>
+              {loading && <Loader2 className="size-4 animate-spin" />}
+              {loading ? t(locale, "login.verifying") : appCodeText(locale, "submit")}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setStep("email")
+                setWebCode("")
+                setError("")
+              }}
+              className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-950"
+            >
+              <ArrowLeft className="size-4" /> {t(locale, "web.back")}
+            </button>
+          </form>
         )}
 
         {step === "code" && (
