@@ -2474,7 +2474,7 @@ POST photo/pdf/setting/update
 
 `TeamFeedPhoto`：Feed 和照片的关联表。一条 `TeamFeed` 可以对应多张照片。`TeamFeed.photoID` 仅保留为兼容字段，通常是第一张照片；客户端展示照片组时应优先使用返回里的 `photos` 数组。
 
-照片上传后，服务端会自动把同一用户、同一团队/项目、默认 5 分钟内上传的照片归到同一条 `PHOTO` 类型 Feed。超过窗口会创建新的 Feed。时间窗口可在环境变量里修改：
+照片上传后，服务端会自动把同一用户、同一团队/项目、默认 5 分钟拍摄时间窗口内的照片归到同一条 `PHOTO` 类型 Feed。超过窗口会创建新的 Feed。重试上传只按照片的 `takePhotoTimestamp` 归组，不按请求到达服务器的时间归组。时间窗口可在环境变量里修改：
 
 ```env
 TEAM_FEED_AGGREGATION_MINUTES=5
@@ -2491,8 +2491,8 @@ TEAM_FEED_AGGREGATION_MS=300000
 - 同一个用户。
 - 同一个团队。
 - 同一个项目；团队级照片只会和团队级照片聚合，项目照片只会和同一项目照片聚合。
-- 在配置的上传时间窗口内。
-- 同一条 Feed 追加新照片后会刷新 `updatedAt`，但 Feed 列表固定按 `createdAt` 倒序返回。
+- 合并后整组照片的拍摄时间跨度不超过配置窗口。
+- 同一条 Feed 追加新照片后会刷新 `updatedAt`；Feed 列表按照片组内最早拍摄时间倒序返回。
 
 `TeamFeedComment`：动态评论。只支持新增和删除，不支持修改；删除为软删除。
 

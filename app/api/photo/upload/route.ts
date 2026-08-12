@@ -7,6 +7,7 @@ import { feedAggregationWindowMs } from "@/app/api/_utils/feed"
 type FeedPhotoDelegate = {
   teamFeed: {
     findFirst: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+    findMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>[]>
     create: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
     update: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
   }
@@ -40,25 +41,58 @@ async function attachPhotoToRecentFeed({
   projectID,
   userID,
   photoID,
+  photoTimestamp,
 }: {
   groupID: string
   projectID?: number
   userID: string
   photoID: string
+  photoTimestamp: number
 }) {
   const delegate = prisma as never as FeedPhotoDelegate
-  const windowStart = new Date(Date.now() - feedAggregationWindowMs())
-  const feed = await delegate.teamFeed.findFirst({
+  const windowMs = feedAggregationWindowMs()
+  const windowStart = BigInt(Math.trunc(photoTimestamp - windowMs))
+  const windowEnd = BigInt(Math.trunc(photoTimestamp + windowMs))
+  const candidateFeeds = await delegate.teamFeed.findMany({
     where: {
       groupID,
       projectID: projectID ?? null,
       createdByUserID: userID,
       feedType: "PHOTO",
       deletedAt: null,
-      createdAt: { gte: windowStart },
+      feedPhotos: {
+        some: {
+          photo: {
+            deletedAt: null,
+            timestamp: { gte: windowStart, lte: windowEnd },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: "desc" },
+    select: {
+      feedID: true,
+      feedPhotos: {
+        where: { photo: { deletedAt: null } },
+        select: { photo: { select: { timestamp: true } } },
+      },
+    },
   })
+  const feed = candidateFeeds
+    .map((candidate) => {
+      const feedPhotos = Array.isArray(candidate.feedPhotos) ? candidate.feedPhotos : []
+      const timestamps = feedPhotos
+        .map((item) => item && typeof item === "object" ? (item as Record<string, unknown>).photo : null)
+        .map((photo) => photo && typeof photo === "object" ? Number((photo as Record<string, unknown>).timestamp) : Number.NaN)
+        .filter((value) => Number.isFinite(value))
+      if (timestamps.length === 0) return null
+      const earliest = Math.min(...timestamps, photoTimestamp)
+      const latest = Math.max(...timestamps, photoTimestamp)
+      if (latest - earliest > windowMs) return null
+      const distance = Math.min(...timestamps.map((value) => Math.abs(value - photoTimestamp)))
+      return { candidate, distance }
+    })
+    .filter((item): item is { candidate: Record<string, unknown>; distance: number } => Boolean(item))
+    .sort((a, b) => a.distance - b.distance)[0]?.candidate ?? null
   const targetFeed = feed ?? await delegate.teamFeed.create({
     data: {
       groupID,
@@ -129,7 +163,7 @@ export async function POST(req: Request) {
         ossFileName: body.ossFileName,
         deletedAt: null,
       },
-      select: { photoID: true },
+      select: { photoID: true, timestamp: true },
       orderBy: { createdAt: "desc" },
     })
     const existingPhotoByMediaID = existingPhotoByOss || !mediaID
@@ -141,7 +175,7 @@ export async function POST(req: Request) {
             projectID: project?.projectID ?? null,
             deletedAt: null,
           },
-          select: { photoID: true, mediaInfo: true },
+          select: { photoID: true, timestamp: true, mediaInfo: true },
           orderBy: { createdAt: "desc" },
           take: 200,
         })).find((item) => mediaIDFromInfo(item.mediaInfo) === mediaID) ?? null
@@ -153,6 +187,7 @@ export async function POST(req: Request) {
         projectID: project?.projectID,
         userID: user.id,
         photoID: existingPhoto.photoID,
+        photoTimestamp: Number(existingPhoto.timestamp),
       })
       return ok({ photoID: existingPhoto.photoID, feedID, duplicated: true })
     }
@@ -221,6 +256,7 @@ export async function POST(req: Request) {
       projectID: project?.projectID,
       userID: user.id,
       photoID: photo.photoID,
+      photoTimestamp: timestamp,
     })
 
     return ok({ photoID: photo.photoID, feedID })
