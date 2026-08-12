@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import QRCode from "qrcode"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,10 +11,10 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Mail, QrCode, RefreshCw } from "lucide-react"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 
-type Step = "email" | "code" | "webCode"
+type Step = "email" | "code" | "qrCode"
 
 declare global {
   interface Window {
@@ -48,35 +49,37 @@ interface LoginCardProps {
   className?: string
 }
 
-function appCodeText(locale: string, key: "button" | "title" | "desc" | "identifier" | "code" | "submit") {
+function qrLoginText(locale: string, key: "button" | "title" | "desc" | "confirmed" | "expired" | "refresh") {
   const zh = resolveLocale(locale).startsWith("zh")
   const copy = zh
     ? {
-        button: "使用 App 登录码",
-        title: "App 登录码登录",
-        desc: "输入 App 中生成的账号标识和 6 位数字码",
-        identifier: "账号标识",
-        code: "6 位数字码",
-        submit: "登录 Web",
+        button: "使用 App 扫码登录",
+        title: "扫码登录",
+        desc: "请使用已登录的 Timeprint App 扫描二维码",
+        confirmed: "已确认，正在登录",
+        expired: "二维码已过期",
+        refresh: "刷新二维码",
       }
     : {
-        button: "Use App login code",
-        title: "App login code",
-        desc: "Enter the account identifier and 6-digit code generated in the app",
-        identifier: "Account identifier",
-        code: "6-digit code",
-        submit: "Log in to Web",
+        button: "Scan with the App",
+        title: "Scan to log in",
+        desc: "Scan this QR code with the signed-in Timeprint App",
+        confirmed: "Confirmed, logging in",
+        expired: "QR code expired",
+        refresh: "Refresh QR code",
       }
   return copy[key]
 }
 
 export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   const [locale, setLocale] = useState("zh-Hans")
-  const [step, setStep] = useState<Step>("email")
+  const [step, setStep] = useState<Step>("qrCode")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
-  const [webIdentifier, setWebIdentifier] = useState("")
-  const [webCode, setWebCode] = useState("")
+  const [qrLogin, setQrLogin] = useState<{ scanToken: string; browserSecret: string; scanURL: string; expiresAt: string } | null>(null)
+  const [qrImage, setQrImage] = useState("")
+  const [qrRefreshKey, setQrRefreshKey] = useState(0)
+  const [qrConfirmed, setQrConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [googleClientID, setGoogleClientID] = useState("")
@@ -147,6 +150,75 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleClientID, googleScriptReady, locale])
 
+  useEffect(() => {
+    if (step !== "qrCode") return
+    let cancelled = false
+    setError("")
+    setQrLogin(null)
+    setQrImage("")
+    setQrConfirmed(false)
+    fetch("/api/auth/qr-login/create", { method: "POST" })
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || t(locale, "common.networkError"))
+        const image = await QRCode.toDataURL(data.scanURL, {
+          width: 240,
+          margin: 1,
+          errorCorrectionLevel: "M",
+          color: { dark: "#0f172a", light: "#ffffff" },
+        })
+        if (!cancelled) {
+          setQrLogin(data)
+          setQrImage(image)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : t(locale, "common.networkError"))
+      })
+    return () => { cancelled = true }
+  }, [step, qrRefreshKey, locale])
+
+  useEffect(() => {
+    if (step !== "qrCode" || !qrLogin) return
+    let cancelled = false
+    let requesting = false
+    async function poll() {
+      if (requesting || cancelled) return
+      requesting = true
+      try {
+        const res = await fetch("/api/auth/qr-login/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-locale": locale },
+          body: JSON.stringify({ scanToken: qrLogin?.scanToken, browserSecret: qrLogin?.browserSecret, locale }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || t(locale, "common.verifyFailed"))
+        if (data.status === "authenticated") {
+          setQrConfirmed(true)
+          onSuccess({
+            token: data.token,
+            expiresAt: data.expiresAt,
+            user: data.user || { id: data.userID, email: data.email || "" },
+          })
+        } else if (data.status === "expired" || data.status === "consumed") {
+          setError(qrLoginText(locale, "expired"))
+        } else if (data.status === "confirmed") {
+          setQrConfirmed(true)
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : t(locale, "common.networkError"))
+      } finally {
+        requesting = false
+      }
+    }
+    poll()
+    const timer = window.setInterval(poll, 2000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [step, qrLogin, locale, onSuccess])
+
   async function sendCode() {
     setError("")
     setLoading(true)
@@ -193,33 +265,6 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     }
   }
 
-  async function verifyWebCode(submitCode = webCode) {
-    setError("")
-    setLoading(true)
-    try {
-      const res = await fetch("/api/user/login/web-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-locale": locale },
-        body: JSON.stringify({ identifier: webIdentifier, code: submitCode, locale }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || t(locale, "common.verifyFailed"))
-        setWebCode("")
-        return
-      }
-      onSuccess({
-        token: data.token,
-        expiresAt: data.expiresAt,
-        user: data.user || { id: data.userID, email: data.email || "" },
-      })
-    } catch {
-      setError(t(locale, "common.networkError"))
-    } finally {
-      setLoading(false)
-    }
-  }
-
   async function handleGoogleCredential(response: { credential?: string }) {
     const identityToken = response.credential
     if (!identityToken) {
@@ -255,10 +300,10 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
     <Card className={`w-full max-w-sm border-orange-100 bg-white/90 text-slate-950 shadow-2xl shadow-orange-900/10 backdrop-blur-xl ring-orange-50 ${className}`}>
       <CardHeader className="space-y-2">
         <CardTitle className="text-3xl font-semibold text-slate-950">
-          {step === "email" ? t(locale, "login.freeStart") : step === "webCode" ? appCodeText(locale, "title") : t(locale, "login.titleCode")}
+          {step === "email" ? t(locale, "login.freeStart") : step === "qrCode" ? qrLoginText(locale, "title") : t(locale, "login.titleCode")}
         </CardTitle>
         {step === "code" && <CardDescription className="text-slate-500">{t(locale, "login.descCode", { email })}</CardDescription>}
-        {step === "webCode" && <CardDescription className="text-slate-500">{appCodeText(locale, "desc")}</CardDescription>}
+        {step === "qrCode" && <CardDescription className="text-slate-500">{qrLoginText(locale, "desc")}</CardDescription>}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -317,72 +362,47 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
               variant="outline"
               className="h-11 w-full border-orange-200 bg-white text-[#ea580c] hover:bg-orange-50 hover:text-[#c2410c]"
               onClick={() => {
-                setStep("webCode")
+                setStep("qrCode")
                 setError("")
               }}
             >
-              {appCodeText(locale, "button")}
+              <QrCode className="size-4" /> {qrLoginText(locale, "button")}
             </Button>
           </div>
         )}
 
-        {step === "webCode" && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              verifyWebCode()
-            }}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="webIdentifier" className="text-slate-700">{appCodeText(locale, "identifier")}：</Label>
-              <Input
-                id="webIdentifier"
-                value={webIdentifier}
-                onChange={(e) => setWebIdentifier(e.target.value)}
-                autoComplete="username"
-                required
-                className="h-11 border-slate-200 bg-white px-3 text-slate-950 placeholder:text-slate-400 focus-visible:border-orange-400 focus-visible:ring-orange-200/60"
-              />
+        {step === "qrCode" && (
+          <div className="space-y-4">
+            <div className="mx-auto flex aspect-square w-[240px] items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-2">
+              {qrImage ? (
+                <img src={qrImage} alt={qrLoginText(locale, "title")} className="size-full" />
+              ) : (
+                <Loader2 className="size-7 animate-spin text-[#ea580c]" />
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="webCode" className="text-slate-700">{appCodeText(locale, "code")}：</Label>
-              <InputOTP
-                maxLength={6}
-                value={webCode}
-                onChange={(v) => {
-                  setWebCode(v)
-                  if (v.length === 6 && webIdentifier.trim()) verifyWebCode(v)
-                }}
-                disabled={loading}
-              >
-                <InputOTPGroup className="gap-2">
-                  <InputOTPSlot index={0} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={1} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={2} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={3} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={4} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={5} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
+            {qrConfirmed && (
+              <p className="flex items-center justify-center gap-2 text-sm text-slate-500">
+                <Loader2 className="size-4 animate-spin" /> {qrLoginText(locale, "confirmed")}
+              </p>
+            )}
             {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
-            <Button type="submit" className="h-11 w-full bg-[#ea580c] text-white shadow-lg shadow-orange-200/70 hover:bg-[#f97316]" disabled={loading || !webIdentifier || webCode.length !== 6}>
-              {loading && <Loader2 className="size-4 animate-spin" />}
-              {loading ? t(locale, "login.verifying") : appCodeText(locale, "submit")}
+            <Button type="button" variant="outline" className="h-10 w-full border-orange-200 text-[#ea580c] hover:bg-orange-50" onClick={() => setQrRefreshKey((value) => value + 1)}>
+              <RefreshCw className="size-4" /> {qrLoginText(locale, "refresh")}
             </Button>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => {
                 setStep("email")
-                setWebCode("")
+                setQrLogin(null)
+                setQrImage("")
                 setError("")
               }}
-              className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-950"
+              className="h-11 w-full border-orange-200 bg-white text-[#ea580c] hover:bg-orange-50 hover:text-[#c2410c]"
             >
-              <ArrowLeft className="size-4" /> {t(locale, "web.back")}
-            </button>
-          </form>
+              <Mail className="size-4" /> {t(locale, "login.emailLogin")}
+            </Button>
+          </div>
         )}
 
         {step === "code" && (

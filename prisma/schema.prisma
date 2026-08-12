@@ -8,39 +8,40 @@ datasource db {
 }
 
 model User {
-  id                   String            @id @default(cuid())
-  email                String?           @unique
-  appleUserID          String?           @unique
-  googleUserID         String?           @unique
-  zaloUserID           String?           @unique
+  id                   String              @id @default(cuid())
+  email                String?             @unique
+  appleUserID          String?             @unique
+  googleUserID         String?             @unique
+  zaloUserID           String?             @unique
   userName             String?
   shortName            String?
   avatar               String?
   selectedGroupID      String?
   selectedProjectID    Int?
   appInstanceID        String?
-  appVersion           String?           @map("App-Version")
+  appVersion           String?             @map("App-Version")
   versionCode          String?
   platform             String?
-  deviceId             String?           @map("device_id")
-  appUUID              String?           @map("App-UUID")
-  deviceModel          String?           @map("device model")
+  deviceId             String?             @map("device_id")
+  appUUID              String?             @map("App-UUID")
+  deviceModel          String?             @map("device model")
   realTimeZone         String?
   systemTimeZone       String?
   countryCode          String?
   appLan               String?
   fullapplan           String?
   deletedAt            DateTime?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
   sessions             Session[]
   webLoginCodes        WebLoginCode[]
-  ownedTeams           Team[]            @relation("TeamOwner")
-  sentTeamEmailInvites TeamEmailInvite[] @relation("TeamEmailInviteInviter")
+  webQrLoginSessions   WebQrLoginSession[]
+  ownedTeams           Team[]              @relation("TeamOwner")
+  sentTeamEmailInvites TeamEmailInvite[]   @relation("TeamEmailInviteInviter")
   teamMemberships      TeamMember[]
   projectMemberships   ProjectMember[]
   photos               Photo[]
-  feedPosts            TeamFeed[]        @relation("TeamFeedCreatedBy")
+  feedPosts            TeamFeed[]          @relation("TeamFeedCreatedBy")
   feedComments         TeamFeedComment[]
   feedLikes            TeamFeedLike[]
 
@@ -60,16 +61,32 @@ model VerificationCode {
 }
 
 model WebLoginCode {
-  id        String    @id @default(cuid())
-  userId    String
-  code      String
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  userId     String
+  code       String
+  expiresAt  DateTime
   consumedAt DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([code])
+  @@index([expiresAt])
+}
+
+model WebQrLoginSession {
+  id                String    @id @default(cuid())
+  scanToken         String    @unique
+  browserSecretHash String    @unique
+  userId            String?
+  expiresAt         DateTime
+  confirmedAt       DateTime?
+  consumedAt        DateTime?
+  webSessionToken   String?   @unique
+  createdAt         DateTime  @default(now())
+  user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([expiresAt])
 }
 
@@ -277,11 +294,11 @@ model ProjectMember {
 }
 
 model Photo {
-  photoID             String     @id @default(cuid())
+  photoID             String          @id @default(cuid())
   groupID             String
   projectID           Int?
   userID              String
-  mediaType           Int        @default(0)
+  mediaType           Int             @default(0)
   timestamp           BigInt
   takePhotoFormatTime String
   takePhotoTimezoneID String
@@ -296,8 +313,8 @@ model Photo {
   ossFileName         String
   localPhotoName      String?
   location            String?
-  lat                 Decimal?   @db.Decimal(10, 7)
-  lng                 Decimal?   @db.Decimal(10, 7)
+  lat                 Decimal?        @db.Decimal(10, 7)
+  lng                 Decimal?        @db.Decimal(10, 7)
   watermarkID         String?
   watermarkBaseID     String?
   saveToDevice        Int?
@@ -307,13 +324,13 @@ model Photo {
   systemInfo          Json?
   mediaInfo           Json?
   attendanceInfo      Json?
-  searchText          String?    @db.Text
+  searchText          String?         @db.Text
   deletedAt           DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  team                Team       @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
-  project             Project?   @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
-  user                User       @relation(fields: [userID], references: [id], onDelete: Restrict)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  team                Team            @relation(fields: [groupID], references: [groupID], onDelete: Cascade)
+  project             Project?        @relation(fields: [projectID], references: [projectID], onDelete: SetNull)
+  user                User            @relation(fields: [userID], references: [id], onDelete: Restrict)
   feeds               TeamFeed[]
   feedItems           TeamFeedPhoto[]
 

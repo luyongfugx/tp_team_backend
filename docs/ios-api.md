@@ -36,97 +36,73 @@ x-sign-id: md5(email + signKey)
 
 如果服务端未配置 `EMAIL_SIGN_KEY`，签名不强制校验。
 
-## Web 登录码
+## Web 扫码登录
 
-用于“App 已登录，Web 端输入账号标识 + 6 位数字码登录”的场景。
+用于“用户已登录 App，使用 App 摄像头扫描 Web 登录页二维码并自动登录 Web”的场景。二维码默认 5 分钟有效且只能登录一次。
 
-### App 端生成 Web 登录码
+### App 扫码后的确认接口
 
 ```text
-POST user/web-login/code/create
+POST user/web-login/qr/confirm
 Authorization: Bearer <App 登录 token>
 ```
 
-请求 body 可以为空：
+Web 二维码内容是以下格式的 URL：
+
+```text
+https://teamspace.timeprint.net/scan-login?token=<一次性扫码令牌>
+```
+
+App 扫描器识别到 host 为 `teamspace.timeprint.net`、path 为 `/scan-login` 后，调用确认接口。可以直接上传完整扫码内容：
 
 ```json
-{}
+{
+  "scanURL": "https://teamspace.timeprint.net/scan-login?token=abc123..."
+}
 ```
+
+也可以解析 URL 后只上传令牌：
+
+```json
+{
+  "scanToken": "abc123..."
+}
+```
+
+兼容字段名：`scanToken`、`token`、`scanURL`、`code`。
 
 成功响应：
 
 ```json
 {
-  "code": "123456",
-  "expiresAt": "2026-08-12T12:05:00.000Z",
-  "identifier": "zalo_user_id_or_email",
-  "email": "user@example.com",
-  "zaloUserID": "",
-  "userID": "backend_user_id"
+  "confirmed": true,
+  "alreadyConfirmed": false
 }
 ```
 
-说明：
+确认成功后，Web 登录页会在下一次轮询时自动完成登录，App 不需要把用户 ID、邮箱或 Zalo 用户 ID 传给 Web。
 
-|字段|说明|
+常见错误：
+
+|HTTP 状态码|说明|
 |---|---|
-|`code`|6 位数字 Web 登录码，默认 5 分钟有效|
-|`identifier`|推荐展示/传给 Web 的账号标识。Zalo 用户优先返回 `zaloUserID`，否则返回邮箱|
-|`email`|用户邮箱。Zalo 用户通常为空字符串|
-|`zaloUserID`|Zalo SDK 返回的用户 ID。非 Zalo 用户为空字符串|
-|`userID`|Timeprint 后端用户 ID，兜底使用|
+|`401`|App 登录 token 无效或已过期|
+|`404`|二维码不存在或已经失效|
+|`409`|二维码已被确认或使用|
+|`410`|二维码已过期，需要刷新 Web 二维码|
 
-### Web 端使用登录码登录
+### Web 内部接口
 
-```text
-POST user/login/web-code
-```
+以下接口由 Web 登录页自动调用，App 不需要调用：
 
-请求：
+- `POST auth/qr-login/create`：创建二维码会话。
+- `POST auth/qr-login/status`：Web 使用扫码令牌和仅浏览器持有的私钥轮询登录状态。
 
-```json
-{
-  "identifier": "zalo_user_id_or_email",
-  "code": "123456"
-}
-```
+扫码令牌本身不能直接换取 Web 登录 token。浏览器私钥不会写入二维码，可以避免第三方拍摄二维码后冒领登录会话。
 
-也兼容字段名：
+### 旧版六位登录码兼容
 
-|字段|说明|
-|---|---|
-|`identifier` / `account`|账号标识，推荐字段|
-|`email`|Google / Apple / 邮箱用户可以直接传邮箱|
-|`zaloUserID` / `zaloUserId` / `zalo_user_id` / `userID` / `userId`|Zalo 用户 ID 或后端用户 ID|
-
-成功响应与普通登录一致：
-
-```json
-{
-  "success": true,
-  "userID": "user_xxx",
-  "userName": "User",
-  "avatar": "https://...",
-  "shortName": null,
-  "ownerTeamCount": 1,
-  "token": "login-token",
-  "expiresAt": "2026-08-12T12:00:00.000Z",
-  "email": "user@example.com",
-  "user": {
-    "id": "user_xxx",
-    "email": "user@example.com"
-  },
-  "isNewUser": false,
-  "groupID": "group_xxx",
-  "zaloUserID": ""
-}
-```
-
-注意：
-
-- 每次生成新 Web 登录码，会自动作废该用户之前未使用的 Web 登录码。
-- Web 登录码使用成功后会立即失效，不能重复使用。
-- Zalo 用户的登录响应 `email` 为空字符串，Web 端应使用 `zaloUserID` 作为账号标识。
+旧接口 `POST user/web-login/code/create` 和 `POST user/login/web-code` 暂时保留，避免影响已经发布的 App；新版 Web 登录页不再展示六位登录码入口。
 
 ### 通用成功响应
 
