@@ -520,8 +520,11 @@ const localeAliases: Record<string, AppLocale> = {
   ko: "ko",
   "ko-kr": "ko",
   th: "th",
+  "th-th": "th",
   vi: "vi",
+  "vi-vn": "vi",
   id: "id",
+  "id-id": "id",
   ms: "ms",
   pt: "pt",
   "pt-br": "pt",
@@ -529,7 +532,13 @@ const localeAliases: Record<string, AppLocale> = {
   es: "es",
   "es-es": "es",
   "es-mx": "es",
+  "es-ar": "es",
+  "es-co": "es",
+  "es-us": "es",
   ar: "ar",
+  "ar-ae": "ar",
+  "ar-eg": "ar",
+  "ar-sa": "ar",
   fa: "fa",
   "fa-ir": "fa",
   ru: "ru",
@@ -26111,11 +26120,11 @@ export function resolveLocale(input?: unknown): AppLocale {
 export function localeFromRequest(req: Request, body?: Record<string, unknown>) {
   return resolveLocale(
     body?.locale ||
-      body?.language ||
-      body?.lang ||
-      body?.appLan ||
       body?.fullapplan ||
       body?.fullAppLan ||
+      body?.appLan ||
+      body?.language ||
+      body?.lang ||
       req.headers.get("x-locale") ||
       req.headers.get("x-language") ||
       req.headers.get("accept-language"),

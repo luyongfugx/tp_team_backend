@@ -138,6 +138,7 @@ export async function GET(req: Request) {
           id: user.id,
           email: user.email || "",
           userName: user.userName,
+          shortName: user.shortName,
           avatar: user.avatar,
         },
         summary: {

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { clientLocale, t } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/client-auth"
 
 type Auth = {
   token: string
@@ -94,11 +95,10 @@ export function FeedDedupeTool() {
         setError(t(locale, "dedupe.loginFirst"))
         return
       }
-      const res = await fetch("/api/admin/feed-duplicates", {
+      const res = await authenticatedFetch("/api/admin/feed-duplicates", auth.token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
           "x-locale": locale,
         },
         body: JSON.stringify({ feedID: nextFeedID.trim() }),
@@ -125,11 +125,10 @@ export function FeedDedupeTool() {
     setMessage("")
     setDeletingPhotoID(photoID)
     try {
-      const res = await fetch("/api/admin/feed-duplicates", {
+      const res = await authenticatedFetch("/api/admin/feed-duplicates", auth.token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
           "x-locale": locale,
         },
         body: JSON.stringify({ action: "delete", feedID: feed.feedID, photoID }),

@@ -4,7 +4,17 @@ import { useEffect } from "react"
 import { getApps, initializeApp } from "firebase/app"
 import { getAnalytics, isSupported } from "firebase/analytics"
 
-const firebaseConfig = {
+type FirebaseAnalyticsConfig = {
+  apiKey: string
+  authDomain?: string
+  projectId?: string
+  storageBucket?: string
+  messagingSenderId?: string
+  appId: string
+  measurementId: string
+}
+
+const buildTimeFirebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -14,25 +24,43 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
-function hasFirebaseConfig() {
-  return Boolean(firebaseConfig.apiKey && firebaseConfig.appId && firebaseConfig.measurementId)
+function validFirebaseConfig(config: typeof buildTimeFirebaseConfig | FirebaseAnalyticsConfig): config is FirebaseAnalyticsConfig {
+  return Boolean(config.apiKey && config.appId && config.measurementId)
+}
+
+async function runtimeFirebaseConfig() {
+  try {
+    const response = await fetch("/api/config/firebase-analytics", { cache: "no-store" })
+    if (!response.ok) return null
+    const payload = (await response.json()) as { config?: FirebaseAnalyticsConfig | null }
+    return payload.config && validFirebaseConfig(payload.config) ? payload.config : null
+  } catch (error) {
+    console.warn("[firebase:analytics] runtime config failed", error)
+    return null
+  }
 }
 
 export function FirebaseAnalytics() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return
-    if (!hasFirebaseConfig()) return
 
     let mounted = true
-    isSupported()
-      .then((supported) => {
-        if (!mounted || !supported) return
-        const app = getApps()[0] ?? initializeApp(firebaseConfig)
+    async function initializeAnalytics() {
+      try {
+        const config = validFirebaseConfig(buildTimeFirebaseConfig)
+          ? buildTimeFirebaseConfig
+          : await runtimeFirebaseConfig()
+        if (!mounted || !config || !(await isSupported())) return
+
+        const appName = "timeprint-web-analytics"
+        const app = getApps().find((item) => item.name === appName) ?? initializeApp(config, appName)
         getAnalytics(app)
-      })
-      .catch((error) => {
+      } catch (error) {
         console.warn("[firebase:analytics] init failed", error)
-      })
+      }
+    }
+
+    void initializeAnalytics()
 
     return () => {
       mounted = false

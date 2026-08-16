@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   Building2,
@@ -27,10 +27,11 @@ import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/client-auth"
 
 interface DashboardProps {
   token: string
-  user: { id: string; email: string }
+  user: { id: string; email: string; userName?: string | null; shortName?: string | null }
   expiresAt: string
   onLogout: () => void
 }
@@ -50,7 +51,7 @@ type DetailView =
 
 type Overview = {
   role: AdminRole
-  currentUser: { id: string; email: string; userName: string | null; avatar: string | null }
+  currentUser: { id: string; email: string; userName: string | null; shortName: string | null; avatar: string | null }
   summary: { teamCount: number; userCount: number; projectCount: number; photoCount: number }
   pagination: { page: number; pageSize: number; totalCount: number; totalPages: number }
   teams: TeamInfo[]
@@ -552,6 +553,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [selectedAdminUser, setSelectedAdminUser] = useState<AdminUser | null>(null)
   const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
   const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
+  const photoPreviewRef = useRef<HTMLDivElement>(null)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
   const selectedTeam = useMemo(() => {
@@ -585,8 +587,26 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     return []
   }, [selectedTeam, selectedProject, selectedMember, teamPhotos, view])
   const activePhotoIndex = activePhoto ? activePhotoList.findIndex((photo) => photo.photoID === activePhoto.photoID) : -1
+  const previewPhotos = useMemo(() => {
+    if (activePhotoIndex < 0) return []
+    const previewSize = 21
+    if (activePhotoList.length <= previewSize) return activePhotoList
+
+    let start = Math.max(0, activePhotoIndex - 10)
+    let end = Math.min(activePhotoList.length, start + previewSize)
+    start = Math.max(0, end - previewSize)
+    end = Math.min(activePhotoList.length, start + previewSize)
+    return activePhotoList.slice(start, end)
+  }, [activePhotoIndex, activePhotoList])
   const teamPageCount = Math.max(1, overview?.pagination.totalPages || 1)
   const currentTeamPage = overview?.pagination.page || teamPage
+  const currentUserName =
+    overview?.currentUser.userName?.trim() ||
+    overview?.currentUser.shortName?.trim() ||
+    user.userName?.trim() ||
+    user.shortName?.trim() ||
+    user.email ||
+    user.id
 
   async function loadOverview() {
     setLoading(true)
@@ -595,8 +615,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       const url = new URL("/api/admin/overview", window.location.origin)
       url.searchParams.set("page", String(teamPage))
       url.searchParams.set("pageSize", String(TEAM_PAGE_SIZE))
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      const res = await authenticatedFetch(url.toString(), token, {
+        headers: { "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
@@ -612,9 +632,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   }
 
   async function logout() {
-    await fetch("/api/auth/logout", {
+    await authenticatedFetch("/api/auth/logout", token, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {})
     onLogout()
   }
@@ -627,8 +646,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       const url = new URL("/api/admin/account-deletion-requests", window.location.origin)
       url.searchParams.set("page", String(page))
       url.searchParams.set("pageSize", String(DELETE_REQUEST_PAGE_SIZE))
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      const res = await authenticatedFetch(url.toString(), token, {
+        headers: { "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
@@ -653,8 +672,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       url.searchParams.set("page", String(page))
       url.searchParams.set("pageSize", String(ADMIN_USER_PAGE_SIZE))
       if (search.trim()) url.searchParams.set("search", search.trim())
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      const res = await authenticatedFetch(url.toString(), token, {
+        headers: { "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
@@ -677,8 +696,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setAdminUserDetailLoading(true)
     setMessage("")
     try {
-      const res = await fetch(`/api/admin/users/${encodeURIComponent(userID)}`, {
-        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      const res = await authenticatedFetch(`/api/admin/users/${encodeURIComponent(userID)}`, token, {
+        headers: { "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
@@ -707,8 +726,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       url.searchParams.set("locale", locale)
       url.searchParams.set("page", String(page))
       url.searchParams.set("pageSize", String(PHOTO_DAY_PAGE_SIZE))
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}`, "x-locale": locale },
+      const res = await authenticatedFetch(url.toString(), token, {
+        headers: { "x-locale": locale },
       })
       const data = await res.json()
       if (!res.ok) {
@@ -746,12 +765,40 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setView({ type: "team", teamID: team.groupID, tab: "projects" })
   }
 
-  function showAdjacentPhoto(direction: -1 | 1) {
+  const showAdjacentPhoto = useCallback((direction: -1 | 1) => {
     if (!activePhoto || activePhotoList.length <= 1) return
     const currentIndex = activePhotoIndex >= 0 ? activePhotoIndex : 0
-    const nextIndex = (currentIndex + direction + activePhotoList.length) % activePhotoList.length
+    const nextIndex = currentIndex + direction
+    if (nextIndex < 0 || nextIndex >= activePhotoList.length) return
     setActivePhoto(activePhotoList[nextIndex])
-  }
+  }, [activePhoto, activePhotoIndex, activePhotoList])
+
+  useEffect(() => {
+    if (!activePhoto) return
+
+    function handlePhotoKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      const editing = target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "")
+      if (editing) return
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault()
+        showAdjacentPhoto(-1)
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault()
+        showAdjacentPhoto(1)
+      }
+    }
+
+    window.addEventListener("keydown", handlePhotoKeyDown)
+    return () => window.removeEventListener("keydown", handlePhotoKeyDown)
+  }, [activePhoto, showAdjacentPhoto])
+
+  useEffect(() => {
+    if (!activePhoto) return
+    const selectedThumbnail = photoPreviewRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+    selectedThumbnail?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+  }, [activePhoto])
 
   function photoIDsForKey(key: string) {
     return teamPhotos[key]?.days.flatMap((day) => day.photos.map((photo) => photo.photoID)) || []
@@ -794,11 +841,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setDownloadingZip(true)
     setMessage("")
     try {
-      const res = await fetch("/api/admin/team-photos/download", {
+      const res = await authenticatedFetch("/api/admin/team-photos/download", token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ groupID: team.groupID, projectID, userID, photoIDs: Array.from(selectedPhotoIDs) }),
       })
@@ -832,11 +878,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setMemberActionLoading("invite")
     setMessage("")
     try {
-      const res = await fetch("/api/group/user/invite/email", {
+      const res = await authenticatedFetch("/api/group/user/invite/email", token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
           "x-locale": locale,
         },
         body: JSON.stringify({ groupID: team.groupID, emails: [email], roleID: 3 }),
@@ -865,11 +910,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setMemberActionLoading(member.userID)
     setMessage("")
     try {
-      const res = await fetch("/api/group/user/delete", {
+      const res = await authenticatedFetch("/api/group/user/delete", token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
           "x-locale": locale,
         },
         body: JSON.stringify({ groupID: team.groupID, deletedUserIDs: [member.userID] }),
@@ -1056,7 +1100,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
         </nav>
 
         <div className="border-t p-3">
-          {!collapsed && <div className="mb-3 truncate text-xs text-sidebar-foreground/60">{user.email}</div>}
+          {!collapsed && <div className="mb-3 w-full truncate text-center text-xs text-sidebar-foreground/60">{currentUserName}</div>}
           <div className="group relative">
             <Button onClick={logout} variant="outline" className="w-full" size={collapsed ? "icon" : "default"} title={t(locale, "dashboard.logout")}>
               <LogOut className="size-4" />
@@ -1071,7 +1115,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
         <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
           <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold">{title}</h1>
-            <p className="truncate text-xs text-muted-foreground">{activeMenu === "teams" ? t(locale, "dashboard.teamNavHint") : user.email}</p>
+            <p className="truncate text-xs text-muted-foreground">{activeMenu === "teams" ? t(locale, "dashboard.teamNavHint") : currentUserName}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button onClick={refreshCurrentView} disabled={loading || adminUsersLoading || adminUserDetailLoading || deleteRequestsLoading} variant="outline">
@@ -1759,6 +1803,9 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
               >
                 {t(locale, "web.close")}
               </Button>
+              <span className="text-sm tabular-nums text-white/70">
+                {activePhotoIndex + 1} / {activePhotoList.length}
+              </span>
               <a
                 href={activePhoto.downloadURL}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-sm font-medium text-black transition hover:bg-white/90"
@@ -1767,39 +1814,68 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {t(locale, "web.download")}
               </a>
             </div>
-            <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-4">
-              {activePhotoList.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => showAdjacentPhoto(-1)}
-                    className="absolute left-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/90 text-black shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:left-6"
-                    aria-label={t(locale, "dashboard.previousPhoto")}
-                  >
-                    <ChevronLeft className="size-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showAdjacentPhoto(1)}
-                    className="absolute right-4 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/90 text-black shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-6"
-                    aria-label={t(locale, "dashboard.nextPhoto")}
-                  >
-                    <ChevronRight className="size-6" />
-                  </button>
-                </>
-              )}
-              {activePhoto.imageURL ? (
-                <img
-                  src={activePhoto.imageURL}
-                  alt={activePhoto.localPhotoName || activePhoto.location || t(locale, "web.teamPhoto")}
-                  className="max-h-full max-w-full rounded-lg object-contain"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-white/60">
-                  <ImageOff className="size-12" />
-                  <span>{t(locale, "web.largeImage")}</span>
-                </div>
-              )}
+            <div className="shrink-0 border-y border-white/10 bg-white/[0.03] px-3 py-2">
+              <div ref={photoPreviewRef} className="flex h-16 items-center gap-2 overflow-x-auto overscroll-x-contain md:h-20">
+                {previewPhotos.map((photo) => {
+                  const selected = photo.photoID === activePhoto.photoID
+                  const thumbnail = photo.thumbnailURL || photo.imageURL
+                  return (
+                    <button
+                      key={photo.photoID}
+                      type="button"
+                      data-active={selected ? "true" : "false"}
+                      onClick={() => setActivePhoto(photo)}
+                      className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 md:size-16 ${
+                        selected
+                          ? "border-orange-400 opacity-100 shadow-[0_0_0_2px_rgba(251,146,60,0.25)]"
+                          : "border-transparent opacity-55 hover:opacity-90"
+                      }`}
+                      aria-label={photo.timeText || t(locale, "dashboard.viewPhoto")}
+                      aria-current={selected ? "true" : undefined}
+                    >
+                      {thumbnail ? (
+                        <img src={thumbnail} alt="" className="size-full object-cover" loading="lazy" />
+                      ) : (
+                        <ImageOff className="size-5 text-white/50" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="relative flex min-h-0 flex-1 items-center justify-center px-14 py-3 md:px-20">
+              <button
+                type="button"
+                onClick={() => showAdjacentPhoto(-1)}
+                disabled={activePhotoIndex <= 0}
+                className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12"
+                aria-label={t(locale, "dashboard.previousPhoto")}
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+              <div className="flex size-full min-h-0 items-center justify-center">
+                {activePhoto.imageURL ? (
+                  <img
+                    src={activePhoto.imageURL}
+                    alt={activePhoto.localPhotoName || activePhoto.location || t(locale, "web.teamPhoto")}
+                    className="max-h-full max-w-full rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-3 text-white/60">
+                    <ImageOff className="size-12" />
+                    <span>{t(locale, "web.largeImage")}</span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => showAdjacentPhoto(1)}
+                disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
+                className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12"
+                aria-label={t(locale, "dashboard.nextPhoto")}
+              >
+                <ChevronRight className="size-6" />
+              </button>
             </div>
             <div className="shrink-0 px-4 pb-5 text-center text-sm text-white/60">
               {[activePhoto.timeText, activePhoto.location, activePhoto.userName, activePhoto.projectName].filter(Boolean).join(" · ")}

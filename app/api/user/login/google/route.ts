@@ -88,7 +88,12 @@ export async function POST(req: Request) {
       token,
       expiresAt: expiresAt.toISOString(),
       email: user.email || "",
-      user: { id: user.id, email: user.email || "" },
+      user: {
+        id: user.id,
+        email: user.email || "",
+        userName: user.userName,
+        shortName: user.shortName,
+      },
       isNewUser: !existing,
       groupID: firstTeam?.groupID,
     })

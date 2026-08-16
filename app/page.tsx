@@ -5,15 +5,19 @@ import { LoginCard } from "@/components/login-card"
 import { Dashboard } from "@/components/dashboard"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { clientLocale, t, type AppLocale } from "@/lib/i18n"
+import {
+  AUTH_STORAGE_KEY,
+  clearStoredAuth,
+  resetExpiredSessionHandling,
+  SESSION_EXPIRED_EVENT,
+} from "@/lib/client-auth"
 import { Apple, Camera, Clock3, Download, MapPinned, Play, ShieldCheck, Users } from "lucide-react"
 
 interface Auth {
   token: string
   expiresAt: string
-  user: { id: string; email: string }
+  user: { id: string; email: string; userName?: string | null; shortName?: string | null }
 }
-
-const STORAGE_KEY = "auth"
 
 export default function Page() {
   const [auth, setAuth] = useState<Auth | null>(null)
@@ -24,20 +28,33 @@ export default function Page() {
   useEffect(() => {
     try {
       setLocale(clientLocale())
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setAuth(JSON.parse(raw))
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+      if (raw) {
+        const stored = JSON.parse(raw) as Auth
+        if (stored.expiresAt && new Date(stored.expiresAt).getTime() <= Date.now()) clearStoredAuth()
+        else setAuth(stored)
+      }
     } catch {}
     setReady(true)
   }, [])
 
+  useEffect(() => {
+    function handleSessionExpired() {
+      setAuth(null)
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+  }, [])
+
   function handleSuccess(data: Auth) {
+    resetExpiredSessionHandling()
     setAuth(data)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data))
   }
 
   function handleLogout() {
     setAuth(null)
-    localStorage.removeItem(STORAGE_KEY)
+    clearStoredAuth()
   }
 
   if (!ready) return <main className="min-h-svh bg-background" />

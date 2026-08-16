@@ -45,7 +45,11 @@ declare global {
 }
 
 interface LoginCardProps {
-  onSuccess: (data: { token: string; expiresAt: string; user: { id: string; email: string } }) => void
+  onSuccess: (data: {
+    token: string
+    expiresAt: string
+    user: { id: string; email: string; userName?: string | null; shortName?: string | null }
+  }) => void
   className?: string
 }
 
@@ -176,7 +180,12 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
           onSuccess({
             token: data.token,
             expiresAt: data.expiresAt,
-            user: data.user || { id: data.userID, email: data.email || "" },
+            user: data.user || {
+              id: data.userID,
+              email: data.email || "",
+              userName: data.userName,
+              shortName: data.shortName,
+            },
           })
         } else if (data.status === "expired" || data.status === "consumed") {
           setError(t(locale, "login.qrExpired"))
@@ -265,7 +274,12 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
       onSuccess({
         token: data.token,
         expiresAt: data.expiresAt,
-        user: data.user || { id: data.userID, email: data.email },
+        user: data.user || {
+          id: data.userID,
+          email: data.email,
+          userName: data.userName,
+          shortName: data.shortName,
+        },
       })
     } catch {
       setError(t(locale, "common.networkError"))
