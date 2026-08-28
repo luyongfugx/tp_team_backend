@@ -26,6 +26,13 @@ export async function POST(req: Request) {
 
     if (status === "SUCCEEDED") {
       const result = body.result && typeof body.result === "object" ? body.result : {}
+      const verificationPassed = (result as Record<string, unknown>).verified === true
+      const resultErrorCode = typeof (result as Record<string, unknown>).errorCode === "string"
+        ? String((result as Record<string, unknown>).errorCode).slice(0, 100)
+        : null
+      const resultErrorMessage = typeof (result as Record<string, unknown>).errorMessage === "string"
+        ? String((result as Record<string, unknown>).errorMessage).slice(0, 2000)
+        : null
       const photoCodeBlock = (result as Record<string, unknown>).photoCode
       const photoCode = photoCodeBlock && typeof photoCodeBlock === "object"
         ? String((photoCodeBlock as Record<string, unknown>).recognized ?? "").slice(0, 14)
@@ -36,10 +43,10 @@ export async function POST(req: Request) {
           status: "SUCCEEDED",
           result,
           photoCode: photoCode || null,
-          verified: (result as Record<string, unknown>).verified === true,
+          verified: verificationPassed,
           resultObjectKey: typeof body.resultObjectKey === "string" ? body.resultObjectKey.slice(0, 1024) : null,
-          errorCode: null,
-          errorMessage: null,
+          errorCode: verificationPassed ? null : resultErrorCode,
+          errorMessage: verificationPassed ? null : resultErrorMessage,
           startedAt: existing.startedAt ?? now,
           completedAt: now,
         },
@@ -47,10 +54,13 @@ export async function POST(req: Request) {
       return ok({ taskID, status: "SUCCEEDED" })
     }
 
+    const failureResult = body.result && typeof body.result === "object" ? body.result : undefined
     await verificationTasks.update({
       where: { taskID },
       data: {
         status: "FAILED",
+        result: failureResult,
+        verified: false,
         errorCode: typeof body.errorCode === "string" ? body.errorCode.slice(0, 100) : "ocr_failed",
         errorMessage: typeof body.errorMessage === "string" ? body.errorMessage.slice(0, 2000) : "Verification failed",
         startedAt: existing.startedAt ?? now,
