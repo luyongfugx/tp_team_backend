@@ -11,6 +11,12 @@ const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.times
 
 type PageProps = { params: Promise<{ photoCode: string }> }
 
+function storeURLForUserAgent(userAgent: string) {
+  if (/android/i.test(userAgent)) return GOOGLE_PLAY_URL
+  if (/(iphone|ipad|ipod|macintosh|mac os x)/i.test(userAgent)) return APP_STORE_URL
+  return "#download"
+}
+
 function mapLinks(latitude: number, longitude: number) {
   const deltaLat = 0.006
   const deltaLng = 0.01
@@ -56,6 +62,7 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
   if (!share) notFound()
 
   const requestHeaders = await headers()
+  const storeURL = storeURLForUserAgent(requestHeaders.get("user-agent") ?? "")
   const isChinese = /(^|,)\s*zh(?:-|;|,|$)/i.test(requestHeaders.get("accept-language") ?? "")
   const locale = isChinese ? "zh-CN" : "en-US"
   const copy = isChinese ? {
@@ -121,7 +128,7 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
   return <div className={styles.page}>
     <header className={styles.header}>
       <div className={styles.brand}><img src="/logo.png" alt="Timeprint" /><span>Timeprint</span></div>
-      <a className={styles.getApp} href="#download">{copy.openApp}</a>
+      <a className={styles.getApp} href={storeURL}>{copy.openApp}</a>
     </header>
     <main className={styles.main}>
       <section className={styles.hero}>
@@ -167,7 +174,7 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
         <div className={styles.verifyMark}>✓</div>
         <h2>{copy.verifyTitle}</h2>
         <p>{copy.verifyBody}</p>
-        <a className={styles.verifyButton} href="#download">{copy.openApp}</a>
+        <a className={styles.verifyButton} href={storeURL}>{copy.openApp}</a>
       </section>
 
       <section className={styles.downloads} id="download">
