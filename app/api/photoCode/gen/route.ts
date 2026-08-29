@@ -3,7 +3,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
 
-const PHOTO_CODE_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+// O is the only round glyph in newly issued codes. Excluding 0 and Q makes
+// OCR normalization deterministic: legacy-looking 0/Q readings map to O.
+const PHOTO_CODE_ALPHABET = "123456789ABCDEFGHIJKLMNOPRSTUVWXYZ"
 const PHOTO_CODE_LENGTH = 14
 
 type PhotoCodeCreateInput = {
