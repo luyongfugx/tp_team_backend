@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Search,
   Settings,
+  ShieldCheck,
   Trash2,
   UserPlus,
   Users,
@@ -28,6 +29,7 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 import { authenticatedFetch } from "@/lib/client-auth"
+import { PhotoVerificationRecords } from "@/components/admin/photo-verification-records"
 
 interface DashboardProps {
   token: string
@@ -41,7 +43,7 @@ const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 const DELETE_REQUEST_PAGE_SIZE = 30
 const ADMIN_USER_PAGE_SIZE = 30
-type MainMenu = "teams" | "settings" | "deleteRequests" | "adminUsers"
+type MainMenu = "teams" | "settings" | "deleteRequests" | "adminUsers" | "verificationRecords"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -553,6 +555,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [selectedAdminUser, setSelectedAdminUser] = useState<AdminUser | null>(null)
   const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
   const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
+  const [verificationRefreshKey, setVerificationRefreshKey] = useState(0)
   const photoPreviewRef = useRef<HTMLDivElement>(null)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
@@ -1011,6 +1014,11 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setSelectedAdminUser(null)
   }
 
+  function openVerificationRecords() {
+    setActiveMenu("verificationRecords")
+    setView({ type: "teams" })
+  }
+
   function refreshCurrentView() {
     if (activeMenu === "adminUsers") {
       if (selectedAdminUserID) {
@@ -1024,11 +1032,17 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       loadDeleteRequests(deleteRequestPage)
       return
     }
+    if (activeMenu === "verificationRecords") {
+      setVerificationRefreshKey((value) => value + 1)
+      return
+    }
     loadOverview()
   }
 
   const title =
-    activeMenu === "adminUsers"
+    activeMenu === "verificationRecords"
+      ? (locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records")
+      : activeMenu === "adminUsers"
       ? selectedAdminUserID
         ? t(locale, "dashboard.userDetail")
         : t(locale, "dashboard.users")
@@ -1079,6 +1093,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {!collapsed && <span>{t(locale, "dashboard.users")}</span>}
               </button>
               <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.users")} />
+            </div>
+          )}
+          {isSuperAdmin && (
+            <div className="group relative">
+              <button type="button" className={menuButtonClass(activeMenu === "verificationRecords", collapsed)} onClick={openVerificationRecords} title={locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"}>
+                <ShieldCheck className="size-4" />
+                {!collapsed && <span>{locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"}</span>}
+              </button>
+              <CollapsedTooltip collapsed={collapsed} label={locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"} />
             </div>
           )}
           {isSuperAdmin && (
@@ -1200,6 +1223,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {!loading && overview && activeMenu === "verificationRecords" && isSuperAdmin && (
+            <PhotoVerificationRecords token={token} locale={locale} refreshKey={verificationRefreshKey} />
           )}
 
           {!loading && overview && activeMenu === "teams" && view.type === "team" && selectedTeam && (

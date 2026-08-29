@@ -24,6 +24,12 @@ npx prisma migrate deploy
 
 后端 CAM 账号授予上述前缀所需的 `PutObject` 权限，并为验真图片桶的 `verify/` 前缀增加 `GetObject`，用于给公开分享页签发 5–60 分钟的只读图片 URL。OCR 使用的 CAM 账号授予验真图片桶读权限，以及照片 JSON 桶读写权限。不要在客户端内置永久 SecretId/SecretKey。
 
+后台“验真记录”页面还会由服务端读取验真图片、原始 `<照片码>.json` 和
+`<照片码>_verified.json`。因此 `team_backend` 使用的 CAM 账号需要拥有验真图片桶
+`verify/*` 和照片 JSON 桶对应前缀的 `cos:GetObject` 权限。浏览器只会收到有效期
+15 分钟的验真图片签名 URL；两个 JSON 由后台接口读取，不会暴露永久密钥。若 OCR
+配置了 `COS_SOURCE_PREFIX` / `COS_VERIFIED_PREFIX`，`team_backend` 应配置相同值。
+
 ## 3. 环境变量
 
 ```dotenv
