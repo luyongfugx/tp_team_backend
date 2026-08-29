@@ -22,6 +22,7 @@
     "@prisma/client": "^6.19.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cos-nodejs-sdk-v5": "^2.15.4",
     "firebase": "^12.16.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.16.0",

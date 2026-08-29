@@ -22,7 +22,7 @@ npx prisma migrate deploy
 - `photocode-json-1330977225`：客户端写入 `<14位照片码>.json`；OCR 服务读取源 JSON，并写入 `<14位照片码>_verified.json`。
 - `photocode-verify-images-1330977225`：登录用户写入 `verify/<userID>/<UUID>.jpg`；OCR 服务读取待验真图片。
 
-后端用于签发 STS 的 CAM 账号只授予上述前缀所需的 `PutObject` 权限。OCR 使用的 CAM 账号授予验真图片桶读权限，以及照片 JSON 桶读写权限。不要在客户端内置永久 SecretId/SecretKey。
+后端 CAM 账号授予上述前缀所需的 `PutObject` 权限，并为验真图片桶的 `verify/` 前缀增加 `GetObject`，用于给公开分享页签发 5–60 分钟的只读图片 URL。OCR 使用的 CAM 账号授予验真图片桶读权限，以及照片 JSON 桶读写权限。不要在客户端内置永久 SecretId/SecretKey。
 
 ## 3. 环境变量
 
@@ -58,6 +58,8 @@ X-Callback-Secret: <TP_OCR_CALLBACK_SECRET>
 - `POST /api/workgroup/cos/sts`：以 `bucketAlias=photo_json` 或 `verify_images` 获取对应短期凭证。
 - `POST /api/photoCode/verify/task`：登录后提交 `{ "imageUrl": "..." }`，创建当前账户名下的任务。
 - `POST /api/photoCode/verify/task/status`：登录后提交 `{ "taskID": "..." }`，仅可读取本人任务。
+- `POST /api/photoCode/record`：登录后提交 `{ "photoCode": "14位照片码" }`，只读取可信 JSON 中登记的拍摄记录，不执行图片 OCR；团队和项目会结合当前账户的照片记录补全。
+- `GET /s/<14位照片码>`：持链接访问的验真分享页。页面使用后端临时签名读取私有验真图片，不会把永久 COS 密钥下发到浏览器；页面带 `noindex`，不会主动进入搜索引擎索引。
 
 验真图片 URL 必须属于配置的验真桶，且对象键必须为当前用户自己的 `verify/<userID>/...jpg`，后端会拒绝跨账户对象。
 
@@ -69,3 +71,4 @@ X-Callback-Secret: <TP_OCR_CALLBACK_SECRET>
 4. 从一个登录账户提交两张照片，确认生成两条任务；一条失败不应改变另一条状态。
 5. 确认成功任务保存 `resultObjectKey`，对应 COS 中存在 `code_verify.json`。
 6. 确认其他账户查询该 `taskID` 返回任务不存在或无权限。
+7. 打开 `/s/<照片码>`，确认私有桶图片、位置地图和元数据可见，导航按钮能打开对应坐标的 Google 地图。

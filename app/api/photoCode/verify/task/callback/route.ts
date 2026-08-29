@@ -6,6 +6,7 @@ import {
   completedVerificationProgress,
   mergeVerificationProgress,
 } from "@/lib/photoVerification"
+import { enrichCaptureTeamInfo } from "@/lib/photoRecord"
 
 const verificationTasks = (prisma as unknown as { photoVerificationTask: any }).photoVerificationTask
 
@@ -34,7 +35,10 @@ export async function POST(req: Request) {
     }
 
     if (status === "SUCCEEDED") {
-      const result = body.result && typeof body.result === "object" ? body.result : {}
+      const rawResult = body.result && typeof body.result === "object" && !Array.isArray(body.result)
+        ? body.result as Record<string, unknown>
+        : {}
+      const result = await enrichCaptureTeamInfo(rawResult, existing.userID)
       const verificationPassed = (result as Record<string, unknown>).verified === true
       const resultErrorCode = typeof (result as Record<string, unknown>).errorCode === "string"
         ? String((result as Record<string, unknown>).errorCode).slice(0, 100)

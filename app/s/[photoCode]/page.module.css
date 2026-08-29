@@ -1,0 +1,203 @@
+.page {
+  min-height: 100vh;
+  background: #f3f6fb;
+  color: #18202c;
+  font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  padding: 0 max(20px, env(safe-area-inset-left));
+  background: rgb(255 255 255 / 94%);
+  border-bottom: 1px solid #e8edf5;
+  backdrop-filter: blur(14px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #141922;
+  font-size: 21px;
+  font-weight: 750;
+  letter-spacing: -.3px;
+}
+
+.brand img {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.getApp,
+.navigate,
+.verifyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.getApp {
+  padding: 0 16px;
+  color: #fff;
+  background: #216ff4;
+}
+
+.main {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 24px 16px 52px;
+}
+
+.hero,
+.card {
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #e6ebf3;
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgb(35 57 92 / 7%);
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  background: #111722;
+}
+
+.photoCaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 18px;
+}
+
+.eyebrow {
+  margin-bottom: 5px;
+  color: #728098;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #159768;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.statusWarning { color: #d98216; }
+
+.statusIcon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: #fff;
+  background: currentColor;
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+.statusIcon span { color: #fff; }
+
+.sectionTitle {
+  margin: 0;
+  padding: 20px 20px 14px;
+  font-size: 20px;
+  font-weight: 760;
+}
+
+.mapWrap {
+  position: relative;
+  height: 250px;
+  margin: 0 16px;
+  overflow: hidden;
+  background: #dfe8f5;
+  border-radius: 15px;
+}
+
+.mapWrap iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.navigate {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  gap: 7px;
+  padding: 0 15px;
+  color: #fff;
+  background: #2174f5;
+  box-shadow: 0 5px 16px rgb(26 102 225 / 35%);
+}
+
+.locationText { padding: 18px 20px 20px; }
+.address { margin: 0 0 8px; font-size: 16px; line-height: 1.55; font-weight: 650; }
+.gps { margin: 0; color: #68758a; font-size: 14px; }
+
+.rows { padding: 0 20px 8px; }
+.row {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 16px;
+  padding: 15px 0;
+  border-top: 1px solid #edf0f5;
+}
+.label { color: #6d788a; }
+.value { min-width: 0; overflow-wrap: anywhere; font-weight: 620; text-align: right; }
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+
+.verifyCard { padding: 23px 20px; text-align: center; }
+.verifyMark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(145deg, #2777fb, #165ee0);
+  border-radius: 17px;
+  font-size: 28px;
+}
+.verifyCard h2 { margin: 0 0 9px; font-size: 21px; }
+.verifyCard p { margin: 0 auto 18px; color: #68758a; line-height: 1.55; }
+.verifyButton { width: 100%; min-height: 48px; color: #fff; background: #216ff4; }
+
+.downloads {
+  padding: 16px 4px 0;
+  text-align: center;
+}
+.downloads h2 { margin: 0 0 6px; font-size: 22px; }
+.downloads p { margin: 0 0 16px; color: #778399; }
+.downloadButtons { display: flex; justify-content: center; gap: 12px; }
+.downloadButtons img { width: 118px; height: 118px; border-radius: 12px; }
+.privacy { margin-top: 20px; color: #9aa4b4; font-size: 12px; }
+
+@media (max-width: 520px) {
+  .main { padding: 14px 10px 36px; }
+  .header { height: 60px; padding-right: 12px; padding-left: 12px; }
+  .hero, .card { border-radius: 16px; }
+  .photo { max-height: 62vh; }
+  .mapWrap { height: 220px; margin: 0 12px; }
+  .row { grid-template-columns: 112px 1fr; gap: 10px; }
+}
