@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
 import { prisma } from "@/lib/prisma"
 import {
+  initialVerificationProgress,
   publicVerificationTask,
   submitPhotoVerificationTask,
   validateVerificationImageURL,
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
         imageUrl: image.imageUrl,
         imageObjectKey: image.objectKey,
         status: "PENDING",
+        verificationProgress: initialVerificationProgress(),
       },
     })
 
@@ -33,7 +35,11 @@ export async function POST(req: Request) {
       await submitPhotoVerificationTask(taskID, image.imageUrl)
       await verificationTasks.updateMany({
         where: { taskID, status: "PENDING" },
-        data: { status: "PROCESSING", startedAt: new Date() },
+        data: {
+          status: "PROCESSING",
+          startedAt: new Date(),
+          verificationProgress: initialVerificationProgress(),
+        },
       })
       task = await verificationTasks.findUnique({ where: { taskID } })
     } catch (error) {
@@ -44,6 +50,16 @@ export async function POST(req: Request) {
           status: "FAILED",
           errorCode: "ocr_submit_failed",
           errorMessage: message,
+          verificationProgress: {
+            currentStage: "PHOTO_CODE",
+            stages: [
+              { key: "PHOTO_CODE", status: "FAILED" },
+              { key: "TIME", status: "PENDING" },
+              { key: "ADDRESS", status: "PENDING" },
+              { key: "PHOTO_INFO", status: "PENDING" },
+            ],
+            updatedAt: Date.now(),
+          },
           completedAt: new Date(),
         },
       })

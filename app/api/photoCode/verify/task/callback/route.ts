@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { bad, ok, readBody } from "@/app/api/_utils/api"
 import { prisma } from "@/lib/prisma"
-import { callbackSecretMatches } from "@/lib/photoVerification"
+import {
+  callbackSecretMatches,
+  completedVerificationProgress,
+  mergeVerificationProgress,
+} from "@/lib/photoVerification"
 
 const verificationTasks = (prisma as unknown as { photoVerificationTask: any }).photoVerificationTask
 
@@ -17,9 +21,14 @@ export async function POST(req: Request) {
 
     const now = new Date()
     if (status === "PROCESSING") {
+      const progress = mergeVerificationProgress(existing.verificationProgress, body.stage, body.stageStatus)
       await verificationTasks.updateMany({
         where: { taskID, status: { in: ["PENDING", "PROCESSING"] } },
-        data: { status: "PROCESSING", startedAt: existing.startedAt ?? now },
+        data: {
+          status: "PROCESSING",
+          startedAt: existing.startedAt ?? now,
+          ...(progress ? { verificationProgress: progress } : {}),
+        },
       })
       return ok({ taskID, status: "PROCESSING" })
     }
@@ -49,12 +58,14 @@ export async function POST(req: Request) {
           errorMessage: verificationPassed ? null : resultErrorMessage,
           startedAt: existing.startedAt ?? now,
           completedAt: now,
+          verificationProgress: completedVerificationProgress(),
         },
       })
       return ok({ taskID, status: "SUCCEEDED" })
     }
 
     const failureResult = body.result && typeof body.result === "object" ? body.result : undefined
+    const failedProgress = mergeVerificationProgress(existing.verificationProgress, body.stage, "FAILED")
     await verificationTasks.update({
       where: { taskID },
       data: {
@@ -65,6 +76,7 @@ export async function POST(req: Request) {
         errorMessage: typeof body.errorMessage === "string" ? body.errorMessage.slice(0, 2000) : "Verification failed",
         startedAt: existing.startedAt ?? now,
         completedAt: now,
+        ...(failedProgress ? { verificationProgress: failedProgress } : {}),
       },
     })
     return ok({ taskID, status: "FAILED" })

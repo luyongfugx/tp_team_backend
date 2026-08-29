@@ -377,6 +377,7 @@ model PhotoVerificationTask {
   photoCode       String?                     @db.VarChar(14)
   verified        Boolean?
   result          Json?
+  verificationProgress Json?
   resultObjectKey String?                     @db.VarChar(1024)
   errorCode       String?                     @db.VarChar(100)
   errorMessage    String?                     @db.Text

@@ -5,6 +5,74 @@ type VerificationImageBucket = {
   region: string
 }
 
+export const VERIFICATION_STAGE_KEYS = ["PHOTO_CODE", "TIME", "ADDRESS", "PHOTO_INFO"] as const
+export const VERIFICATION_STAGE_STATUSES = ["PENDING", "RUNNING", "COMPLETED", "FAILED"] as const
+type VerificationStageKey = typeof VERIFICATION_STAGE_KEYS[number]
+type VerificationStageStatus = typeof VERIFICATION_STAGE_STATUSES[number]
+
+type VerificationProgress = {
+  currentStage: VerificationStageKey
+  stages: Array<{ key: VerificationStageKey; status: VerificationStageStatus }>
+  updatedAt: number
+}
+
+export function initialVerificationProgress(): VerificationProgress {
+  return {
+    currentStage: "PHOTO_CODE",
+    stages: VERIFICATION_STAGE_KEYS.map((key, index) => ({
+      key,
+      status: index === 0 ? "RUNNING" : "PENDING",
+    })),
+    updatedAt: Date.now(),
+  }
+}
+
+function isStageKey(value: unknown): value is VerificationStageKey {
+  return typeof value === "string" && (VERIFICATION_STAGE_KEYS as readonly string[]).includes(value)
+}
+
+function isStageStatus(value: unknown): value is VerificationStageStatus {
+  return typeof value === "string" && (VERIFICATION_STAGE_STATUSES as readonly string[]).includes(value)
+}
+
+export function mergeVerificationProgress(
+  existing: unknown,
+  stageValue: unknown,
+  statusValue: unknown,
+): VerificationProgress | null {
+  if (!isStageKey(stageValue) || !isStageStatus(statusValue)) return null
+  const base = initialVerificationProgress()
+  const source = existing && typeof existing === "object" && !Array.isArray(existing)
+    ? existing as Record<string, unknown>
+    : null
+  const sourceStages = Array.isArray(source?.stages) ? source.stages : []
+  const prior = new Map<string, VerificationStageStatus>()
+  for (const item of sourceStages) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue
+    const row = item as Record<string, unknown>
+    if (isStageKey(row.key) && isStageStatus(row.status)) prior.set(row.key, row.status)
+  }
+  const targetIndex = VERIFICATION_STAGE_KEYS.indexOf(stageValue)
+  return {
+    currentStage: stageValue,
+    stages: base.stages.map(({ key }, index) => {
+      let status = prior.get(key) ?? (index === 0 ? "RUNNING" : "PENDING")
+      if (index < targetIndex && status !== "FAILED") status = "COMPLETED"
+      if (key === stageValue) status = statusValue
+      return { key, status }
+    }),
+    updatedAt: Date.now(),
+  }
+}
+
+export function completedVerificationProgress(): VerificationProgress {
+  return {
+    currentStage: "PHOTO_INFO",
+    stages: VERIFICATION_STAGE_KEYS.map((key) => ({ key, status: "COMPLETED" })),
+    updatedAt: Date.now(),
+  }
+}
+
 function cleanUserPathID(userID: string) {
   return userID.trim().replaceAll("/", "_")
 }
@@ -99,6 +167,7 @@ export function publicVerificationTask(task: Record<string, unknown>) {
     resultObjectKey: task.resultObjectKey,
     errorCode: task.errorCode,
     errorMessage: task.errorMessage,
+    progress: task.verificationProgress,
     createdAt: task.createdAt instanceof Date ? task.createdAt.getTime() : task.createdAt,
     startedAt: task.startedAt instanceof Date ? task.startedAt.getTime() : task.startedAt,
     completedAt: task.completedAt instanceof Date ? task.completedAt.getTime() : task.completedAt,

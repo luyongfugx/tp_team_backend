@@ -11,13 +11,15 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
-迁移会创建 `PhotoVerificationTask`。每张照片对应一条任务，保存提交用户 `userID`、图片 URL/对象键、任务状态、识别照片码、验真结果、错误信息和各阶段时间。一次多选照片时客户端会创建多条独立任务，互不影响。
+迁移会创建 `PhotoVerificationTask`，并通过后续迁移增加 `verificationProgress` JSON 字段。每张照片对应一条任务，保存提交用户 `userID`、图片 URL/对象键、任务状态、识别照片码、验真结果、错误信息和阶段进度。
+
+阶段固定按 `PHOTO_CODE → TIME → ADDRESS → PHOTO_INFO` 执行。每个阶段状态为 `PENDING`、`RUNNING`、`COMPLETED` 或 `FAILED`。任务查询接口通过 `progress.currentStage` 和 `progress.stages[]` 返回最新快照，供 iOS/Android 轮询刷新进度页。
 
 ## 2. COS 桶
 
 需要创建并建议保持为私有读的两个桶：
 
-- `photocode-json-1330977225`：客户端写入 `<14位照片码>.json`；OCR 服务读取源 JSON，并写入 `verification_tasks/<taskID>/code_verify.json`。
+- `photocode-json-1330977225`：客户端写入 `<14位照片码>.json`；OCR 服务读取源 JSON，并写入 `<14位照片码>_verified.json`。
 - `photocode-verify-images-1330977225`：登录用户写入 `verify/<userID>/<UUID>.jpg`；OCR 服务读取待验真图片。
 
 后端用于签发 STS 的 CAM 账号只授予上述前缀所需的 `PutObject` 权限。OCR 使用的 CAM 账号授予验真图片桶读权限，以及照片 JSON 桶读写权限。不要在客户端内置永久 SecretId/SecretKey。
@@ -49,6 +51,8 @@ POST /api/photoCode/verify/task/callback
 X-Callback-Secret: <TP_OCR_CALLBACK_SECRET>
 ```
 
+处理中回调除 `taskId`、`status=PROCESSING` 外，还包含 `stage` 和 `stageStatus`；最终成功会将四个阶段全部置为 `COMPLETED`，执行异常会将当前阶段置为 `FAILED`。
+
 客户端接口：
 
 - `POST /api/workgroup/cos/sts`：以 `bucketAlias=photo_json` 或 `verify_images` 获取对应短期凭证。
@@ -65,4 +69,3 @@ X-Callback-Secret: <TP_OCR_CALLBACK_SECRET>
 4. 从一个登录账户提交两张照片，确认生成两条任务；一条失败不应改变另一条状态。
 5. 确认成功任务保存 `resultObjectKey`，对应 COS 中存在 `code_verify.json`。
 6. 确认其他账户查询该 `taskID` 返回任务不存在或无权限。
-
