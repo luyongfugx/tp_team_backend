@@ -1,4 +1,5 @@
 import COS from "cos-nodejs-sdk-v5"
+import { normalizeVerificationErrorCode } from "@/lib/verificationErrorCodes"
 
 type BucketConfig = {
   bucket: string
@@ -71,6 +72,145 @@ function record(value: unknown): Record<string, unknown> | null {
     : null
 }
 
+type RecognitionAttempt = {
+  provider: "local" | "deepseek" | "unknown"
+  model: string | null
+  scope: string | null
+  recognized: string | null
+  verified: boolean | null
+  usable: boolean | null
+  similarity: number | null
+  error: string | null
+  errorMessage: string | null
+  retryCount: number | null
+  requestErrors: Array<{ type: string; message: string }>
+}
+
+type RecognitionTrace = {
+  field: "photoCode" | "time" | "address"
+  label: string
+  priority: string | null
+  finalProvider: string | null
+  finalModel: string | null
+  fallbackUsed: boolean
+  attempts: RecognitionAttempt[]
+}
+
+function nullableString(value: unknown) {
+  return value == null || value === "" ? null : String(value)
+}
+
+function nullableNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function provider(value: unknown): RecognitionAttempt["provider"] {
+  return value === "local" || value === "deepseek" ? value : "unknown"
+}
+
+function recognitionAttempt(
+  value: Record<string, unknown>,
+  fallbackProvider: RecognitionAttempt["provider"],
+): RecognitionAttempt {
+  const requestErrors = Array.isArray(value.requestErrors)
+    ? value.requestErrors.map(record)
+      .filter((item): item is Record<string, unknown> => Boolean(item))
+      .map((item) => ({
+        type: String(item.type || "Error"),
+        message: String(item.message || ""),
+      }))
+    : []
+  return {
+    provider: provider(value.provider || value.recognitionProvider || fallbackProvider),
+    model: nullableString(value.model),
+    scope: nullableString(value.scope || value.rectType || value.source),
+    recognized: nullableString(value.recognized || value.code || value.text),
+    verified: typeof value.verified === "boolean"
+      ? value.verified
+      : typeof value.sourceMatched === "boolean"
+        ? value.sourceMatched
+        : null,
+    usable: typeof value.usable === "boolean" ? value.usable : null,
+    similarity: nullableNumber(value.similarity),
+    error: nullableString(value.error || value.reason),
+    errorMessage: nullableString(value.errorMessage),
+    retryCount: nullableNumber(value.retryCount),
+    requestErrors,
+  }
+}
+
+function attemptsFrom(
+  value: unknown,
+  fallbackProvider: RecognitionAttempt["provider"],
+) {
+  return Array.isArray(value)
+    ? value.map(record).filter((item): item is Record<string, unknown> => Boolean(item))
+      .map((item) => recognitionAttempt(item, fallbackProvider))
+    : []
+}
+
+function sectionRecognitionTrace(
+  result: Record<string, unknown>,
+  field: "time" | "address",
+  label: string,
+): RecognitionTrace {
+  const section = record(result[field])
+  const regions = Array.isArray(section?.regions)
+    ? section.regions.map(record).filter((item): item is Record<string, unknown> => Boolean(item))
+    : []
+  const attempts: RecognitionAttempt[] = []
+  let priority: string | null = null
+  let finalProvider: string | null = null
+  let finalModel: string | null = nullableString(section?.model)
+  let fallbackUsed = false
+
+  for (const region of regions) {
+    const regionPriority = nullableString(region.recognitionPriority)
+    const regionProvider = provider(region.recognitionProvider)
+    const localResult = record(region.localResult)
+    const localAttempts = localResult
+      ? attemptsFrom(localResult.attempts, "local")
+      : regionProvider === "local"
+        ? attemptsFrom(region.attempts, "local")
+        : []
+    const deepseekAttempts = regionProvider === "deepseek"
+      ? attemptsFrom(region.attempts, "deepseek")
+      : attemptsFrom(region.deepseekDiagnostics, "deepseek")
+
+    if (regionPriority === "deepseek_first") attempts.push(...deepseekAttempts, ...localAttempts)
+    else attempts.push(...localAttempts, ...deepseekAttempts)
+
+    priority ||= regionPriority
+    finalProvider ||= regionProvider === "unknown" ? null : regionProvider
+    finalModel ||= nullableString(region.model)
+    fallbackUsed ||= region.fallbackUsed === true || (localAttempts.length > 0 && deepseekAttempts.length > 0)
+  }
+
+  return { field, label, priority, finalProvider, finalModel, fallbackUsed, attempts }
+}
+
+function recognitionTraces(result: Record<string, unknown> | null): RecognitionTrace[] {
+  if (!result) return []
+  const photoCode = record(result.photoCode)
+  const photoAttempts = attemptsFrom(photoCode?.attempts, "unknown")
+  if (photoCode && photoAttempts.length === 0) {
+    photoAttempts.push(recognitionAttempt(photoCode, provider(photoCode.recognitionProvider)))
+  }
+  return [
+    {
+      field: "photoCode",
+      label: "照片码",
+      priority: null,
+      finalProvider: nullableString(photoCode?.recognitionProvider),
+      finalModel: nullableString(photoCode?.model),
+      fallbackUsed: new Set(photoAttempts.map((item) => item.provider).filter((item) => item !== "unknown")).size > 1,
+      attempts: photoAttempts,
+    },
+    sectionRecognitionTrace(result, "time", "拍摄时间"),
+    sectionRecognitionTrace(result, "address", "拍摄地点"),
+  ]
+}
+
 export function verificationFailureAnalysis(task: Record<string, unknown>) {
   const result = record(task.result)
   const progress = record(task.verificationProgress)
@@ -98,20 +238,23 @@ export function verificationFailureAnalysis(task: Record<string, unknown>) {
     })
   }
 
-  const errorCode = String(task.errorCode || result?.errorCode || "")
+  const rawErrorCode = task.errorCode || result?.errorCode
+  const errorCode = rawErrorCode ? normalizeVerificationErrorCode(rawErrorCode, "") : ""
   const errorMessage = String(task.errorMessage || result?.errorMessage || "")
   const categoryByCode: Record<string, string> = {
-    "-2100": "输入参数无效",
-    "-2200": "盲水印提取失败或相似度不足",
-    "-2300": "OCR 初始化或内部结果异常",
-    "-2301": "OCR 未识别到内容",
-    "-2302": "OCR 预处理失败",
-    "-2303": "照片码长度异常",
-    "-2400": "照片码结构、时间或地点范围校验失败",
-    "-2401": "拍摄时间校验失败",
-    "-2402": "拍摄地点校验失败",
-    "-2403": "疑似作弊或包含非法字符",
-    "-2500": "OCR 服务并发繁忙",
+    "400": "输入参数无效",
+    "403": "疑似作弊或包含非法字符",
+    "404": "OCR 未识别到内容",
+    "406": "照片内容不一致",
+    "409": "照片码与可信拍摄记录不匹配",
+    "410": "可信照片内容参考不可用",
+    "412": "拍摄时间校验失败",
+    "416": "拍摄地点校验失败",
+    "422": "照片码长度异常",
+    "424": "盲水印提取失败或相似度不足",
+    "500": "OCR 初始化或内部结果异常",
+    "502": "OCR 预处理或上游服务失败",
+    "503": "OCR 服务并发繁忙",
   }
   return {
     passed: task.verified === true,
@@ -122,6 +265,7 @@ export function verificationFailureAnalysis(task: Record<string, unknown>) {
     errorMessage: errorMessage || null,
     failedStages,
     mismatches,
+    recognitionTraces: recognitionTraces(result),
   }
 }
 

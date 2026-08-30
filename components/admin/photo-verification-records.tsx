@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { AlertTriangle, CheckCircle2, FileJson, Image as ImageIcon, Loader2, ShieldCheck, XCircle, X } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Cloud, Cpu, FileJson, Image as ImageIcon, Loader2, Route, ShieldCheck, XCircle, X } from "lucide-react"
 import { authenticatedFetch } from "@/lib/client-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,27 @@ type Detail = {
     errorMessage: string | null
     failedStages: string[]
     mismatches: Array<{ field: string; reason: string; detail?: unknown }>
+    recognitionTraces: Array<{
+      field: "photoCode" | "time" | "address"
+      label: string
+      priority: string | null
+      finalProvider: string | null
+      finalModel: string | null
+      fallbackUsed: boolean
+      attempts: Array<{
+        provider: "local" | "deepseek" | "unknown"
+        model: string | null
+        scope: string | null
+        recognized: string | null
+        verified: boolean | null
+        usable: boolean | null
+        similarity: number | null
+        error: string | null
+        errorMessage: string | null
+        retryCount: number | null
+        requestErrors: Array<{ type: string; message: string }>
+      }>
+    }>
   }
 }
 
@@ -69,7 +90,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
   const [error, setError] = useState("")
   const [detail, setDetail] = useState<Detail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [tab, setTab] = useState<"analysis" | "image" | "source" | "verify">("analysis")
+  const [tab, setTab] = useState<"analysis" | "trace" | "image" | "source" | "verify">("analysis")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -181,6 +202,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
             <div className="flex flex-wrap gap-2 border-b p-3">
               {([
                 ["analysis", chinese ? "失败分析" : "Analysis", AlertTriangle],
+                ["trace", chinese ? "识别过程" : "Recognition trace", Route],
                 ["image", chinese ? "验真图片" : "Image", ImageIcon],
                 ["source", "photocode.json", FileJson],
                 ["verify", "verify.json", FileJson],
@@ -191,6 +213,40 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                 <div className={`rounded-xl border p-4 ${detail.analysis.passed ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"}`}><div className="flex items-center gap-2 font-semibold">{detail.analysis.passed ? <CheckCircle2 className="size-5" /> : <AlertTriangle className="size-5" />}{detail.analysis.summary}</div>{detail.analysis.errorCode && <div className="mt-2 text-sm">{detail.analysis.errorCode} · {detail.analysis.errorMessage}</div>}</div>
                 <div className="grid gap-3 md:grid-cols-3"><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">PhotoCode</div><div className="mt-1 font-mono">{detail.task.photoCode || "-"}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "用户" : "User"}</div><div className="mt-1">{detail.task.user.email}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "失败阶段" : "Failed stages"}</div><div className="mt-1">{detail.analysis.failedStages.join(", ") || "-"}</div></div></div>
                 {detail.analysis.mismatches.map((item) => <div key={item.field} className="rounded-lg border border-red-200 p-4 dark:border-red-900"><div className="font-medium text-red-700 dark:text-red-300">{item.field}</div><div className="mt-1 text-sm text-muted-foreground">{item.reason}</div>{item.detail != null && <details className="mt-3"><summary className="cursor-pointer text-sm">{chinese ? "查看诊断数据" : "Diagnostic data"}</summary><pre className="mt-2 max-h-72 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(item.detail, null, 2)}</pre></details>}</div>)}
+              </div>}
+              {tab === "trace" && <div className="space-y-4">
+                {detail.analysis.recognitionTraces.map((trace) => <div key={trace.field} className="rounded-xl border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="font-semibold">{chinese ? trace.label : trace.field === "photoCode" ? "Photo code" : trace.field === "time" ? "Capture time" : "Capture location"}</div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {trace.priority && <span className="rounded-full bg-muted px-2.5 py-1">{chinese ? "优先级" : "Priority"}: {trace.priority}</span>}
+                      <span className="rounded-full bg-muted px-2.5 py-1">{chinese ? "最终" : "Final"}: {trace.finalProvider === "deepseek" ? "DeepSeek" : trace.finalProvider === "local" ? (chinese ? "本地 OCR" : "Local OCR") : "-"}</span>
+                      {trace.finalModel && <span className="rounded-full bg-muted px-2.5 py-1 font-mono">{trace.finalModel}</span>}
+                      {trace.fallbackUsed && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800 dark:bg-amber-950 dark:text-amber-200">{chinese ? "发生兜底" : "Fallback used"}</span>}
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {trace.attempts.map((attempt, index) => {
+                      const failed = Boolean(attempt.error || attempt.errorMessage) || attempt.verified === false || attempt.usable === false
+                      return <div key={`${trace.field}-${index}`} className={`rounded-lg border p-3 ${failed ? "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20" : "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20"}`}>
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="font-mono text-xs text-muted-foreground">#{index + 1}</span>
+                          {attempt.provider === "deepseek" ? <Cloud className="size-4 text-blue-500" /> : <Cpu className="size-4 text-violet-500" />}
+                          <span className="font-medium">{attempt.provider === "deepseek" ? "DeepSeek" : attempt.provider === "local" ? (chinese ? "本地 OCR" : "Local OCR") : (chinese ? "未知" : "Unknown")}</span>
+                          {attempt.scope && <span className="rounded bg-muted px-2 py-0.5 text-xs">{attempt.scope}</span>}
+                          {attempt.model && <span className="font-mono text-xs text-muted-foreground">{attempt.model}</span>}
+                          {attempt.retryCount != null && attempt.retryCount > 0 && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{chinese ? `重试 ${attempt.retryCount} 次` : `${attempt.retryCount} retries`}</span>}
+                          <span className={`ml-auto text-xs font-medium ${failed ? "text-red-600" : "text-emerald-600"}`}>{attempt.verified === true ? (chinese ? "通过" : "Passed") : attempt.verified === false ? (chinese ? "未通过" : "Failed") : attempt.usable === false ? (chinese ? "不可用" : "Unavailable") : (chinese ? "已执行" : "Executed")}</span>
+                        </div>
+                        {attempt.recognized && <div className="mt-2 whitespace-pre-wrap rounded bg-background/80 p-2 text-sm"><span className="text-xs text-muted-foreground">{chinese ? "识别结果" : "Recognized"}: </span>{attempt.recognized}</div>}
+                        {(attempt.error || attempt.errorMessage) && <div className="mt-2 text-xs text-red-600">{[attempt.error, attempt.errorMessage].filter(Boolean).join(" · ")}</div>}
+                        {attempt.requestErrors.map((error, errorIndex) => <div key={errorIndex} className="mt-1 text-xs text-amber-700 dark:text-amber-300">{chinese ? "重试前错误" : "Pre-retry error"}: {error.type} · {error.message}</div>)}
+                        {attempt.similarity != null && <div className="mt-2 text-xs text-muted-foreground">Similarity: {attempt.similarity}</div>}
+                      </div>
+                    })}
+                    {!trace.attempts.length && <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">{chinese ? "该历史记录没有识别过程数据" : "No recognition trace in this historical record"}</div>}
+                  </div>
+                </div>)}
               </div>}
               {tab === "image" && (detail.image.url ? <div className="flex min-h-[50vh] items-center justify-center rounded-lg bg-black/95 p-3"><img src={detail.image.url} alt="Verification upload" className="max-h-[68vh] max-w-full object-contain" /></div> : <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive">{detail.image.error || "Image unavailable"}</div>)}
               {tab === "source" && <><div className="mb-2 font-mono text-xs text-muted-foreground">{detail.sourceJSON.objectKey}</div><JSONViewer value={detail.sourceJSON.document} error={detail.sourceJSON.error} /></>}

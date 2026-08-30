@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { normalizeVerificationErrorCode } from "@/lib/verificationErrorCodes"
 import { bad, ok, readBody } from "@/app/api/_utils/api"
 import { prisma } from "@/lib/prisma"
 import {
@@ -40,9 +41,12 @@ export async function POST(req: Request) {
         : {}
       const result = await enrichCaptureTeamInfo(rawResult, existing.userID)
       const verificationPassed = (result as Record<string, unknown>).verified === true
-      const resultErrorCode = typeof (result as Record<string, unknown>).errorCode === "string"
-        ? String((result as Record<string, unknown>).errorCode).slice(0, 100)
-        : null
+      const rawResultErrorCode = (result as Record<string, unknown>).errorCode
+      const resultErrorCode = rawResultErrorCode == null
+        ? null
+        : normalizeVerificationErrorCode(rawResultErrorCode).slice(0, 100)
+      const effectiveErrorCode = verificationPassed ? null : (resultErrorCode || "500")
+      if (effectiveErrorCode) (result as Record<string, unknown>).errorCode = effectiveErrorCode
       const resultErrorMessage = typeof (result as Record<string, unknown>).errorMessage === "string"
         ? String((result as Record<string, unknown>).errorMessage).slice(0, 2000)
         : null
@@ -58,7 +62,7 @@ export async function POST(req: Request) {
           photoCode: photoCode || null,
           verified: verificationPassed,
           resultObjectKey: typeof body.resultObjectKey === "string" ? body.resultObjectKey.slice(0, 1024) : null,
-          errorCode: verificationPassed ? null : resultErrorCode,
+          errorCode: effectiveErrorCode,
           errorMessage: verificationPassed ? null : resultErrorMessage,
           startedAt: existing.startedAt ?? now,
           completedAt: now,
@@ -76,7 +80,7 @@ export async function POST(req: Request) {
         status: "FAILED",
         result: failureResult,
         verified: false,
-        errorCode: typeof body.errorCode === "string" ? body.errorCode.slice(0, 100) : "ocr_failed",
+        errorCode: normalizeVerificationErrorCode(body.errorCode).slice(0, 100),
         errorMessage: typeof body.errorMessage === "string" ? body.errorMessage.slice(0, 2000) : "Verification failed",
         startedAt: existing.startedAt ?? now,
         completedAt: now,

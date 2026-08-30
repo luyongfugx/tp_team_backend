@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         where: { taskID },
         data: {
           status: "FAILED",
-          errorCode: "ocr_submit_failed",
+          errorCode: "502",
           errorMessage: message,
           verificationProgress: {
             currentStage: "PHOTO_CODE",
