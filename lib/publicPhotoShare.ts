@@ -28,7 +28,7 @@ const verificationTasks = (prisma as unknown as { photoVerificationTask: any }).
 export function normalizePublicPhotoCode(value: unknown) {
   if (typeof value !== "string") return null
   const code = value.trim().toUpperCase()
-  return /^[A-Z0-9]{14}$/.test(code) ? code : null
+  return /^[A-Z0-9]{12}$/.test(code) ? code : null
 }
 
 function objectValue(value: unknown) {

@@ -136,7 +136,7 @@ async function objectAllowed(config: COSBucketConfig, objectKey: string, userID:
     // Some captures still use the local code provider during rollout. Limit the
     // credential to one valid code-shaped object; ownership moves to the code
     // table automatically once all clients consume prefetched server codes.
-    return /^[A-Z0-9]{14}\.json$/.test(objectKey)
+    return /^[A-Z0-9]{12}\.json$/.test(objectKey)
   }
   if (config.validator === "verifyImage") {
     const safeUserID = cleanUserPathID(userID)

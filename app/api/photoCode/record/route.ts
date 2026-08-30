@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const photoCode = typeof body.photoCode === "string"
       ? body.photoCode.toUpperCase().replace(/[^A-Z0-9]/g, "")
       : ""
-    if (photoCode.length !== 14) return bad("照片码必须是14位数字或大写字母")
+    if (photoCode.length !== 12) return bad("照片码必须是12位数字或大写字母")
     const record = await fetchTrustedPhotoRecord(photoCode)
     if (!record) return bad("未找到该照片码对应的拍摄记录", 404)
     return ok(await enrichCaptureTeamInfo(record, user.id))

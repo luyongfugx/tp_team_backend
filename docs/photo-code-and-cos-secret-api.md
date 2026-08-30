@@ -31,7 +31,7 @@ Configuration:
 - `PHOTO_CODE_MAX_BATCH_SIZE`: default `100`, hard-capped at `1000`.
 - `PHOTO_CODE_VALIDITY_MONTHS`: default `3`, hard-capped at `120`.
 
-Codes contain exactly 14 characters from `0-9A-Z` and are persisted with a
+Codes contain exactly 12 characters from the configured uppercase-letter/digit alphabet and are persisted with a
 unique database constraint, owner, optional device ID, batch ID, and expiry.
 
 ## Get the COS JSON AES secret
