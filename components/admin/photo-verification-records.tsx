@@ -236,11 +236,14 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                           {attempt.scope && <span className="rounded bg-muted px-2 py-0.5 text-xs">{attempt.scope}</span>}
                           {attempt.model && <span className="font-mono text-xs text-muted-foreground">{attempt.model}</span>}
                           {attempt.retryCount != null && attempt.retryCount > 0 && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{chinese ? `重试 ${attempt.retryCount} 次` : `${attempt.retryCount} retries`}</span>}
+                          {attempt.http?.status != null && <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">HTTP {attempt.http.status}</span>}
+                          {attempt.http?.mode && <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs">{attempt.http.mode.toUpperCase()}</span>}
                           <span className={`ml-auto text-xs font-medium ${failed ? "text-red-600" : "text-emerald-600"}`}>{attempt.verified === true ? (chinese ? "通过" : "Passed") : attempt.verified === false ? (chinese ? "未通过" : "Failed") : attempt.usable === false ? (chinese ? "不可用" : "Unavailable") : (chinese ? "已执行" : "Executed")}</span>
                         </div>
                         {attempt.recognized && <div className="mt-2 whitespace-pre-wrap rounded bg-background/80 p-2 text-sm"><span className="text-xs text-muted-foreground">{chinese ? "识别结果" : "Recognized"}: </span>{attempt.recognized}</div>}
                         {(attempt.error || attempt.errorMessage) && <div className="mt-2 text-xs text-red-600">{[attempt.error, attempt.errorMessage].filter(Boolean).join(" · ")}</div>}
                         {attempt.requestErrors.map((error, errorIndex) => <div key={errorIndex} className="mt-1 text-xs text-amber-700 dark:text-amber-300">{chinese ? "重试前错误" : "Pre-retry error"}: {error.type} · {error.message}</div>)}
+                        {attempt.http && (attempt.http.contentType || attempt.http.requestId) && <div className="mt-2 break-all font-mono text-xs text-muted-foreground">{[attempt.http.contentType, attempt.http.requestId && `request-id=${attempt.http.requestId}`].filter(Boolean).join(" · ")}</div>}
                         {attempt.similarity != null && <div className="mt-2 text-xs text-muted-foreground">Similarity: {attempt.similarity}</div>}
                       </div>
                     })}

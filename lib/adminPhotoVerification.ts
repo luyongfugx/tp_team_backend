@@ -84,6 +84,12 @@ type RecognitionAttempt = {
   errorMessage: string | null
   retryCount: number | null
   requestErrors: Array<{ type: string; message: string }>
+  http: {
+    status: number | null
+    contentType: string | null
+    requestId: string | null
+    mode: string | null
+  } | null
 }
 
 type RecognitionTrace = {
@@ -120,6 +126,7 @@ function recognitionAttempt(
         message: String(item.message || ""),
       }))
     : []
+  const http = record(value.http)
   return {
     provider: provider(value.provider || value.recognitionProvider || fallbackProvider),
     model: nullableString(value.model),
@@ -136,6 +143,12 @@ function recognitionAttempt(
     errorMessage: nullableString(value.errorMessage),
     retryCount: nullableNumber(value.retryCount),
     requestErrors,
+    http: http ? {
+      status: nullableNumber(http.status),
+      contentType: nullableString(http.contentType),
+      requestId: nullableString(http.requestId),
+      mode: nullableString(http.mode),
+    } : null,
   }
 }
 
