@@ -73,6 +73,21 @@ export function completedVerificationProgress(): VerificationProgress {
   }
 }
 
+export function failedVerificationProgress(existing: unknown): VerificationProgress {
+  const source = existing && typeof existing === "object" && !Array.isArray(existing)
+    ? existing as Record<string, unknown>
+    : null
+  const currentStage = isStageKey(source?.currentStage) ? source.currentStage : "PHOTO_CODE"
+  return mergeVerificationProgress(existing, currentStage, "FAILED") ?? {
+    currentStage,
+    stages: VERIFICATION_STAGE_KEYS.map((key) => ({
+      key,
+      status: key === currentStage ? "FAILED" : "PENDING",
+    })),
+    updatedAt: Date.now(),
+  }
+}
+
 function cleanUserPathID(userID: string) {
   return userID.trim().replaceAll("/", "_")
 }

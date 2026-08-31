@@ -20,6 +20,9 @@ export async function POST(req: Request) {
     if (!taskID || !["PROCESSING", "SUCCEEDED", "FAILED"].includes(String(status))) return bad("参数不正确")
     const existing = await verificationTasks.findUnique({ where: { taskID } })
     if (!existing) return bad("任务不存在", 404)
+    if (["SUCCEEDED", "FAILED"].includes(String(existing.status))) {
+      return ok({ taskID, status: existing.status })
+    }
 
     const now = new Date()
     if (status === "PROCESSING") {
@@ -54,8 +57,8 @@ export async function POST(req: Request) {
       const photoCode = photoCodeBlock && typeof photoCodeBlock === "object"
         ? String((photoCodeBlock as Record<string, unknown>).recognized ?? "").slice(0, 14)
         : null
-      await verificationTasks.update({
-        where: { taskID },
+      const updated = await verificationTasks.updateMany({
+        where: { taskID, status: { in: ["PENDING", "PROCESSING"] } },
         data: {
           status: "SUCCEEDED",
           result,
@@ -69,13 +72,13 @@ export async function POST(req: Request) {
           verificationProgress: completedVerificationProgress(),
         },
       })
-      return ok({ taskID, status: "SUCCEEDED" })
+      return ok({ taskID, status: updated.count > 0 ? "SUCCEEDED" : "FAILED" })
     }
 
     const failureResult = body.result && typeof body.result === "object" ? body.result : undefined
     const failedProgress = mergeVerificationProgress(existing.verificationProgress, body.stage, "FAILED")
-    await verificationTasks.update({
-      where: { taskID },
+    const updated = await verificationTasks.updateMany({
+      where: { taskID, status: { in: ["PENDING", "PROCESSING"] } },
       data: {
         status: "FAILED",
         result: failureResult,
@@ -87,7 +90,7 @@ export async function POST(req: Request) {
         ...(failedProgress ? { verificationProgress: failedProgress } : {}),
       },
     })
-    return ok({ taskID, status: "FAILED" })
+    return ok({ taskID, status: updated.count > 0 ? "FAILED" : existing.status })
   } catch (error) {
     console.log("[photoCode/verify/task/callback] error:", error)
     return NextResponse.json({ error: "服务器错误，请稍后再试" }, { status: 500 })
