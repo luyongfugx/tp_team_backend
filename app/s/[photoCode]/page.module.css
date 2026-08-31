@@ -267,7 +267,16 @@
 
 .captureRecordIcon svg { width: 17px; height: 17px; stroke-width: 2; }
 .captureRecordItem strong { align-self: start; font-size: 14px; line-height: 1.25; }
-.captureRecordValue { min-width: 0; align-self: end; color: #7d8794; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-line; }
+.captureRecordValue {
+  min-width: 0;
+  align-self: center;
+  color: #7d8794;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: pre-line;
+}
 
 .compressedTip {
   margin: 0 4px 16px;
