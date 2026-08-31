@@ -155,17 +155,129 @@
 .address { margin: 0 0 8px; font-size: 16px; line-height: 1.55; font-weight: 650; }
 .gps { margin: 0; color: #68758a; font-size: 14px; }
 
-.rows { padding: 0 20px 8px; }
-.row {
-  display: grid;
-  grid-template-columns: 132px 1fr;
-  gap: 16px;
-  padding: 15px 0;
-  border-top: 1px solid #edf0f5;
-}
-.label { color: #6d788a; }
-.value { min-width: 0; overflow-wrap: anywhere; font-weight: 620; text-align: right; }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+
+.detailsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 12px;
+}
+
+.detailsHeader h2,
+.captureRecordTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+
+.summaryBadge,
+.matchBadge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #129858;
+  background: #dff8e8;
+  border-radius: 999px;
+  font-weight: 750;
+}
+
+.summaryBadge {
+  min-height: 42px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+.detailRows { padding: 0 22px 12px; }
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 30px minmax(90px, 132px) minmax(0, 1fr) 112px;
+  align-items: center;
+  min-height: 68px;
+  border-top: 1px solid #edf0f3;
+}
+
+.detailIcon {
+  display: grid;
+  color: #111820;
+  place-items: center start;
+}
+
+.detailIcon svg { width: 21px; height: 21px; stroke-width: 2; }
+.detailLabel { color: #1b212a; font-size: 16px; font-weight: 650; }
+.detailValue { min-width: 0; padding: 12px 14px; color: #7a8492; line-height: 1.42; overflow-wrap: anywhere; }
+
+.matchBadge {
+  min-height: 38px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.mismatchBadge {
+  color: #d45151;
+  background: #ffebee;
+}
+
+.conclusionCheck {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  justify-self: end;
+  place-items: center;
+  color: #18ba70;
+  fill: #dff8e8;
+  border-radius: 50%;
+  font-weight: 800;
+  stroke-width: 2.2;
+}
+
+.conclusionMismatch { color: #d45151; background: #ffebee; }
+
+.captureRecordCard { padding: 22px 22px 24px; }
+.captureRecordTitle { margin-bottom: 22px; }
+
+.captureRecordGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.captureRecordItem {
+  display: grid;
+  grid-template-rows: 34px minmax(38px, auto) minmax(48px, auto);
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.captureRecordIcon {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  color: #21a657;
+  border: 2px solid #21a657;
+  border-radius: 50%;
+}
+
+.captureRecordIcon svg { width: 17px; height: 17px; stroke-width: 2; }
+.captureRecordItem strong { align-self: start; font-size: 14px; line-height: 1.25; }
+.captureRecordValue { min-width: 0; align-self: end; color: #7d8794; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-line; }
+
+.compressedTip {
+  margin: 0 4px 16px;
+  padding: 14px 16px;
+  color: #3378c8;
+  background: #eaf3ff;
+  border-radius: 13px;
+  font-size: 13px;
+  line-height: 1.5;
+}
 
 .verifyCard { padding: 23px 20px; text-align: center; }
 .verifyMark {
@@ -199,5 +311,19 @@
   .hero, .card { border-radius: 16px; }
   .photo { max-height: 62vh; }
   .mapWrap { height: 220px; margin: 0 12px; }
-  .row { grid-template-columns: 112px 1fr; gap: 10px; }
+  .detailsHeader { padding: 18px 16px 10px; }
+  .detailsHeader h2, .captureRecordTitle { font-size: 19px; }
+  .summaryBadge { min-height: 36px; padding: 0 16px; font-size: 13px; }
+  .detailRows { padding: 0 16px 10px; }
+  .detailRow { grid-template-columns: 26px 92px minmax(0, 1fr) 76px; min-height: 62px; }
+  .detailIcon svg { width: 19px; height: 19px; }
+  .detailLabel { font-size: 14px; }
+  .detailValue { padding: 10px 7px; font-size: 13px; }
+  .matchBadge { min-height: 34px; padding: 0 10px; font-size: 13px; }
+  .captureRecordCard { padding: 18px 12px 20px; }
+  .captureRecordTitle { margin-left: 4px; margin-bottom: 18px; }
+  .captureRecordGrid { gap: 5px; }
+  .captureRecordItem { grid-template-rows: 32px minmax(42px, auto) minmax(60px, auto); }
+  .captureRecordItem strong { font-size: 12px; }
+  .captureRecordValue { font-size: 10px; }
 }

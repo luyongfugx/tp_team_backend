@@ -5,6 +5,10 @@ export type PublicPhotoShare = {
   photoCode: string
   imageUrl: string
   verified: boolean
+  timeVerified: boolean
+  addressVerified: boolean
+  contentVerified: boolean
+  photoCodeVerified: boolean
   captureTime: string
   timestamp: number | null
   address: string
@@ -78,16 +82,27 @@ export async function getPublicPhotoShare(rawPhotoCode: unknown): Promise<Public
   const result = objectValue(task.result)
   const capture = objectValue(result?.captureRecord)
   if (!capture) return null
+  const timeResult = objectValue(result?.time)
+  const addressResult = objectValue(result?.address)
+  const contentResult = objectValue(result?.content)
+  const photoCodeResult = objectValue(result?.photoCode)
   const coordinates = coordinatePair(capture.latlng)
   const timestamp = finiteNumber(capture.timestamp)
   const accuracy = finiteNumber(capture.locationAccuracyMeters)
   const imageWidth = finiteNumber(capture.imageWidth)
   const imageHeight = finiteNumber(capture.imageHeight)
+  const overallVerified = task.verified === true
+  const verificationFlag = (container: Record<string, unknown> | null, key: string) =>
+    typeof container?.[key] === "boolean" ? container[key] === true : overallVerified
 
   return {
     photoCode,
     imageUrl: signedVerificationImageURL(textValue(task.imageObjectKey)),
-    verified: task.verified === true,
+    verified: overallVerified,
+    timeVerified: verificationFlag(timeResult, "verified"),
+    addressVerified: verificationFlag(addressResult, "verified"),
+    contentVerified: verificationFlag(contentResult, "verified"),
+    photoCodeVerified: verificationFlag(photoCodeResult, "matched"),
     captureTime: textValue(capture.captureTime),
     timestamp,
     address: textValue(capture.address),
