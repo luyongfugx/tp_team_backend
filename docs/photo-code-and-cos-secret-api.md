@@ -18,7 +18,7 @@ Response:
 
 ```json
 {
-  "antiFakeCodes": ["UE1AYC6P2WE6YB"],
+  "antiFakeCodes": ["UEIAYC9PZWE9"],
   "count": 1,
   "expiresAt": "2026-11-27T08:00:00.000Z",
   "validityMonths": 3

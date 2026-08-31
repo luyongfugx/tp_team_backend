@@ -5,7 +5,9 @@ import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
 
 // O is the only round glyph in newly issued codes. Excluding 0 and Q makes
 // OCR normalization deterministic: legacy-looking 0/Q readings map to O.
-const PHOTO_CODE_ALPHABET = "123456789ABCDEFGHIJKLMNOPRSTUVWXYZ"
+// Avoid glyph pairs that are unstable after JPEG compression/OCR.
+// Canonical substitutions: 0/Q->O, 1->I, 2->Z, 5->S, 6->9, 8->B.
+const PHOTO_CODE_ALPHABET = "3479ABCDEFGHIJKLMNOPRSTUVWXYZ"
 const PHOTO_CODE_LENGTH = 12
 
 type PhotoCodeCreateInput = {
