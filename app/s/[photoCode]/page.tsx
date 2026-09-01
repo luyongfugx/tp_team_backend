@@ -144,7 +144,7 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
           <DetailRow icon={<Smartphone />} label={copy.deviceModel} value={share.deviceModel || "—"} />
           <DetailRow icon={<Smartphone />} label={copy.systemVersion} value={share.os || share.versionCode || "—"} />
           <DetailRow icon={<Camera />} label={copy.captureSource} value="Timeprint" />
-          {share.locationAccuracyMeters !== null && <DetailRow icon={<Navigation />} label={copy.accuracy} value={`±${share.locationAccuracyMeters} m`} />}
+          {share.locationAccuracyMeters !== null && <DetailRow icon={<Navigation />} label={copy.accuracy} value={`±${Math.round(share.locationAccuracyMeters)} m`} />}
           <DetailRow icon={<Globe2 />} label={copy.timezone} value={share.timezone || "—"} />
           <DetailRow icon={<ShieldCheck />} label={copy.conclusion} value={share.verified ? copy.workReference : copy.reviewRequired} conclusion={share.verified} match={copy.match} mismatch={copy.mismatch} />
         </div>
@@ -173,8 +173,14 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
         <h2>Timeprint · {copy.downloadTitle}</h2>
         <p>{copy.downloadBody}</p>
         <div className={styles.downloadButtons}>
-          <a href={APP_STORE_URL}><img src="/appstore.png" alt={`${copy.openApp} · App Store`} /></a>
-          <a href={GOOGLE_PLAY_URL}><img src="/googleplay.png" alt={`${copy.openApp} · Google Play`} /></a>
+          <a className={styles.downloadItem} href={APP_STORE_URL}>
+            <img src="/appstore.png" alt={`${copy.openApp} · App Store`} />
+            <span>App Store</span>
+          </a>
+          <a className={styles.downloadItem} href={GOOGLE_PLAY_URL}>
+            <img src="/googleplay.png" alt={`${copy.openApp} · Google Play`} />
+            <span>Google Play</span>
+          </a>
         </div>
         <div className={styles.privacy}>{copy.privacy}</div>
       </section>

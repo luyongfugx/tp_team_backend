@@ -311,6 +311,15 @@
 .downloads h2 { margin: 0 0 6px; font-size: 22px; }
 .downloads p { margin: 0 0 16px; color: #778399; }
 .downloadButtons { display: flex; justify-content: center; gap: 12px; }
+.downloadItem {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: #313b4a;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
 .downloadButtons img { width: 118px; height: 118px; border-radius: 12px; }
 .privacy { margin-top: 20px; color: #9aa4b4; font-size: 12px; }
 
