@@ -35,19 +35,6 @@ function storeURLForUserAgent(userAgent: string) {
   return "#download"
 }
 
-function mapLinks(latitude: number, longitude: number) {
-  const deltaLat = 0.006
-  const deltaLng = 0.01
-  const bbox = [longitude - deltaLng, latitude - deltaLat, longitude + deltaLng, latitude + deltaLat]
-    .map((value) => value.toFixed(6))
-    .join("%2C")
-  const marker = `${latitude.toFixed(6)}%2C${longitude.toFixed(6)}`
-  return {
-    preview: `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`,
-    navigation: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-  }
-}
-
 function displayDateTime(value: string, timestamp: number | null, locale: string) {
   if (value) return value
   if (!timestamp) return "—"
@@ -88,10 +75,8 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
   const requestHeaders = await headers()
   const storeURL = storeURLForUserAgent(requestHeaders.get("user-agent") ?? "")
   const { locale, direction, copy } = getPhotoShareCopy(requestHeaders.get("accept-language") ?? "")
-  const maps = share.latitude !== null && share.longitude !== null
-    ? mapLinks(share.latitude, share.longitude)
-    : null
-  const gps = maps ? `${share.latitude!.toFixed(6)}, ${share.longitude!.toFixed(6)}` : "—"
+  const hasCoordinates = share.latitude !== null && share.longitude !== null
+  const gps = hasCoordinates ? `${share.latitude!.toFixed(6)}, ${share.longitude!.toFixed(6)}` : "—"
   const captureTime = displayDateTime(share.captureTime, share.timestamp, locale)
   const compactCaptureTime = captureTime.replace(/^(\d{4}-\d{1,2}-\d{1,2})[ T](\d{1,2}:\d{2}(?::\d{2})?)/, "$1\n$2")
   const membership = (value: string) => value || copy.none
@@ -114,18 +99,6 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
       </section>
 
       <section className={styles.card}>
-        <h1 className={styles.sectionTitle}>{copy.location}</h1>
-        {maps && <div className={styles.mapWrap}>
-          <iframe src={maps.preview} loading="lazy" title={copy.location} referrerPolicy="no-referrer" />
-          <a className={styles.navigate} href={maps.navigation} target="_blank" rel="noreferrer">⌖ {copy.navigate}</a>
-        </div>}
-        <div className={styles.locationText}>
-          <p className={styles.address}>{share.address || "—"}</p>
-          <p className={styles.gps}>{copy.gps}: {gps}</p>
-        </div>
-      </section>
-
-      <section className={styles.card}>
         <div className={styles.detailsHeader}>
           <h2>{copy.verificationDetails}</h2>
           <span className={`${styles.summaryBadge} ${share.verified ? "" : styles.mismatchBadge}`}>
@@ -137,7 +110,7 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
           <DetailRow icon={<Clock3 />} label={copy.captureTime} value={captureTime} verified={share.timeVerified} match={copy.match} mismatch={copy.mismatch} />
           <DetailRow icon={<MapPin />} label={copy.captureLocation} value={share.address || "—"} verified={share.addressVerified} match={copy.match} mismatch={copy.mismatch} />
           <DetailRow icon={<Crosshair />} label={copy.gpsDetail} value={gps} />
-          <DetailRow icon={<ImageIcon />} label={copy.photoContent} value={share.contentVerified ? copy.contentMatched : copy.contentMismatched} verified={share.contentVerified} match={copy.match} mismatch={copy.mismatch} />
+          <DetailRow icon={<ImageIcon />} label={copy.photoContent} value={share.contentVerified ? copy.match : copy.mismatch} verified={share.contentVerified} match={copy.match} mismatch={copy.mismatch} />
           <DetailRow icon={<Hash />} label={copy.photoCode} value={share.photoCode} verified={share.photoCodeVerified} match={copy.match} mismatch={copy.mismatch} code />
           <DetailRow icon={<Folder />} label={copy.project} value={membership(share.projectName)} />
           <DetailRow icon={<Users />} label={copy.team} value={membership(share.groupName)} />

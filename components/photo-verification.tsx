@@ -144,8 +144,7 @@ function CaptureRecordView({ record, photoCode, locale }: { record: CaptureRecor
       <DetailRow icon={<Clock3 className="size-4" />} label={copy.captureTime} value={record.captureTime || "-"} />
       <DetailRow icon={<MapPin className="size-4" />} label={copy.captureLocation} value={record.address || "-"} />
       <DetailRow icon={<Crosshair className="size-4" />} label={copy.gpsDetail} value={record.latlng || "-"} />
-      {record.positionType && <DetailRow icon={<MapPin className="size-4" />} label={copy.positionType} value={record.positionType} />}
-      {record.locationAccuracyMeters != null && <DetailRow icon={<Crosshair className="size-4" />} label={copy.accuracy} value={`±${record.locationAccuracyMeters} m`} />}
+      {record.locationAccuracyMeters != null && <DetailRow icon={<Crosshair className="size-4" />} label={copy.accuracy} value={`±${Math.round(record.locationAccuracyMeters)} m`} />}
       <DetailRow icon={<FolderKanban className="size-4" />} label={copy.project} value={record.projectName || copy.none} />
       <DetailRow icon={<Users className="size-4" />} label={copy.team} value={record.groupName || copy.none} />
       <DetailRow icon={<Smartphone className="size-4" />} label={copy.deviceModel} value={record.deviceModel || "-"} />
@@ -349,7 +348,7 @@ export function PhotoVerification({ token, locale, refreshKey }: { token: string
               <DetailRow icon={<Hash className="size-4" />} label={copy.photoCode} value={result.photoCode?.recognized || task?.photoCode || "-"} verified={result.photoCode?.matched} />
               <DetailRow icon={<Clock3 className="size-4" />} label={copy.captureTime} value={result.time?.expected || result.captureRecord?.captureTime || "-"} verified={result.time?.verified} />
               <DetailRow icon={<MapPin className="size-4" />} label={copy.captureLocation} value={result.address?.expected || result.captureRecord?.address || "-"} verified={result.address?.verified} />
-              <DetailRow icon={<ImageIcon className="size-4" />} label={copy.photoContent} value={result.content?.reason || (result.content?.verified ? copy.contentMatched : copy.contentMismatched)} verified={result.content?.verified} />
+              <DetailRow icon={<ImageIcon className="size-4" />} label={copy.photoContent} value={result.content?.verified ? copy.match : copy.mismatch} verified={result.content?.verified} />
               {result.captureRecord && <div className="mt-6 border-t pt-5"><h3 className="mb-2 font-semibold">{copy.captureRecord}</h3><CaptureRecordView record={result.captureRecord} photoCode={result.photoCode?.recognized || task?.photoCode || ""} locale={locale} /></div>}
             </div>
           </div>
