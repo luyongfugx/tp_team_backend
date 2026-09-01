@@ -19,7 +19,6 @@ import {
   Search,
   Smartphone,
   Users,
-  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -209,7 +208,6 @@ export function PhotoCodePhotos({ token, locale, refreshKey }: { token: string; 
   }, [activePhotoID])
 
   function closeDetail() {
-    if (detailLoading) return
     setActivePhotoID(null)
     setDetail(null)
   }
@@ -281,8 +279,8 @@ export function PhotoCodePhotos({ token, locale, refreshKey }: { token: string; 
       </div>}
 
       {activePhotoID && <div className="fixed inset-0 z-[100] flex flex-col bg-black/95">
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4">
-          <Button variant="outline" onClick={closeDetail} disabled={detailLoading} className="border-white/20 bg-white text-black hover:bg-white/90"><X className="size-4" />{t(locale, "web.close")}</Button>
+        <div className="flex h-16 shrink-0 items-center justify-between px-4">
+          <Button variant="outline" onClick={closeDetail} className="border-white/20 bg-white text-black hover:bg-white/90">{t(locale, "web.close")}</Button>
           <span className="text-sm tabular-nums text-white/70">{activePhotoIndex + 1} / {activePhotoList.length}{detail?.photoCode ? ` · ${detail.photoCode}` : ""}</span>
           {detail ? <a href={detail.downloadURL} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-sm font-medium text-black hover:bg-white/90"><Download className="size-4" />{t(locale, "web.download")}</a> : <span />}
         </div>
@@ -305,40 +303,56 @@ export function PhotoCodePhotos({ token, locale, refreshKey }: { token: string; 
             })}
           </div>
         </div>
-        <div className="grid min-h-0 flex-1 grid-rows-[minmax(220px,1fr)_minmax(0,40vh)] lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-1">
-          <div className="relative flex min-h-0 items-center justify-center px-14 py-4 md:px-20 lg:py-6">
+        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center lg:px-20 lg:py-3">
+          <button
+            type="button"
+            onClick={() => showAdjacentPhoto(-1)}
+            disabled={detailLoading || activePhotoIndex <= 0}
+            className="absolute left-5 top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 lg:flex"
+            aria-label={t(locale, "dashboard.previousPhoto")}
+          ><ChevronLeft className="size-6" /></button>
+          <div className="flex min-h-0 w-full flex-1 flex-col lg:h-full lg:w-fit lg:max-w-[calc(100vw_-_10rem)] lg:flex-none lg:flex-row lg:items-stretch lg:justify-center">
+          <div className="relative flex min-h-[240px] min-w-0 flex-1 items-center justify-center px-14 py-3 md:px-20 lg:contents">
             <button
               type="button"
               onClick={() => showAdjacentPhoto(-1)}
               disabled={detailLoading || activePhotoIndex <= 0}
-              className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12"
+              className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12 lg:hidden"
               aria-label={t(locale, "dashboard.previousPhoto")}
             ><ChevronLeft className="size-6" /></button>
-            {detailLoading ? <Loader2 className="size-8 animate-spin text-white/70" /> : detail?.imageURL ? <img src={detail.imageURL} alt={detail.photoCode} className="max-h-full max-w-full rounded-lg object-contain" /> : <ImageOff className="size-14 text-white/40" />}
+            {detailLoading ? <Loader2 className="size-8 animate-spin self-center text-white/70" /> : detail?.imageURL ? <img src={detail.imageURL} alt={detail.photoCode} className="max-h-full max-w-full self-center rounded-lg object-contain lg:max-w-[calc(100vw_-_30rem)]" /> : <ImageOff className="size-14 self-center text-white/40" />}
             <button
               type="button"
               onClick={() => showAdjacentPhoto(1)}
               disabled={detailLoading || activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
-              className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12"
+              className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12 lg:hidden"
               aria-label={t(locale, "dashboard.nextPhoto")}
             ><ChevronRight className="size-6" /></button>
           </div>
-          {detailLoading ? <aside className="flex min-h-0 items-center justify-center border-t border-white/10 bg-white/[0.04] text-white/50 lg:border-l lg:border-t-0"><Loader2 className="size-6 animate-spin" /></aside> : detail && <aside className="min-h-0 overflow-y-auto border-t border-white/10 bg-white/[0.04] p-4 text-white lg:border-l lg:border-t-0 lg:p-5">
+          {detailLoading ? <aside className="flex max-h-[38vh] min-h-0 w-full shrink-0 items-center justify-center border-t border-white/10 bg-white/[0.04] text-white/50 lg:max-h-none lg:w-80 lg:border-l lg:border-t-0"><Loader2 className="size-6 animate-spin" /></aside> : detail && <aside className="max-h-[38vh] min-h-0 w-full shrink-0 overflow-y-auto border-t border-white/10 bg-white/[0.04] p-4 text-white lg:max-h-none lg:w-80 lg:border-l lg:border-t-0 lg:p-5">
             <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3"><Camera className="size-5 text-orange-400" /><h3 className="text-sm font-semibold">{copy.captureRecord}</h3></div>
-            <DetailItem icon={<Hash className="size-4" />} label={copy.photoCode} value={detail.photoCode} />
+            <DetailItem icon={<Users className="size-4" />} label={copy.photographer} value={[detail.userName, detail.userEmail].filter(Boolean).join(" · ") || "-"} />
             <DetailItem icon={<Clock3 className="size-4" />} label={copy.captureTime} value={detail.captureTime} />
             <DetailItem icon={<MapPin className="size-4" />} label={copy.captureLocation} value={detail.location || "-"} />
             <DetailItem icon={<Crosshair className="size-4" />} label={copy.gpsDetail} value={detail.latitude != null && detail.longitude != null ? `${detail.latitude.toFixed(6)}, ${detail.longitude.toFixed(6)}` : "-"} />
             {detail.locationAccuracyMeters != null && <DetailItem icon={<Crosshair className="size-4" />} label={copy.accuracy} value={`±${detail.locationAccuracyMeters} m`} />}
-            <DetailItem icon={<Building2 className="size-4" />} label={copy.team} value={detail.team.groupName} />
             <DetailItem icon={<FolderKanban className="size-4" />} label={copy.project} value={detail.projectName || copy.none} />
-            <DetailItem icon={<Users className="size-4" />} label={t(locale, "dashboard.member")} value={[detail.userName, detail.userEmail].filter(Boolean).join(" · ") || "-"} />
+            <DetailItem icon={<Building2 className="size-4" />} label={copy.team} value={detail.team.groupName} />
             <DetailItem icon={<Smartphone className="size-4" />} label={copy.deviceModel} value={detail.deviceModel || "-"} />
             <DetailItem icon={<Smartphone className="size-4" />} label={copy.systemVersion} value={[detail.os, detail.versionCode].filter(Boolean).join(" · ") || "-"} />
             <DetailItem icon={<Camera className="size-4" />} label={copy.captureSource} value="Timeprint" />
             <DetailItem icon={<Globe2 className="size-4" />} label={copy.timezone} value={detail.timeZone || "-"} />
+            <DetailItem icon={<Hash className="size-4" />} label={copy.photoCode} value={detail.photoCode} />
             {(detail.imageWidth != null || detail.imageHeight != null) && <DetailItem icon={<ImageOff className="size-4" />} label={copy.photoContent} value={`${detail.imageWidth || "-"} × ${detail.imageHeight || "-"} px · ${formatFileSize(detail.fileSize)}`} />}
           </aside>}
+          </div>
+          <button
+            type="button"
+            onClick={() => showAdjacentPhoto(1)}
+            disabled={detailLoading || activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
+            className="absolute right-5 top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 lg:flex"
+            aria-label={t(locale, "dashboard.nextPhoto")}
+          ><ChevronRight className="size-6" /></button>
         </div>
       </div>}
     </div>

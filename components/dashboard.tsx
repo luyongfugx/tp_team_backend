@@ -2008,31 +2008,39 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 })}
               </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:items-stretch">
-              <div className="relative flex min-h-[240px] min-w-0 flex-1 items-center justify-center px-14 py-3 md:px-20 lg:min-h-0 lg:justify-end lg:pl-20 lg:pr-0">
+            <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center lg:px-20 lg:py-3">
+              <button
+                type="button"
+                onClick={() => showAdjacentPhoto(-1)}
+                disabled={activePhotoIndex <= 0}
+                className="absolute left-5 top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 lg:flex"
+                aria-label={t(locale, "dashboard.previousPhoto")}
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+              <div className="flex min-h-0 w-full flex-1 flex-col lg:h-full lg:w-fit lg:max-w-[calc(100vw_-_10rem)] lg:flex-none lg:flex-row lg:items-stretch lg:justify-center">
+              <div className="relative flex min-h-[240px] min-w-0 flex-1 items-center justify-center px-14 py-3 md:px-20 lg:contents">
                 <button
                   type="button"
                   onClick={() => showAdjacentPhoto(-1)}
                   disabled={activePhotoIndex <= 0}
-                  className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12"
+                  className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12 lg:hidden"
                   aria-label={t(locale, "dashboard.previousPhoto")}
                 >
                   <ChevronLeft className="size-6" />
                 </button>
-                <div className="flex size-full min-h-0 items-center justify-center lg:justify-end">
                   {activePhoto.imageURL ? (
                     <img
                       src={activePhoto.imageURL}
                       alt={activePhoto.localPhotoName || activePhoto.location || t(locale, "web.teamPhoto")}
-                      className="max-h-full max-w-full rounded-lg object-contain"
+                      className="max-h-full max-w-full rounded-lg object-contain lg:max-w-[calc(100vw_-_30rem)] lg:self-center"
                     />
                   ) : (
-                    <div className="flex flex-col items-center gap-3 text-white/60">
+                    <div className="flex flex-col items-center gap-3 text-white/60 lg:max-w-[calc(100vw_-_30rem)] lg:self-center">
                       <ImageOff className="size-12" />
                       <span>{t(locale, "web.largeImage")}</span>
                     </div>
                   )}
-                </div>
                 <button
                   type="button"
                   onClick={() => showAdjacentPhoto(1)}
@@ -2044,17 +2052,16 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 </button>
               </div>
               <PhotoCaptureDetails photo={activePhoto} teamName={selectedTeam?.groupName || ""} locale={locale} />
-              <div className="hidden w-16 shrink-0 items-center justify-center lg:flex">
-                <button
-                  type="button"
-                  onClick={() => showAdjacentPhoto(1)}
-                  disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
-                  className="flex size-12 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label={t(locale, "dashboard.nextPhoto")}
-                >
-                  <ChevronRight className="size-6" />
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={() => showAdjacentPhoto(1)}
+                disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
+                className="absolute right-5 top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 lg:flex"
+                aria-label={t(locale, "dashboard.nextPhoto")}
+              >
+                <ChevronRight className="size-6" />
+              </button>
             </div>
           </div>
         )}

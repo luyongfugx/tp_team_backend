@@ -113,6 +113,12 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds))
 }
 
+function verificationFailureMessage(task: VerificationTask, fallback: string, recordNotFound: string) {
+  const message = task.errorMessage?.trim() || ""
+  if (message.toLowerCase().includes("cos object not found")) return recordNotFound
+  return message || fallback
+}
+
 function DetailRow({ icon, label, value, verified }: { icon: React.ReactNode; label: string; value: string; verified?: boolean | null }) {
   return (
     <div className="flex gap-3 border-b py-3 last:border-b-0">
@@ -192,7 +198,9 @@ export function PhotoVerification({ token, locale, refreshKey }: { token: string
       if (generationRef.current !== generation) return
       setTask(current)
       if (current.status === "SUCCEEDED") return
-      if (current.status === "FAILED") throw new Error(current.errorMessage || copy.failedMessage)
+      if (current.status === "FAILED") {
+        throw new Error(verificationFailureMessage(current, copy.failedMessage, copy.recordNotFound))
+      }
       if (attempt === 30) {
         await requestJSON("/api/photoCode/verify/task/timeout", {
           method: "POST",
