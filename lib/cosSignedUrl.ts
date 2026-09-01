@@ -37,3 +37,23 @@ export function signedVerificationImageURL(objectKey: string, expiresSeconds = 9
     Protocol: "https:",
   })
 }
+
+export async function uploadVerificationImage(objectKey: string, body: Buffer) {
+  const { bucket, region } = verificationImageBucket()
+  const { secretID, secretKey } = verificationBucketSecrets()
+  const cos = new COS({ SecretId: secretID, SecretKey: secretKey, Protocol: "https:" })
+  await new Promise<void>((resolve, reject) => {
+    cos.putObject({
+      Bucket: bucket,
+      Region: region,
+      Key: objectKey,
+      Body: body,
+      ContentLength: body.length,
+      ContentType: "image/jpeg",
+    }, (error: unknown) => {
+      if (error) reject(error)
+      else resolve()
+    })
+  })
+  return `https://${bucket}.cos.${region}.myqcloud.com/${objectKey}`
+}

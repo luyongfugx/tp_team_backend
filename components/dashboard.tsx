@@ -7,18 +7,25 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
+  Clock3,
+  Crosshair,
   Download,
   FolderKanban,
+  Globe2,
+  Hash,
   ImageOff,
+  Images,
   Inbox,
   LogOut,
   Mail,
   MapPin,
   RefreshCw,
   ArrowRight,
+  ScanSearch,
   Search,
   Settings,
   ShieldCheck,
+  Smartphone,
   Trash2,
   UserPlus,
   Users,
@@ -30,6 +37,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 import { authenticatedFetch } from "@/lib/client-auth"
 import { PhotoVerificationRecords } from "@/components/admin/photo-verification-records"
+import { PhotoCodePhotos } from "@/components/admin/photo-code-photos"
+import { PhotoVerification } from "@/components/photo-verification"
+import { getPhotoShareCopy } from "@/lib/photoShareI18n"
 
 interface DashboardProps {
   token: string
@@ -43,7 +53,7 @@ const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 const DELETE_REQUEST_PAGE_SIZE = 30
 const ADMIN_USER_PAGE_SIZE = 30
-type MainMenu = "teams" | "settings" | "deleteRequests" | "adminUsers" | "verificationRecords"
+type MainMenu = "teams" | "photoVerification" | "photoCodePhotos" | "settings" | "deleteRequests" | "adminUsers" | "verificationRecords"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -120,6 +130,17 @@ type TeamPhoto = {
   userName: string | null
   projectName: string | null
   timeText: string
+  timeZone: string
+  captureInfo: {
+    latitude: number | null
+    longitude: number | null
+    positionType: string | null
+    locationAccuracyMeters: number | null
+    deviceModel: string | null
+    os: string | null
+    versionCode: string | null
+    photoCode: string | null
+  }
 }
 
 type TeamPhotoDay = {
@@ -191,6 +212,54 @@ function formatDate(value: string | number | null | undefined, locale: string) {
   const date = typeof value === "number" ? new Date(value) : new Date(value)
   if (Number.isNaN(date.getTime())) return "-"
   return date.toLocaleString(localeDateCode(resolveLocale(locale)))
+}
+
+function PhotoCaptureDetails({ photo, teamName, locale }: { photo: TeamPhoto; teamName: string; locale: string }) {
+  const copy = getPhotoShareCopy(locale).copy
+  const capture = photo.captureInfo
+  const coordinates = capture?.latitude != null && capture?.longitude != null
+    ? `${capture.latitude.toFixed(6)}, ${capture.longitude.toFixed(6)}`
+    : "-"
+  const systemVersion = [capture?.os, capture?.versionCode].filter(Boolean).join(" · ") || "-"
+  const rows = [
+    { icon: <Clock3 className="size-4" />, label: copy.captureTime, value: photo.timeText || "-" },
+    { icon: <MapPin className="size-4" />, label: copy.captureLocation, value: photo.location || "-" },
+    { icon: <Crosshair className="size-4" />, label: copy.gpsDetail, value: coordinates },
+    ...(capture?.locationAccuracyMeters != null
+      ? [{ icon: <Crosshair className="size-4" />, label: copy.accuracy, value: `±${capture.locationAccuracyMeters} m` }]
+      : []),
+    ...(capture?.positionType
+      ? [{ icon: <MapPin className="size-4" />, label: copy.positionType, value: capture.positionType }]
+      : []),
+    { icon: <Users className="size-4" />, label: t(locale, "dashboard.member"), value: photo.userName || "-" },
+    { icon: <FolderKanban className="size-4" />, label: copy.project, value: photo.projectName || copy.none },
+    { icon: <Building2 className="size-4" />, label: copy.team, value: teamName || "-" },
+    { icon: <Smartphone className="size-4" />, label: copy.deviceModel, value: capture?.deviceModel || "-" },
+    { icon: <Smartphone className="size-4" />, label: copy.systemVersion, value: systemVersion },
+    { icon: <Camera className="size-4" />, label: copy.captureSource, value: "Timeprint" },
+    { icon: <Globe2 className="size-4" />, label: copy.timezone, value: photo.timeZone || "-" },
+    { icon: <Hash className="size-4" />, label: copy.photoCode, value: capture?.photoCode || "-" },
+  ]
+
+  return (
+    <aside className="min-h-0 overflow-y-auto border-t border-white/10 bg-white/[0.04] p-4 text-white lg:border-l lg:border-t-0 lg:p-5">
+      <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
+        <Camera className="size-5 text-orange-400" />
+        <h2 className="text-sm font-semibold text-white">{copy.captureRecord}</h2>
+      </div>
+      <div className="space-y-1">
+        {rows.map((row, index) => (
+          <div key={`${row.label}-${index}`} className="flex gap-3 rounded-md px-2 py-2.5 hover:bg-white/[0.04]">
+            <span className="mt-0.5 shrink-0 text-white/45">{row.icon}</span>
+            <div className="min-w-0">
+              <div className="text-[11px] text-white/45">{row.label}</div>
+              <div className="mt-0.5 break-words text-sm leading-5 text-white/90">{row.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </aside>
+  )
 }
 
 function ownerName(team: TeamInfo) {
@@ -556,6 +625,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
   const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
   const [verificationRefreshKey, setVerificationRefreshKey] = useState(0)
+  const [photoVerificationRefreshKey, setPhotoVerificationRefreshKey] = useState(0)
+  const [photoCodePhotosRefreshKey, setPhotoCodePhotosRefreshKey] = useState(0)
   const photoPreviewRef = useRef<HTMLDivElement>(null)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
@@ -1002,6 +1073,11 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setActiveMenu("settings")
   }
 
+  function openPhotoVerification() {
+    setActiveMenu("photoVerification")
+    setView({ type: "teams" })
+  }
+
   function openDeleteRequests() {
     setActiveMenu("deleteRequests")
     setView({ type: "teams" })
@@ -1016,6 +1092,11 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
 
   function openVerificationRecords() {
     setActiveMenu("verificationRecords")
+    setView({ type: "teams" })
+  }
+
+  function openPhotoCodePhotos() {
+    setActiveMenu("photoCodePhotos")
     setView({ type: "teams" })
   }
 
@@ -1036,11 +1117,29 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       setVerificationRefreshKey((value) => value + 1)
       return
     }
+    if (activeMenu === "photoVerification") {
+      setPhotoVerificationRefreshKey((value) => value + 1)
+      return
+    }
+    if (activeMenu === "photoCodePhotos") {
+      setPhotoCodePhotosRefreshKey((value) => value + 1)
+      return
+    }
     loadOverview()
   }
 
+  const photoVerificationCopy = getPhotoShareCopy(locale).copy
+  const photoCodePhotosTitle = resolveLocale(locale) === "zh-Hans"
+    ? "照片码照片"
+    : resolveLocale(locale) === "zh-Hant"
+      ? "照片碼照片"
+      : `${photoVerificationCopy.photoCode} · ${t(locale, "dashboard.photos")}`
   const title =
-    activeMenu === "verificationRecords"
+    activeMenu === "photoVerification"
+      ? photoVerificationCopy.menuTitle
+      : activeMenu === "photoCodePhotos"
+      ? photoCodePhotosTitle
+      : activeMenu === "verificationRecords"
       ? (locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records")
       : activeMenu === "adminUsers"
       ? selectedAdminUserID
@@ -1086,6 +1185,13 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             </button>
             <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.myTeams")} />
           </div>
+          <div className="group relative">
+            <button type="button" className={menuButtonClass(activeMenu === "photoVerification", collapsed)} onClick={openPhotoVerification} title={photoVerificationCopy.menuTitle}>
+              <ScanSearch className="size-4" />
+              {!collapsed && <span>{photoVerificationCopy.menuTitle}</span>}
+            </button>
+            <CollapsedTooltip collapsed={collapsed} label={photoVerificationCopy.menuTitle} />
+          </div>
           {isSuperAdmin && (
             <div className="group relative">
               <button type="button" className={menuButtonClass(activeMenu === "adminUsers", collapsed)} onClick={openAdminUsers} title={t(locale, "dashboard.users")}>
@@ -1093,6 +1199,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {!collapsed && <span>{t(locale, "dashboard.users")}</span>}
               </button>
               <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.users")} />
+            </div>
+          )}
+          {isSuperAdmin && (
+            <div className="group relative">
+              <button type="button" className={menuButtonClass(activeMenu === "photoCodePhotos", collapsed)} onClick={openPhotoCodePhotos} title={photoCodePhotosTitle}>
+                <Images className="size-4" />
+                {!collapsed && <span>{photoCodePhotosTitle}</span>}
+              </button>
+              <CollapsedTooltip collapsed={collapsed} label={photoCodePhotosTitle} />
             </div>
           )}
           {isSuperAdmin && (
@@ -1225,8 +1340,16 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             </div>
           )}
 
+          {!loading && overview && activeMenu === "photoVerification" && (
+            <PhotoVerification token={token} locale={locale} refreshKey={photoVerificationRefreshKey} />
+          )}
+
           {!loading && overview && activeMenu === "verificationRecords" && isSuperAdmin && (
             <PhotoVerificationRecords token={token} locale={locale} refreshKey={verificationRefreshKey} />
+          )}
+
+          {!loading && overview && activeMenu === "photoCodePhotos" && isSuperAdmin && (
+            <PhotoCodePhotos token={token} locale={locale} refreshKey={photoCodePhotosRefreshKey} />
           )}
 
           {!loading && overview && activeMenu === "teams" && view.type === "team" && selectedTeam && (
@@ -1870,42 +1993,42 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 })}
               </div>
             </div>
-            <div className="relative flex min-h-0 flex-1 items-center justify-center px-14 py-3 md:px-20">
-              <button
-                type="button"
-                onClick={() => showAdjacentPhoto(-1)}
-                disabled={activePhotoIndex <= 0}
-                className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12"
-                aria-label={t(locale, "dashboard.previousPhoto")}
-              >
-                <ChevronLeft className="size-6" />
-              </button>
-              <div className="flex size-full min-h-0 items-center justify-center">
-                {activePhoto.imageURL ? (
-                  <img
-                    src={activePhoto.imageURL}
-                    alt={activePhoto.localPhotoName || activePhoto.location || t(locale, "web.teamPhoto")}
-                    className="max-h-full max-w-full rounded-lg object-contain"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-white/60">
-                    <ImageOff className="size-12" />
-                    <span>{t(locale, "web.largeImage")}</span>
-                  </div>
-                )}
+            <div className="grid min-h-0 flex-1 grid-rows-[minmax(240px,1fr)_minmax(0,38vh)] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1">
+              <div className="relative flex min-h-0 items-center justify-center px-14 py-3 md:px-20">
+                <button
+                  type="button"
+                  onClick={() => showAdjacentPhoto(-1)}
+                  disabled={activePhotoIndex <= 0}
+                  className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:left-5 md:size-12"
+                  aria-label={t(locale, "dashboard.previousPhoto")}
+                >
+                  <ChevronLeft className="size-6" />
+                </button>
+                <div className="flex size-full min-h-0 items-center justify-center">
+                  {activePhoto.imageURL ? (
+                    <img
+                      src={activePhoto.imageURL}
+                      alt={activePhoto.localPhotoName || activePhoto.location || t(locale, "web.teamPhoto")}
+                      className="max-h-full max-w-full rounded-lg object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-white/60">
+                      <ImageOff className="size-12" />
+                      <span>{t(locale, "web.largeImage")}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => showAdjacentPhoto(1)}
+                  disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
+                  className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12"
+                  aria-label={t(locale, "dashboard.nextPhoto")}
+                >
+                  <ChevronRight className="size-6" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => showAdjacentPhoto(1)}
-                disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
-                className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12"
-                aria-label={t(locale, "dashboard.nextPhoto")}
-              >
-                <ChevronRight className="size-6" />
-              </button>
-            </div>
-            <div className="shrink-0 px-4 pb-5 text-center text-sm text-white/60">
-              {[activePhoto.timeText, activePhoto.location, activePhoto.userName, activePhoto.projectName].filter(Boolean).join(" · ")}
+              <PhotoCaptureDetails photo={activePhoto} teamName={selectedTeam?.groupName || ""} locale={locale} />
             </div>
           </div>
         )}

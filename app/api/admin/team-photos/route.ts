@@ -13,13 +13,42 @@ const photoSelect = {
   largeURL: true,
   localPhotoName: true,
   location: true,
+  lat: true,
+  lng: true,
   userName: true,
   projectName: true,
+  antiFakeCode: true,
+  addressInfo: true,
+  systemInfo: true,
   createdAt: true,
 }
 
 const DEFAULT_DAY_PAGE_SIZE = 10
 const MAX_DAY_PAGE_SIZE = 10
+
+function jsonObject(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
+function textValue(container: Record<string, unknown> | null, ...keys: string[]) {
+  for (const key of keys) {
+    const value = container?.[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+  return null
+}
+
+function numberValue(container: Record<string, unknown> | null, ...keys: string[]) {
+  for (const key of keys) {
+    const value = container?.[key]
+    if (value === null || value === undefined || value === "") continue
+    const number = typeof value === "number" ? value : Number(value)
+    if (Number.isFinite(number)) return number
+  }
+  return null
+}
 
 function photoDate(photo: { timestamp: bigint | number; takePhotoFormatTime: string; createdAt: Date }) {
   const millis = Number(photo.timestamp)
@@ -167,6 +196,8 @@ export async function GET(req: Request) {
       const timeZone = photoTimeZone(photo.takePhotoTimezoneID)
       const dateText = formatDate(date, locale, timeZone)
       const imageURL = resolvePhotoURL(photo.largeURL || photo.smallURL)
+      const addressInfo = jsonObject(photo.addressInfo)
+      const systemInfo = jsonObject(photo.systemInfo)
       const items = grouped.get(dateText) || []
       items.push({
         photoID: photo.photoID,
@@ -179,6 +210,16 @@ export async function GET(req: Request) {
         projectName: photo.projectName,
         timeText: formatDateTime(date, locale, timeZone),
         timeZone,
+        captureInfo: {
+          latitude: photo.lat == null ? null : Number(photo.lat),
+          longitude: photo.lng == null ? null : Number(photo.lng),
+          positionType: textValue(addressInfo, "positionType"),
+          locationAccuracyMeters: numberValue(addressInfo, "locationAccuracyMeters", "accuracy", "horizontalAccuracy"),
+          deviceModel: textValue(systemInfo, "deviceModel", "model"),
+          os: textValue(systemInfo, "os", "systemVersion"),
+          versionCode: textValue(systemInfo, "versionCode", "appVersion"),
+          photoCode: photo.antiFakeCode,
+        },
       })
       grouped.set(dateText, items)
     }
