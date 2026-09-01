@@ -1,10 +1,47 @@
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { badFor, jsonSafe, ok, requireUser, roleToID, roleToName } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
 import { localeFromRequest, t } from "@/lib/i18n"
 
 const TEAM_MEMBER_COUNT_CACHE_TTL_MS = 2 * 60 * 60 * 1000
+
+const overviewTeamInclude = Prisma.validator<Prisma.TeamInclude>()({
+  owner: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
+  members: {
+    include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
+    orderBy: { joinedAt: "asc" },
+  },
+  projects: {
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+  },
+  photos: {
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+    select: {
+      photoID: true,
+      projectID: true,
+      userID: true,
+      mediaType: true,
+      timestamp: true,
+      takePhotoFormatTime: true,
+      smallURL: true,
+      largeURL: true,
+      userName: true,
+      userAvatar: true,
+      projectName: true,
+      location: true,
+      createdAt: true,
+    },
+  },
+})
+
+type OverviewTeam = Prisma.TeamGetPayload<{ include: typeof overviewTeamInclude }>
+type TeamIDRow = { groupID: string }
+type CountRow = { count: bigint | number }
 
 const globalForOverviewCache = globalThis as unknown as {
   teamMemberCountCache: Map<string, { count: number; expiresAt: number }> | undefined
@@ -56,50 +93,62 @@ export async function GET(req: Request) {
     if (!user) return badFor(req, "未授权或登录已过期", 401)
 
     const superAdmin = isSuperAdmin(user)
+    const multipleMembersOnly = superAdmin && url.searchParams.get("multipleMembersOnly") === "true"
     const teamWhere = superAdmin
       ? { deletedAt: null }
       : { deletedAt: null, members: { some: { userID: user.id } } }
     const relatedTeamWhere = superAdmin ? {} : { team: teamWhere }
-    const [totalTeamCount, teams] = await Promise.all([
-      prisma.team.count({ where: teamWhere }),
-      prisma.team.findMany({
-        where: teamWhere,
-        include: {
-          owner: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } },
-          members: {
-            include: { user: { select: { id: true, email: true, userName: true, shortName: true, avatar: true } } },
-            orderBy: { joinedAt: "asc" },
-          },
-          projects: {
-            where: { deletedAt: null },
-            orderBy: { createdAt: "desc" },
-          },
-          photos: {
-            where: { deletedAt: null },
-            orderBy: { createdAt: "desc" },
-            take: 12,
-            select: {
-              photoID: true,
-              projectID: true,
-              userID: true,
-              mediaType: true,
-              timestamp: true,
-              takePhotoFormatTime: true,
-              smallURL: true,
-              largeURL: true,
-              userName: true,
-              userAvatar: true,
-              projectName: true,
-              location: true,
-              createdAt: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: pageSize,
-      }),
-    ])
+    let totalTeamCount: number
+    let teams: OverviewTeam[]
+
+    if (multipleMembersOnly) {
+      const [teamIDRows, countRows] = await Promise.all([
+        prisma.$queryRaw<TeamIDRow[]>(Prisma.sql`
+          SELECT team.groupID
+          FROM Team AS team
+          WHERE team.deletedAt IS NULL
+            AND EXISTS (
+              SELECT 1
+              FROM TeamMember AS member
+              WHERE member.groupID = team.groupID
+              LIMIT 1 OFFSET 1
+            )
+          ORDER BY team.createdAt DESC
+          LIMIT ${pageSize} OFFSET ${skip}
+        `),
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*) AS count
+          FROM Team AS team
+          WHERE team.deletedAt IS NULL
+            AND EXISTS (
+              SELECT 1
+              FROM TeamMember AS member
+              WHERE member.groupID = team.groupID
+              LIMIT 1 OFFSET 1
+            )
+        `),
+      ])
+      const teamOrder = new Map(teamIDRows.map((item, index) => [item.groupID, index]))
+      totalTeamCount = Number(countRows[0]?.count || 0)
+      teams = await prisma.team.findMany({
+        where: { deletedAt: null, groupID: { in: teamIDRows.map((item) => item.groupID) } },
+        include: overviewTeamInclude,
+      })
+      teams.sort((left, right) => (teamOrder.get(left.groupID) ?? 0) - (teamOrder.get(right.groupID) ?? 0))
+    } else {
+      const [teamCount, pagedTeams] = await Promise.all([
+        prisma.team.count({ where: teamWhere }),
+        prisma.team.findMany({
+          where: teamWhere,
+          include: overviewTeamInclude,
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: pageSize,
+        }),
+      ])
+      totalTeamCount = teamCount
+      teams = pagedTeams
+    }
 
     const teamIDs = teams.map((team) => team.groupID)
     const [userCount, projectCount, photoCount] = await Promise.all([

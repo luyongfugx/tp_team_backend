@@ -60,6 +60,7 @@ const fields = {
   workReference: "tp_photo_verification_work_reference",
   reviewRequired: "tp_photo_verification_mismatch",
   captureRecord: "tp_photo_verification_photo_record",
+  photographer: "fix_pdf_author",
   deviceSource: "tp_photo_verification_record_device",
   compressedTip: "tp_photo_verification_compressed_tip",
   verifyTitle: "tp_photo_verification_design_title",
@@ -108,6 +109,10 @@ for (const [locale, source] of Object.entries(sourceByLocale)) {
     source[sourceKey] || english[sourceKey] || field,
   ]))
 }
+
+Object.assign(translations.en, { photographer: "Photographer" })
+Object.assign(translations["zh-Hans"] || {}, { photographer: "拍摄者" })
+Object.assign(translations["zh-Hant"] || {}, { photographer: "拍攝者" })
 
 fs.writeFileSync(output, `${JSON.stringify(translations, null, 2)}\n`)
 console.log(`Generated ${Object.keys(translations).length} H5 locales at ${output}`)

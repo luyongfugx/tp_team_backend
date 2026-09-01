@@ -222,16 +222,13 @@ function PhotoCaptureDetails({ photo, teamName, locale }: { photo: TeamPhoto; te
     : "-"
   const systemVersion = [capture?.os, capture?.versionCode].filter(Boolean).join(" · ") || "-"
   const rows = [
+    { icon: <Users className="size-4" />, label: copy.photographer, value: photo.userName || "-" },
     { icon: <Clock3 className="size-4" />, label: copy.captureTime, value: photo.timeText || "-" },
     { icon: <MapPin className="size-4" />, label: copy.captureLocation, value: photo.location || "-" },
     { icon: <Crosshair className="size-4" />, label: copy.gpsDetail, value: coordinates },
     ...(capture?.locationAccuracyMeters != null
       ? [{ icon: <Crosshair className="size-4" />, label: copy.accuracy, value: `±${capture.locationAccuracyMeters} m` }]
       : []),
-    ...(capture?.positionType
-      ? [{ icon: <MapPin className="size-4" />, label: copy.positionType, value: capture.positionType }]
-      : []),
-    { icon: <Users className="size-4" />, label: t(locale, "dashboard.member"), value: photo.userName || "-" },
     { icon: <FolderKanban className="size-4" />, label: copy.project, value: photo.projectName || copy.none },
     { icon: <Building2 className="size-4" />, label: copy.team, value: teamName || "-" },
     { icon: <Smartphone className="size-4" />, label: copy.deviceModel, value: capture?.deviceModel || "-" },
@@ -242,7 +239,7 @@ function PhotoCaptureDetails({ photo, teamName, locale }: { photo: TeamPhoto; te
   ]
 
   return (
-    <aside className="min-h-0 overflow-y-auto border-t border-white/10 bg-white/[0.04] p-4 text-white lg:border-l lg:border-t-0 lg:p-5">
+    <aside className="max-h-[38vh] min-h-0 w-full shrink-0 overflow-y-auto border-t border-white/10 bg-white/[0.04] p-4 text-white lg:max-h-none lg:w-80 lg:border-l lg:border-t-0 lg:p-5">
       <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
         <Camera className="size-5 text-orange-400" />
         <h2 className="text-sm font-semibold text-white">{copy.captureRecord}</h2>
@@ -605,6 +602,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [activeMenu, setActiveMenu] = useState<MainMenu>("teams")
   const [view, setView] = useState<DetailView>({ type: "teams" })
   const [teamPage, setTeamPage] = useState(1)
+  const [multipleMembersOnly, setMultipleMembersOnly] = useState(false)
   const [teamPhotos, setTeamPhotos] = useState<Record<string, TeamPhotosPayload>>({})
   const [photoPages, setPhotoPages] = useState<Record<string, number>>({})
   const [photosLoading, setPhotosLoading] = useState(false)
@@ -689,6 +687,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       const url = new URL("/api/admin/overview", window.location.origin)
       url.searchParams.set("page", String(teamPage))
       url.searchParams.set("pageSize", String(TEAM_PAGE_SIZE))
+      if (multipleMembersOnly) url.searchParams.set("multipleMembersOnly", "true")
       const res = await authenticatedFetch(url.toString(), token, {
         headers: { "x-locale": locale },
       })
@@ -1018,7 +1017,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   useEffect(() => {
     loadOverview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, locale, teamPage])
+  }, [token, locale, teamPage, multipleMembersOnly])
 
   useEffect(() => {
     setTeamPhotos({})
@@ -1269,6 +1268,22 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
               {loading && <div className="rounded-md border bg-background p-6 text-sm text-muted-foreground">{t(locale, "common.loading")}</div>}
           {!loading && overview && activeMenu === "teams" && view.type === "teams" && (
             <div className="space-y-4">
+              {isSuperAdmin && (
+                <div className="flex justify-end">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={multipleMembersOnly}
+                      onChange={(event) => {
+                        setTeamPage(1)
+                        setMultipleMembersOnly(event.target.checked)
+                      }}
+                      className="size-4 accent-primary"
+                    />
+                    <span>{t(locale, "dashboard.memberCountLabel")} &gt; 1</span>
+                  </label>
+                </div>
+              )}
               <DataTable columns={[
                 t(locale, "dashboard.teamName"),
                 t(locale, "dashboard.createdAt"),
@@ -1993,8 +2008,8 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 })}
               </div>
             </div>
-            <div className="grid min-h-0 flex-1 grid-rows-[minmax(240px,1fr)_minmax(0,38vh)] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1">
-              <div className="relative flex min-h-0 items-center justify-center px-14 py-3 md:px-20">
+            <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:items-stretch">
+              <div className="relative flex min-h-[240px] min-w-0 flex-1 items-center justify-center px-14 py-3 md:px-20 lg:min-h-0 lg:justify-end lg:pl-20 lg:pr-0">
                 <button
                   type="button"
                   onClick={() => showAdjacentPhoto(-1)}
@@ -2004,7 +2019,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 >
                   <ChevronLeft className="size-6" />
                 </button>
-                <div className="flex size-full min-h-0 items-center justify-center">
+                <div className="flex size-full min-h-0 items-center justify-center lg:justify-end">
                   {activePhoto.imageURL ? (
                     <img
                       src={activePhoto.imageURL}
@@ -2022,13 +2037,24 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                   type="button"
                   onClick={() => showAdjacentPhoto(1)}
                   disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
-                  className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12"
+                  className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30 md:right-5 md:size-12 lg:hidden"
                   aria-label={t(locale, "dashboard.nextPhoto")}
                 >
                   <ChevronRight className="size-6" />
                 </button>
               </div>
               <PhotoCaptureDetails photo={activePhoto} teamName={selectedTeam?.groupName || ""} locale={locale} />
+              <div className="hidden w-16 shrink-0 items-center justify-center lg:flex">
+                <button
+                  type="button"
+                  onClick={() => showAdjacentPhoto(1)}
+                  disabled={activePhotoIndex < 0 || activePhotoIndex >= activePhotoList.length - 1}
+                  className="flex size-12 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30"
+                  aria-label={t(locale, "dashboard.nextPhoto")}
+                >
+                  <ChevronRight className="size-6" />
+                </button>
+              </div>
             </div>
           </div>
         )}

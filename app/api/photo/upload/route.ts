@@ -36,6 +36,13 @@ function mediaIDFromInfo(value: unknown) {
   return typeof mediaInfo?.mediaID === "string" && mediaInfo.mediaID.trim() ? mediaInfo.mediaID.trim() : null
 }
 
+function normalizedPhotoCode(body: Record<string, unknown>) {
+  const value = body.antiFakeCode ?? body.photoCode
+  if (typeof value !== "string") return null
+  const code = value.trim().toUpperCase()
+  return /^[A-Z0-9]{12}$/.test(code) ? code : null
+}
+
 async function attachPhotoToRecentFeed({
   groupID,
   projectID,
@@ -147,6 +154,7 @@ export async function POST(req: Request) {
     const mediaInfo = maybeJson(body.mediaInfo)
     const mediaObject = jsonObject(mediaInfo) ?? undefined
     const mediaID = mediaIDFromInfo(mediaInfo)
+    const photoCode = normalizedPhotoCode(body)
     const baseURL = process.env.COS_PUBLIC_BASE_URL || ""
     const fallbackURL = baseURL ? `${baseURL.replace(/\/$/, "")}/${body.ossFileName}` : undefined
     const largeURL = typeof mediaObject?.imageUrl === "string"
@@ -163,7 +171,7 @@ export async function POST(req: Request) {
         ossFileName: body.ossFileName,
         deletedAt: null,
       },
-      select: { photoID: true, timestamp: true },
+      select: { photoID: true, timestamp: true, antiFakeCode: true },
       orderBy: { createdAt: "desc" },
     })
     const existingPhotoByMediaID = existingPhotoByOss || !mediaID
@@ -175,12 +183,27 @@ export async function POST(req: Request) {
             projectID: project?.projectID ?? null,
             deletedAt: null,
           },
-          select: { photoID: true, timestamp: true, mediaInfo: true },
+          select: { photoID: true, timestamp: true, antiFakeCode: true, mediaInfo: true },
           orderBy: { createdAt: "desc" },
           take: 200,
         })).find((item) => mediaIDFromInfo(item.mediaInfo) === mediaID) ?? null
     const existingPhoto = existingPhotoByOss ?? existingPhotoByMediaID
     if (existingPhoto) {
+      if (photoCode && !existingPhoto.antiFakeCode) {
+        await prisma.$transaction([
+          prisma.photo.update({
+            where: { photoID: existingPhoto.photoID },
+            data: {
+              antiFakeCode: photoCode,
+              searchText: [body.location, photoCode, body.localPhotoName, project?.projectName, user.userName].filter(Boolean).join(" "),
+            },
+          }),
+          prisma.photoCode.updateMany({
+            where: { code: photoCode, userID: user.id, usedAt: null },
+            data: { usedAt: new Date() },
+          }),
+        ])
+      }
       const existingFeedID = await findExistingPhotoFeedID(groupID, existingPhoto.photoID)
       const feedID = existingFeedID ?? await attachPhotoToRecentFeed({
         groupID,
@@ -208,7 +231,7 @@ export async function POST(req: Request) {
         userShortName: user.shortName,
         userAvatar: user.avatar,
         projectName: project?.projectName,
-        antiFakeCode: typeof body.antiFakeCode === "string" ? body.antiFakeCode : undefined,
+        antiFakeCode: photoCode ?? "",
         ossFileName: body.ossFileName,
         localPhotoName: typeof body.localPhotoName === "string" ? body.localPhotoName : undefined,
         location: typeof body.location === "string" ? body.location : undefined,
@@ -223,7 +246,7 @@ export async function POST(req: Request) {
         systemInfo: maybeJson(body.systemInfo),
         mediaInfo,
         attendanceInfo: maybeJson(body.attendanceInfo),
-        searchText: [body.location, body.antiFakeCode, body.localPhotoName, project?.projectName, user.userName].filter(Boolean).join(" "),
+        searchText: [body.location, photoCode, body.localPhotoName, project?.projectName, user.userName].filter(Boolean).join(" "),
       } as never,
     })
 
@@ -246,6 +269,14 @@ export async function POST(req: Request) {
                 latestPhotoTimestamp: BigInt(timestamp),
                 latestPhotoSmallURL: largeURL,
               },
+            }),
+          ]
+        : []),
+      ...(photoCode
+        ? [
+            prisma.photoCode.updateMany({
+              where: { code: photoCode, userID: user.id, usedAt: null },
+              data: { usedAt: new Date() },
             }),
           ]
         : []),
