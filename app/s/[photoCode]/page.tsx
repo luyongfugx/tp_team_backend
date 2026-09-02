@@ -35,6 +35,19 @@ function storeURLForUserAgent(userAgent: string) {
   return "#download"
 }
 
+function mapLinks(latitude: number, longitude: number) {
+  const deltaLat = 0.006
+  const deltaLng = 0.01
+  const bbox = [longitude - deltaLng, latitude - deltaLat, longitude + deltaLng, latitude + deltaLat]
+    .map((value) => value.toFixed(6))
+    .join("%2C")
+  const marker = `${latitude.toFixed(6)}%2C${longitude.toFixed(6)}`
+  return {
+    preview: `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`,
+    navigation: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+  }
+}
+
 function displayDateTime(value: string, timestamp: number | null, locale: string) {
   if (value) return value
   if (!timestamp) return "—"
@@ -75,8 +88,10 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
   const requestHeaders = await headers()
   const storeURL = storeURLForUserAgent(requestHeaders.get("user-agent") ?? "")
   const { locale, direction, copy } = getPhotoShareCopy(requestHeaders.get("accept-language") ?? "")
-  const hasCoordinates = share.latitude !== null && share.longitude !== null
-  const gps = hasCoordinates ? `${share.latitude!.toFixed(6)}, ${share.longitude!.toFixed(6)}` : "—"
+  const maps = share.latitude !== null && share.longitude !== null
+    ? mapLinks(share.latitude, share.longitude)
+    : null
+  const gps = maps ? `${share.latitude!.toFixed(6)}, ${share.longitude!.toFixed(6)}` : "—"
   const captureTime = displayDateTime(share.captureTime, share.timestamp, locale)
   const compactCaptureTime = captureTime.replace(/^(\d{4}-\d{1,2}-\d{1,2})[ T](\d{1,2}:\d{2}(?::\d{2})?)/, "$1\n$2")
   const membership = (value: string) => value || copy.none
@@ -95,6 +110,18 @@ export default async function PhotoCodeSharePage({ params }: PageProps) {
             <span className={styles.statusIcon}><span>{share.verified ? "✓" : "!"}</span></span>
             {share.verified ? copy.verified : copy.inconsistent}
           </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <h1 className={styles.sectionTitle}>{copy.location}</h1>
+        {maps && <div className={styles.mapWrap}>
+          <iframe src={maps.preview} loading="lazy" title={copy.location} referrerPolicy="no-referrer" />
+          <a className={styles.navigate} href={maps.navigation} target="_blank" rel="noreferrer">⌖ {copy.navigate}</a>
+        </div>}
+        <div className={styles.locationText}>
+          <p className={styles.address}>{share.address || "—"}</p>
+          <p className={styles.gps}>{copy.gps}: {gps}</p>
         </div>
       </section>
 
