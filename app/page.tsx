@@ -31,8 +31,8 @@ export default function Page() {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY)
       if (raw) {
         const stored = JSON.parse(raw) as Auth
-        if (stored.expiresAt && new Date(stored.expiresAt).getTime() <= Date.now()) clearStoredAuth()
-        else setAuth(stored)
+        // 旧 expiresAt 不再代表失效；由服务端判断 token 是否已被撤销。
+        if (stored.token) setAuth(stored)
       }
     } catch {}
     setReady(true)

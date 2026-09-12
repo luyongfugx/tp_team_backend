@@ -1,4 +1,4 @@
-import { generateToken, TOKEN_TTL_MS } from "@/lib/auth"
+import { generateToken, SESSION_EXPIRES_AT } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { badFor, ok, readBody, serverError } from "@/app/api/_utils/api"
 import { findWebQrLoginSession, normalizeQrScanToken, qrBrowserSecretHash, webQrLoginDelegate } from "@/lib/web-qr-login"
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
           })
           if (consumed.count !== 1) return null
 
-          const expiresAt = new Date(Date.now() + TOKEN_TTL_MS)
+          const expiresAt = new Date(SESSION_EXPIRES_AT)
           return tx.session.create({ data: { token, userId: record.userId as string, expiresAt } })
         })
     if (!sessionResult) return ok({ status: "consumed" })

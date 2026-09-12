@@ -1,8 +1,9 @@
 import { randomBytes, randomInt } from "crypto"
 import { prisma } from "@/lib/prisma"
 
-// token 有效期（毫秒）：默认 7 天
-export const TOKEN_TTL_MS = Number(process.env.TOKEN_TTL_MS || 7 * 24 * 60 * 60 * 1000)
+// 会话不按时间失效；保留日期字段以兼容已有数据库和客户端协议。
+// 该值仅为长期会话标记，鉴权仍以数据库中的会话是否存在为准。
+export const SESSION_EXPIRES_AT = "9999-12-31T23:59:59.999Z"
 // 验证码有效期：5 分钟
 export const CODE_TTL_MS = 5 * 60 * 1000
 
@@ -46,34 +47,31 @@ export function generateToken(): string {
 // 创建会话
 export async function createSession(userId: string, appInstanceID?: string) {
   const token = generateToken()
-  const expiresAt = new Date(Date.now() + TOKEN_TTL_MS)
+  const expiresAt = new Date(SESSION_EXPIRES_AT)
   await prisma.session.create({
     data: { token, userId, appInstanceID, expiresAt },
   })
   return { token, expiresAt }
 }
 
-// 校验 token 并刷新过期时间。有效则返回 user，无效返回 null
+// 校验 token，并将现存旧会话升级为长期会话（包括原到期时间已过的会话）。
 export async function verifyAndRefreshToken(token: string) {
   const session = await prisma.session.findUnique({
     where: { token },
     include: { user: true },
   })
 
-  if (!session) return null
+  if (!session || session.user.deletedAt) return null
 
-  // 已过期：删除并返回 null
-  if (session.expiresAt.getTime() < Date.now()) {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => {})
-    return null
+  const newExpiresAt = new Date(SESSION_EXPIRES_AT)
+  if (session.expiresAt.getTime() !== newExpiresAt.getTime()) {
+    // 使用 updateMany，避免并发退出删除会话后抛错；绝不重建已撤销的会话。
+    const updated = await prisma.session.updateMany({
+      where: { id: session.id },
+      data: { expiresAt: newExpiresAt },
+    })
+    if (updated.count === 0) return null
   }
-
-  // 刷新过期时间
-  const newExpiresAt = new Date(Date.now() + TOKEN_TTL_MS)
-  await prisma.session.update({
-    where: { id: session.id },
-    data: { expiresAt: newExpiresAt },
-  })
 
   return { user: session.user, expiresAt: newExpiresAt }
 }

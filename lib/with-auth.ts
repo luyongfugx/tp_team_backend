@@ -12,7 +12,7 @@ export type AuthContext = {
 
 type AuthedHandler = (req: Request, ctx: AuthContext) => Promise<Response> | Response
 
-// 高阶包装器：统一校验 Bearer token、刷新过期时间，并把 user 注入 handler。
+// 高阶包装器：统一校验 Bearer token，并把 user 注入 handler。
 // 用法：export const GET = withAuth(async (req, { user, expiresAt }) => { ... })
 export function withAuth(handler: AuthedHandler) {
   return async (req: Request, routeCtx?: { params?: Promise<Record<string, string | string[]>> }) => {
