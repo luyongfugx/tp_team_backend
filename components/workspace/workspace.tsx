@@ -906,15 +906,14 @@ export function Workspace(props: Props) {
                   {t("newProject")}
                 </button>
               )}
-              {isGallery && (
+              {isGallery && !selecting && (
                 <button
                   className="ws-button ws-primary"
                   disabled={
                     bootstrapBusy ||
                     photoBusy ||
                     query.trim() !== filters.q ||
-                    !total ||
-                    (selecting && !selectedCount)
+                    !total
                   }
                   onClick={openExport}
                 >
