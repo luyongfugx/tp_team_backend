@@ -15,19 +15,24 @@ export default async function TeamPhotosPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { groupID } = await params
+  if (!groupID || groupID.length > 100) notFound()
   const query = await searchParams
   const locale = resolveLocale(firstParam(query.lang) || firstParam(query.locale) || firstParam(query.language))
-  const { team, days, photoCount, memberCount } = await getTeamGallery(groupID, locale)
+  const { team, days, photoCount, memberCount, snapshot } = await getTeamGallery(groupID, locale)
   if (!team) notFound()
 
   return (
     <WebPhotoGallery
+      key={String(groupID)}
+      scope={{ kind: "team", id: String(groupID) }}
       header={{
-        title: t(locale, "web.teamAllPhotos"),
-        subtitle: team.groupName || t(locale, "web.noLocation"),
+        title: team.groupName,
+        subtitle: t(locale, "web.teamAllPhotos"),
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,
       }}
       days={days}
+      initialTotal={photoCount}
+      initialSnapshot={snapshot}
       currentLocale={locale}
       languageOptions={supportedLocaleOptions}
       labels={{

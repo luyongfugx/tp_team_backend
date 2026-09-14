@@ -17,7 +17,7 @@ export const prisma =
     log: prismaLogOptions,
   })
 
-if (!globalForPrisma.prismaQueryLoggerAttached) {
+if (process.env.PRISMA_QUERY_LOG === "1" && !globalForPrisma.prismaQueryLoggerAttached) {
   ;(prisma as PrismaClient<{ log: [{ emit: "event"; level: "query" }] }>).$on("query", (event) => {
     console.log("[prisma:query]", {
       durationMs: event.duration,

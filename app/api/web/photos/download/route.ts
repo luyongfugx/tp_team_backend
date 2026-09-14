@@ -1,40 +1,38 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { resolvePhotoURL } from "@/app/web/photo-url"
-
-function safeFilename(value: string | null | undefined, fallback: string) {
-  const name = (value || fallback).replace(/[\\/:*?"<>|]+/g, "_").trim()
-  return name || fallback
-}
-
+import { NextResponse } from "next/server";
+import { Readable } from "node:stream";
+import { prisma } from "@/lib/prisma";
+import { publicPhotoBaseWhere } from "@/lib/web/public-scope";
+import { downloadHeaders, sourceFile } from "@/lib/workspace/files";
 export async function GET(req: Request) {
-  const url = new URL(req.url)
-  const photoID = url.searchParams.get("photoID") || ""
-  if (!photoID) return NextResponse.json({ error: "参数不正确" }, { status: 400 })
-
+  const photoID = new URL(req.url).searchParams.get("photoID") || "";
+  if (!photoID || photoID.length > 100)
+    return NextResponse.json({ error: "INVALID_PHOTO" }, { status: 400 });
   const photo = await prisma.photo.findFirst({
-    where: { photoID, deletedAt: null },
-    select: { photoID: true, largeURL: true, smallURL: true, localPhotoName: true, ossFileName: true },
-  })
-  const imageURL = resolvePhotoURL(photo?.largeURL || photo?.smallURL)
-  if (!photo || !imageURL) return NextResponse.json({ error: "照片不存在" }, { status: 404 })
-  if (!/^https?:\/\//i.test(imageURL)) {
-    return NextResponse.json({ error: "图片地址未配置 COS_PUBLIC_BASE_URL" }, { status: 400 })
+    where: { AND: [publicPhotoBaseWhere(), { photoID }] },
+    select: {
+      photoID: true,
+      largeURL: true,
+      smallURL: true,
+      localPhotoName: true,
+      ossFileName: true,
+    },
+  });
+  if (!photo)
+    return NextResponse.json({ error: "PHOTO_UNAVAILABLE" }, { status: 404 });
+  try {
+    const source = await sourceFile(
+      photo.largeURL || photo.smallURL,
+      req.signal,
+    );
+    return new Response(Readable.toWeb(source.stream) as ReadableStream, {
+      headers: downloadHeaders(
+        photo.localPhotoName ||
+          photo.ossFileName.split("/").pop() ||
+          photo.photoID + source.extension,
+        source.type,
+      ),
+    });
+  } catch {
+    return NextResponse.json({ error: "DOWNLOAD_FAILED" }, { status: 502 });
   }
-
-  const upstream = await fetch(imageURL)
-  if (!upstream.ok || !upstream.body) {
-    return NextResponse.json({ error: "图片下载失败" }, { status: 502 })
-  }
-
-  const fallbackName = `${photo.photoID}.jpg`
-  const sourceName = photo.localPhotoName || photo.ossFileName?.split("/").pop()
-  const filename = safeFilename(sourceName, fallbackName)
-  const headers = new Headers()
-  headers.set("Content-Type", upstream.headers.get("Content-Type") || "application/octet-stream")
-  headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`)
-  const length = upstream.headers.get("Content-Length")
-  if (length) headers.set("Content-Length", length)
-
-  return new NextResponse(upstream.body, { headers })
 }

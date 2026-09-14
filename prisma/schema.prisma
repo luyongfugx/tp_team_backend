@@ -529,3 +529,30 @@ model AccountDeletionRequest {
   @@index([status, createdAt])
   @@index([createdAt])
 }
+
+// Durable web exports. A separate worker claims leases; existing App package APIs are unchanged.
+model WorkspaceExport {
+  id          String   @id @default(cuid())
+  groupID     String
+  userID      String
+  title       String
+  status      String   @default("QUEUED")
+  photoIDs    Json
+  groupBy     String   @default("date")
+  timeZone    String   @default("UTC")
+  total       Int
+  processed   Int      @default(0)
+  succeeded   Int      @default(0)
+  failures    Json?
+  error       String?
+  filePath    String?
+  leaseToken  String?
+  leaseUntil  DateTime?
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime?
+
+  @@index([userID, groupID, createdAt])
+  @@index([status, leaseUntil])
+}

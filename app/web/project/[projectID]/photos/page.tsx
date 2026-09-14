@@ -18,9 +18,9 @@ export default async function ProjectPhotosPage({
   const query = await searchParams
   const locale = resolveLocale(firstParam(query.lang) || firstParam(query.locale) || firstParam(query.language))
   const projectID = Number(rawProjectID)
-  if (!Number.isFinite(projectID)) notFound()
+  if (!/^[1-9]\d*$/.test(rawProjectID) || !Number.isSafeInteger(projectID) || projectID > 2147483647) notFound()
 
-  const { project, days, photoCount, memberCount } = await getProjectGallery(projectID, locale)
+  const { project, days, photoCount, memberCount, snapshot } = await getProjectGallery(projectID, locale)
   if (!project) notFound()
   const subtitleLines = [
     `${t(locale, "web.teamLabel")}: ${project.team.groupName}`,
@@ -29,6 +29,8 @@ export default async function ProjectPhotosPage({
 
   return (
     <WebPhotoGallery
+      key={String(projectID)}
+      scope={{ kind: "project", id: String(projectID) }}
       header={{
         title: project.projectName,
         subtitle: subtitleLines[0] || t(locale, "web.noLocation"),
@@ -36,6 +38,8 @@ export default async function ProjectPhotosPage({
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,
       }}
       days={days}
+      initialTotal={photoCount}
+      initialSnapshot={snapshot}
       currentLocale={locale}
       languageOptions={supportedLocaleOptions}
       labels={{

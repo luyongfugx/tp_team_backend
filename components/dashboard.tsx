@@ -21,10 +21,8 @@ import {
   MapPin,
   RefreshCw,
   ArrowRight,
-  ScanSearch,
   Search,
   Settings,
-  ShieldCheck,
   Smartphone,
   Trash2,
   UserPlus,
@@ -36,9 +34,7 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 import { authenticatedFetch } from "@/lib/client-auth"
-import { PhotoVerificationRecords } from "@/components/admin/photo-verification-records"
 import { PhotoCodePhotos } from "@/components/admin/photo-code-photos"
-import { PhotoVerification } from "@/components/photo-verification"
 import { getPhotoShareCopy } from "@/lib/photoShareI18n"
 
 interface DashboardProps {
@@ -53,7 +49,7 @@ const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 const DELETE_REQUEST_PAGE_SIZE = 30
 const ADMIN_USER_PAGE_SIZE = 30
-type MainMenu = "teams" | "photoVerification" | "photoCodePhotos" | "settings" | "deleteRequests" | "adminUsers" | "verificationRecords"
+type MainMenu = "teams" | "photoCodePhotos" | "settings" | "deleteRequests" | "adminUsers"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -622,8 +618,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [selectedAdminUser, setSelectedAdminUser] = useState<AdminUser | null>(null)
   const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
   const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
-  const [verificationRefreshKey, setVerificationRefreshKey] = useState(0)
-  const [photoVerificationRefreshKey, setPhotoVerificationRefreshKey] = useState(0)
   const [photoCodePhotosRefreshKey, setPhotoCodePhotosRefreshKey] = useState(0)
   const photoPreviewRef = useRef<HTMLDivElement>(null)
 
@@ -1072,11 +1066,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setActiveMenu("settings")
   }
 
-  function openPhotoVerification() {
-    setActiveMenu("photoVerification")
-    setView({ type: "teams" })
-  }
-
   function openDeleteRequests() {
     setActiveMenu("deleteRequests")
     setView({ type: "teams" })
@@ -1087,11 +1076,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setView({ type: "teams" })
     setSelectedAdminUserID(null)
     setSelectedAdminUser(null)
-  }
-
-  function openVerificationRecords() {
-    setActiveMenu("verificationRecords")
-    setView({ type: "teams" })
   }
 
   function openPhotoCodePhotos() {
@@ -1112,14 +1096,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       loadDeleteRequests(deleteRequestPage)
       return
     }
-    if (activeMenu === "verificationRecords") {
-      setVerificationRefreshKey((value) => value + 1)
-      return
-    }
-    if (activeMenu === "photoVerification") {
-      setPhotoVerificationRefreshKey((value) => value + 1)
-      return
-    }
     if (activeMenu === "photoCodePhotos") {
       setPhotoCodePhotosRefreshKey((value) => value + 1)
       return
@@ -1127,19 +1103,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     loadOverview()
   }
 
-  const photoVerificationCopy = getPhotoShareCopy(locale).copy
+  const photoRecordCopy = getPhotoShareCopy(locale).copy
   const photoCodePhotosTitle = resolveLocale(locale) === "zh-Hans"
     ? "照片码照片"
     : resolveLocale(locale) === "zh-Hant"
       ? "照片碼照片"
-      : `${photoVerificationCopy.photoCode} · ${t(locale, "dashboard.photos")}`
+      : `${photoRecordCopy.photoCode} · ${t(locale, "dashboard.photos")}`
   const title =
-    activeMenu === "photoVerification"
-      ? photoVerificationCopy.menuTitle
-      : activeMenu === "photoCodePhotos"
+    activeMenu === "photoCodePhotos"
       ? photoCodePhotosTitle
-      : activeMenu === "verificationRecords"
-      ? (locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records")
       : activeMenu === "adminUsers"
       ? selectedAdminUserID
         ? t(locale, "dashboard.userDetail")
@@ -1184,13 +1156,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
             </button>
             <CollapsedTooltip collapsed={collapsed} label={t(locale, "dashboard.myTeams")} />
           </div>
-          <div className="group relative">
-            <button type="button" className={menuButtonClass(activeMenu === "photoVerification", collapsed)} onClick={openPhotoVerification} title={photoVerificationCopy.menuTitle}>
-              <ScanSearch className="size-4" />
-              {!collapsed && <span>{photoVerificationCopy.menuTitle}</span>}
-            </button>
-            <CollapsedTooltip collapsed={collapsed} label={photoVerificationCopy.menuTitle} />
-          </div>
           {isSuperAdmin && (
             <div className="group relative">
               <button type="button" className={menuButtonClass(activeMenu === "adminUsers", collapsed)} onClick={openAdminUsers} title={t(locale, "dashboard.users")}>
@@ -1207,15 +1172,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {!collapsed && <span>{photoCodePhotosTitle}</span>}
               </button>
               <CollapsedTooltip collapsed={collapsed} label={photoCodePhotosTitle} />
-            </div>
-          )}
-          {isSuperAdmin && (
-            <div className="group relative">
-              <button type="button" className={menuButtonClass(activeMenu === "verificationRecords", collapsed)} onClick={openVerificationRecords} title={locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"}>
-                <ShieldCheck className="size-4" />
-                {!collapsed && <span>{locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"}</span>}
-              </button>
-              <CollapsedTooltip collapsed={collapsed} label={locale.toLowerCase().startsWith("zh") ? "验真记录" : "Verification records"} />
             </div>
           )}
           {isSuperAdmin && (
@@ -1353,14 +1309,6 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 </div>
               )}
             </div>
-          )}
-
-          {!loading && overview && activeMenu === "photoVerification" && (
-            <PhotoVerification token={token} locale={locale} refreshKey={photoVerificationRefreshKey} />
-          )}
-
-          {!loading && overview && activeMenu === "verificationRecords" && isSuperAdmin && (
-            <PhotoVerificationRecords token={token} locale={locale} refreshKey={verificationRefreshKey} />
           )}
 
           {!loading && overview && activeMenu === "photoCodePhotos" && isSuperAdmin && (

@@ -15,21 +15,26 @@ export default async function UserPhotosPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { userID } = await params
+  if (!userID || userID.length > 100) notFound()
   const query = await searchParams
   const locale = resolveLocale(firstParam(query.lang) || firstParam(query.locale) || firstParam(query.language))
-  const { user, days, photoCount } = await getUserGallery(userID, locale)
+  const { user, days, photoCount, snapshot } = await getUserGallery(userID, locale)
   if (!user) notFound()
 
   const displayName = user.userName || user.shortName || user.email?.split("@")[0] || "User"
 
   return (
     <WebPhotoGallery
+      key={String(userID)}
+      scope={{ kind: "user", id: String(userID) }}
       header={{
         title: displayName,
         subtitle: t(locale, "web.userAllPhotos"),
         meta: t(locale, "web.photoCount", { count: photoCount }),
       }}
       days={days}
+      initialTotal={photoCount}
+      initialSnapshot={snapshot}
       currentLocale={locale}
       languageOptions={supportedLocaleOptions}
       labels={{

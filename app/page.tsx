@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { LoginCard } from "@/components/login-card"
-import { Dashboard } from "@/components/dashboard"
+import { Workspace } from "@/components/workspace/workspace"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { clientLocale, t, type AppLocale } from "@/lib/i18n"
 import {
@@ -11,7 +11,7 @@ import {
   resetExpiredSessionHandling,
   SESSION_EXPIRED_EVENT,
 } from "@/lib/client-auth"
-import { Apple, Camera, Clock3, Download, MapPinned, Play, ShieldCheck, Users } from "lucide-react"
+import { Apple, Camera, Clock3, Download, MapPinned, Play, Users } from "lucide-react"
 
 interface Auth {
   token: string
@@ -62,7 +62,7 @@ export default function Page() {
   if (auth) {
     return (
       <main className="min-h-svh bg-background p-0">
-        <Dashboard
+        <Workspace
           token={auth.token}
           user={auth.user}
           expiresAt={auth.expiresAt}
@@ -73,7 +73,6 @@ export default function Page() {
   }
 
   const featureItems = [
-    { icon: ShieldCheck, title: t(locale, "home.feature.authentic.title"), desc: t(locale, "home.feature.authentic.desc") },
     { icon: MapPinned, title: t(locale, "home.feature.gps.title"), desc: t(locale, "home.feature.gps.desc") },
     { icon: Users, title: t(locale, "home.feature.team.title"), desc: t(locale, "home.feature.team.desc") },
   ]
@@ -103,11 +102,11 @@ export default function Page() {
               {t(locale, "home.title")}
             </h1>
             <p className="max-w-xl text-lg leading-8 text-slate-700/90">
-              {t(locale, "home.subtitle")}
+              {t(locale, "home.feature.team.desc")}
             </p>
           </div>
 
-          <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
+          <div className="grid max-w-2xl gap-3 sm:grid-cols-2">
             {featureItems.map((item) => (
               <div key={item.title} className="rounded-lg border border-orange-100 bg-white/75 p-4 shadow-[0_12px_30px_rgba(154,52,18,0.06)] backdrop-blur">
                 <item.icon className="mb-3 size-5 text-[#f97316]" />
