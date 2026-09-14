@@ -163,6 +163,7 @@ export function WebPhotoGallery({
     wt = useMemo(() => workspaceCopy(currentLocale), [currentLocale]);
   const zipDownloadRef = useRef<ZipDownloadHandle>(null);
   const [zipBusy, setZipBusy] = useState(false);
+  const [excelImages, setExcelImages] = useState(true);
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days]);
   const [filters, setFilters] = useState<GalleryFilters>(defaultFilters),
     [view, setView] = useState("gallery"),
@@ -310,7 +311,7 @@ export function WebPhotoGallery({
     expectedCount: exportCount,
   });
   const maxExport =
-    exportFormat === "zip" ? 200 : exportFormat === "print" ? 200 : 5000;
+    exportFormat === "zip" || exportFormat === "print" || (exportFormat === "xlsx" && excelImages) ? 200 : 5000;
   useEffect(() => {
     const read = () => {
       const q = new URLSearchParams(window.location.search);
@@ -531,6 +532,7 @@ export function WebPhotoGallery({
         body: JSON.stringify({
           ...selectionBody(),
           format: exportFormat,
+          includeImages: exportFormat === "xlsx" && excelImages,
           locale: currentLocale,
         }),
         signal: abort.current.signal,
@@ -1120,6 +1122,15 @@ export function WebPhotoGallery({
               <strong>{exportCount}</strong>
               <span>{t("count")}</span>
             </div>
+            {exportFormat === "xlsx" && (
+              <>
+                <label className="share-excel-images">
+                  <input type="checkbox" checked={excelImages} disabled={busy} onChange={e => setExcelImages(e.target.checked)} />
+                  {t("excelIncludeImages")}
+                </label>
+                <p>{t(excelImages ? "excelImagesHint" : "excelTextHint")}</p>
+              </>
+            )}
             {exportCount > maxExport && (
               <p className="share-error">
                 {t("exportRange")}: {maxExport} {t("count")}

@@ -9,6 +9,7 @@ import { readPublicRequest } from "@/lib/web/request";
 import { resolveGallerySelection, readGalleryFilters } from "@/lib/web/query";
 import { sourceFile, downloadHeaders, safeName } from "@/lib/workspace/files";
 import { shareCopy } from "@/lib/web/share-copy";
+import { MAX_EXCEL_PHOTOS, photoWorkbook } from "@/lib/web/excel-photos";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 let activeExports = 0;
@@ -34,11 +35,16 @@ export async function POST(req: Request) {
     }
     if (body.format !== "zip" && body.format !== "xlsx")
       return NextResponse.json({ error: "INVALID_SELECTION" }, { status: 400 });
+    if (body.includeImages !== undefined && typeof body.includeImages !== "boolean")
+      return NextResponse.json({ error: "INVALID_SELECTION" }, { status: 400 });
+    // Legacy API callers retain text-only exports and the existing 5,000-row limit.
+    const includeImages = body.format === "xlsx" && body.includeImages === true;
+    const limit = body.format === "zip" ? 200 : includeImages ? MAX_EXCEL_PHOTOS : 5000;
     let selectedWhere;
     try {
       selectedWhere = await resolveGallerySelection(
         { ...body, scope },
-        body.format === "zip" ? 200 : 5000,
+        limit,
       );
     } catch (e) {
       return NextResponse.json(
@@ -49,10 +55,23 @@ export async function POST(req: Request) {
     const sort = readGalleryFilters(body.filters).sort as "asc" | "desc";
     const photos = await prisma.photo.findMany({
       where: selectedWhere,
-      take: body.format === "zip" ? 200 : 5000,
+      take: limit,
       orderBy: [{ timestamp: sort }, { photoID: sort }],
     });
     const filename = `Timeprint-${scope.kind}-${new Date().toISOString().slice(0, 10)}`;
+    if (includeImages) {
+      const locale = typeof body.locale === "string" ? body.locale : "";
+      const galleryURL = new URL(`/web/${scope.kind}/${encodeURIComponent(scope.id)}/photos`, req.url);
+      if (locale) galleryURL.searchParams.set("lang", resolveLocale(locale));
+      const signal = AbortSignal.any([req.signal, AbortSignal.timeout(240_000)]);
+      const book = await photoWorkbook({ photos, galleryURL: galleryURL.toString(), locale, signal });
+      signal.throwIfAborted();
+      const data = await book.xlsx.writeBuffer();
+      signal.throwIfAborted();
+      return new Response(new Uint8Array(data), {
+        headers: downloadHeaders(`${filename}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+      });
+    }
     if (body.format === "xlsx") {
       const locale = typeof body.locale === "string" ? body.locale : "";
       const t = shareCopy(locale);
