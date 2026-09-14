@@ -7,6 +7,7 @@ import { readZipResponse } from "@/lib/workspace/download";
 type DownloadRequest = {
   filename: string;
   count: number;
+  mimeType?: string;
   request: (signal: AbortSignal) => Promise<Response>;
 };
 type DownloadState = {
@@ -19,7 +20,7 @@ type DownloadState = {
 };
 export type ZipDownloadHandle = { start: (options: DownloadRequest) => Promise<void> };
 
-// Direct ZIP exports are capped at 100 MB on the server. Keep the prepared file
+// Direct exports are bounded on the server. Keep the prepared ZIP or Excel file
 // until dismissal so a browser-blocked automatic download can be started by hand.
 export function ZipDownloadPanel({ t, ref, onBusyChange }: {
   t: WorkspaceCopy;
@@ -54,7 +55,7 @@ export function ZipDownloadPanel({ t, ref, onBusyChange }: {
       const response = await options.request(controller.signal);
       const blob = await readZipResponse(response, controller.signal, progress => {
         setTask({ ...base, phase: "receiving", progress });
-      });
+      }, undefined, options.mimeType);
       controller.signal.throwIfAborted();
       const url = URL.createObjectURL(blob);
       fileURL.current = url;

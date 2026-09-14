@@ -4,6 +4,7 @@ export async function readZipResponse(
   signal: AbortSignal,
   onProgress: (percentage: number | undefined) => void,
   maxBytes = 102 * 1024 * 1024,
+  mimeType = "application/zip",
 ) {
   signal.throwIfAborted();
   if (!response.ok) {
@@ -34,7 +35,7 @@ export async function readZipResponse(
       }
     }
     if (!received) throw new Error("FILE_UNAVAILABLE");
-    return new Blob(parts, { type: "application/zip" });
+    return new Blob(parts, { type: mimeType });
   } finally {
     signal.removeEventListener("abort", abort);
     await reader.cancel().catch(() => {});

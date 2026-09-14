@@ -6,6 +6,7 @@ import {
   FolderOpen,
   Users,
   Archive,
+  FileSpreadsheet,
   Settings,
   LogOut,
   Search,
@@ -221,6 +222,8 @@ export function Workspace(props: Props) {
     [sort, setSort] = useState("latest"),
     [selection, setSelection] = useState<Selection>(emptySelection);
   const [exportDialog, setExportDialog] = useState(false),
+    [exportFormat, setExportFormat] = useState<"zip" | "xlsx">("zip"),
+    [exportRange, setExportRange] = useState<"all" | "page" | "selected">("all"),
     [exportSelection, setExportSelection] = useState<Selection>(emptySelection),
     [exportTitle, setExportTitle] = useState(""),
     [groupBy, setGroupBy] = useState("date"),
@@ -228,6 +231,7 @@ export function Workspace(props: Props) {
     [exportError, setExportError] = useState("");
   const zipDownloadRef = useRef<ZipDownloadHandle>(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
+  useEffect(() => setExportDialog(false), [groupID, filterKey]);
   const [photoShare, setPhotoShare] = useState<PhotoShare | null>(null);
   useEffect(() => setPhotoShare(null), [url]);
   const [jobs, setJobs] = useState<ExportJob[]>([]),
@@ -556,7 +560,9 @@ export function Workspace(props: Props) {
       notify(errorCopy(t, e instanceof Error ? e.message : "FILE_UNAVAILABLE"));
     }
   };
-  const openExport = () => {
+  const openExport = (format: "zip" | "xlsx" = "zip") => {
+    setExportFormat(format);
+    setExportRange(selecting ? "selected" : "all");
     setExportSelection(
       selecting ? selection : { mode: "all", ids: [], excluded: [] },
     );
@@ -569,16 +575,18 @@ export function Workspace(props: Props) {
     setExportBusy(true);
     setExportError("");
     try {
-      if (!workspace?.backgroundExports) {
+      if (exportFormat === "xlsx" || !workspace?.backgroundExports) {
         const count = selectionCount(exportSelection, total);
         if (!count || count > 200) throw new Error(count ? "DIRECT_EXPORT_LIMIT" : "NO_PHOTOS");
         setExportDialog(false);
         await zipDownloadRef.current?.start({
-          filename: `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
+          filename: `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.${exportFormat}`,
+          mimeType: exportFormat === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "application/zip",
           count,
           request: (signal) => authenticatedFetch("/api/workspace/photos/export", token, {
             method: "POST", headers: { "Content-Type": "application/json" }, signal,
-            body: JSON.stringify({ groupID, filters, selection: exportSelection, title: exportTitle, groupBy, expectedCount: count }),
+            body: JSON.stringify({ groupID, filters, selection: exportSelection, title: exportTitle, groupBy, expectedCount: count,
+              format: exportFormat, locale }),
           }),
         });
         return;
@@ -944,10 +952,18 @@ export function Workspace(props: Props) {
                       query.trim() !== filters.q ||
                       !total
                     }
-                    onClick={openExport}
+                    onClick={() => openExport()}
                   >
                     <Download size={17} />
                     {t("export")}
+                  </button>
+                  <button
+                    className="ws-button"
+                    disabled={bootstrapBusy || downloadBusy || exportBusy || photoBusy || query.trim() !== filters.q || !total}
+                    onClick={() => openExport("xlsx")}
+                  >
+                    <FileSpreadsheet size={17} />
+                    {t("exportExcel")}
                   </button>
                 </>
               )}
@@ -1613,11 +1629,19 @@ export function Workspace(props: Props) {
               </button>
             </div>
             <button
+              className="ws-button"
+              disabled={!selectedCount || photoBusy || downloadBusy || exportBusy || query.trim() !== filters.q}
+              onClick={() => openExport("xlsx")}
+            >
+              <FileSpreadsheet size={16} />
+              {t("exportExcel")}
+            </button>
+            <button
               className="ws-button ws-primary"
               disabled={
                 !selectedCount || photoBusy || downloadBusy || exportBusy || query.trim() !== filters.q
               }
-              onClick={openExport}
+              onClick={() => openExport()}
             >
               <Download size={16} />
               {t("exportSelected")}
@@ -1655,7 +1679,7 @@ export function Workspace(props: Props) {
       )}
       {exportDialog && (
         <WorkspaceDialog
-          label={t("export")}
+          label={t(exportFormat === "xlsx" ? "exportExcel" : "export")}
           onClose={() => {
             if (!exportBusy) setExportDialog(false);
           }}
@@ -1663,9 +1687,9 @@ export function Workspace(props: Props) {
           <form onSubmit={createExport}>
             <header>
               <div className="ws-modal-icon">
-                <Archive size={24} />
+                {exportFormat === "xlsx" ? <FileSpreadsheet size={24} /> : <Archive size={24} />}
               </div>
-              <h2>{t("export")}</h2>
+              <h2>{t(exportFormat === "xlsx" ? "exportExcel" : "export")}</h2>
               <button
                 type="button"
                 aria-label={t("close")}
@@ -1676,6 +1700,23 @@ export function Workspace(props: Props) {
               </button>
             </header>
             <div className="ws-modal-body">
+              {exportFormat === "xlsx" && <>
+                <p className="ws-muted">{t("excelHint")}</p>
+                <label>
+                  {t("exportRange")}
+                  <select value={exportRange} onChange={e => {
+                    const range = e.target.value as "all" | "page" | "selected";
+                    setExportRange(range);
+                    setExportSelection(range === "selected" ? selection : range === "page"
+                      ? { mode: "ids", ids: photos.map(p => p.photoID), excluded: [] }
+                      : { mode: "all", ids: [], excluded: [] });
+                  }}>
+                    <option value="all">{t("exportAll")} ({total})</option>
+                    <option value="page">{t("exportPage")} ({photos.length})</option>
+                    <option value="selected" disabled={!selectedCount}>{t("exportChosen")} ({selectedCount})</option>
+                  </select>
+                </label>
+              </>}
               <p className="ws-export-summary">
                 {selectionCount(exportSelection, total).toLocaleString()}{" "}
                 <span>{t("photos")}</span>
@@ -1689,7 +1730,7 @@ export function Workspace(props: Props) {
                   onChange={(e) => setExportTitle(e.target.value)}
                 />
               </label>
-              <label>
+              {exportFormat === "zip" && <label>
                 {t("groupBy")}
                 <select
                   value={groupBy}
@@ -1699,11 +1740,14 @@ export function Workspace(props: Props) {
                   <option value="project">{t("byProject")}</option>
                   <option value="member">{t("byMember")}</option>
                 </select>
-              </label>
-              <p className="ws-muted">
+              </label>}
+              {exportFormat === "zip" && <p className="ws-muted">
                 {t("timezone")} {filters.tz}
-              </p>
-              <p className="ws-modal-note">{t(workspace?.backgroundExports ? "exportNote" : "directExportNote")}</p>
+              </p>}
+              <p className="ws-modal-note">{t(exportFormat === "xlsx" ? "excelNote" : workspace?.backgroundExports ? "exportNote" : "directExportNote")}</p>
+              {exportFormat === "xlsx" && selectionCount(exportSelection, total) > 200 && (
+                <p role="alert" className="ws-inline-error">{t("DIRECT_EXPORT_LIMIT")}</p>
+              )}
               {exportError && (
                 <p role="alert" className="ws-inline-error">
                   {errorCopy(t, exportError)}
@@ -1722,7 +1766,7 @@ export function Workspace(props: Props) {
               <button
                 type="submit"
                 className="ws-button ws-primary"
-                disabled={exportBusy || !exportTitle.trim()}
+                disabled={exportBusy || !exportTitle.trim() || (exportFormat === "xlsx" && (!selectionCount(exportSelection, total) || selectionCount(exportSelection, total) > 200))}
               >
                 {exportBusy ? (
                   <LoaderCircle size={17} className="ws-spin" />

@@ -20,6 +20,14 @@ test("unknown size stays indeterminate and server errors never become downloadab
   await assert.rejects(readZipResponse(new Response(""), new AbortController().signal, () => {}), /FILE_UNAVAILABLE/);
 });
 
+test("Excel downloads preserve workbook bytes and the spreadsheet MIME type", async () => {
+  const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const bytes = new Uint8Array([80, 75, 3, 4, 0, 255]);
+  const blob = await readZipResponse(new Response(bytes), new AbortController().signal, () => {}, undefined, mime);
+  assert.equal(blob.type, mime);
+  assert.deepEqual(new Uint8Array(await blob.arrayBuffer()), bytes);
+});
+
 test("oversized downloads cancel their response stream", async () => {
   let cancelled = false;
   const stream = new ReadableStream({ start(c) { c.enqueue(new Uint8Array(9)); }, cancel() { cancelled = true; } });

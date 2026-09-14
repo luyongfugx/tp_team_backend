@@ -5,13 +5,15 @@ import { readFilters, readSelection, dateKey } from "@/lib/workspace/model";
 import { accessFor, photoWhere, workspaceUser, workspaceFailure, WorkspaceError } from "@/lib/workspace/server";
 import { sourceFile, safeName, downloadHeaders } from "@/lib/workspace/files";
 import { readPublicRequest } from "@/lib/web/request";
+import { photoWorkbook } from "@/lib/web/excel-photos";
+import { exportGalleryURL } from "@/lib/web/gallery-url";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 const MAX_FILES = 200, MAX_BYTES = 100 * 1024 * 1024;
 let activeDownloads = 0;
 
-// Ordinary ZIP downloads do not depend on WorkspaceExport or a separate worker.
+// Direct ZIP and Excel downloads share authentication, selection and rate limits.
 export async function POST(req: Request) {
   let claimed = false;
   try {
@@ -19,6 +21,8 @@ export async function POST(req: Request) {
     if (activeDownloads >= 2) throw new WorkspaceError("DOWNLOAD_BUSY", 429);
     activeDownloads++; claimed = true;
     const body = await readPublicRequest(req);
+    const format = body.format ?? "zip";
+    if (format !== "zip" && format !== "xlsx") throw new WorkspaceError("INVALID_REQUEST");
     const access = await accessFor(typeof body.groupID === "string" ? body.groupID : "", user.id);
     if (!body.filters || typeof body.filters !== "object" || Array.isArray(body.filters) ||
         Object.values(body.filters).some(v => typeof v !== "string")) throw new WorkspaceError("INVALID_FILTER");
@@ -27,6 +31,7 @@ export async function POST(req: Request) {
     const photos = await prisma.photo.findMany({
       where: photoWhere(access, filters, selection),
       select: { photoID: true, timestamp: true, smallURL: true, largeURL: true, localPhotoName: true,
+        takePhotoTimezoneID: true, location: true, lat: true, lng: true, mediaType: true,
         userName: true, userID: true, projectName: true, project: { select: { projectName: true } },
         user: { select: { userName: true } } },
       orderBy: [{ timestamp: "desc" }, { photoID: "desc" }], take: MAX_FILES + 1,
@@ -35,9 +40,34 @@ export async function POST(req: Request) {
     if (!photos.length) throw new WorkspaceError("NO_PHOTOS");
     if ((body.expectedCount !== undefined && body.expectedCount !== photos.length) ||
         (selection.mode === "ids" && selection.ids.length !== photos.length)) throw new WorkspaceError("SCOPE_CHANGED", 409);
+    const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : access.team.groupName;
+    const recheckAccess = async () => {
+      const latestAccess = await accessFor(access.team.groupID, user.id);
+      const count = await prisma.photo.count({ where: { AND: [photoWhere(latestAccess), { photoID: { in: photos.map(p => p.photoID) } }] } });
+      if (count !== photos.length) throw new WorkspaceError("SCOPE_CHANGED", 409);
+    };
+    if (format === "xlsx") {
+      const signal = AbortSignal.any([req.signal, AbortSignal.timeout(240000)]);
+      const locale = typeof body.locale === "string" ? body.locale : "";
+      const scope = filters.projectID ? { kind: "project" as const, id: filters.projectID }
+        : filters.userID ? { kind: "user" as const, id: filters.userID }
+        : { kind: "team" as const, id: access.team.groupID };
+      const book = await photoWorkbook({
+        photos: photos.map(photo => ({ ...photo, projectName: photo.project?.projectName || photo.projectName,
+          userName: photo.userName || photo.user.userName })),
+        galleryURL: exportGalleryURL(scope, locale), locale, signal,
+      });
+      signal.throwIfAborted();
+      const data = await book.xlsx.writeBuffer();
+      await recheckAccess();
+      signal.throwIfAborted();
+      return new Response(new Uint8Array(data), {
+        headers: { ...downloadHeaders(`${title}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+          "Content-Length": String(data.byteLength) },
+      });
+    }
     const groupBy = body.groupBy ?? "date";
     if (typeof groupBy !== "string" || !["date", "project", "member"].includes(groupBy)) throw new WorkspaceError("INVALID_REQUEST");
-    const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : access.team.groupName;
     const controller = new AbortController();
     const signal = AbortSignal.any([req.signal, controller.signal, AbortSignal.timeout(240000)]);
     const archive = new ZipArchive({ store: true });
@@ -76,9 +106,7 @@ export async function POST(req: Request) {
       await archive.finalize();
       const data = await completed;
       signal.throwIfAborted();
-      const latestAccess = await accessFor(access.team.groupID, user.id);
-      const count = await prisma.photo.count({ where: { AND: [photoWhere(latestAccess), { photoID: { in: photos.map(p => p.photoID) } }] } });
-      if (count !== photos.length) throw new WorkspaceError("SCOPE_CHANGED", 409);
+      await recheckAccess();
       return new Response(Readable.toWeb(Readable.from([data])) as ReadableStream, {
         headers: { ...downloadHeaders(`${title}.zip`, "application/zip"), "Content-Length": String(data.length) },
       });
@@ -86,6 +114,8 @@ export async function POST(req: Request) {
       controller.abort(); archive.abort();
     }
   } catch (e) {
+    if (e instanceof Error && e.name === "TimeoutError")
+      return workspaceFailure(new WorkspaceError("EXPORT_TIMEOUT", 504));
     if (e instanceof WorkspaceError || (e instanceof Error &&
       (/^INVALID_/.test(e.message) || ["FILE_UNAVAILABLE", "STORAGE_NOT_CONFIGURED"].includes(e.message))))
       return workspaceFailure(e);
