@@ -1,3 +1,4 @@
+import { loadTeamspaceTranslations } from "@/lib/teamspace/translations"
 import { notFound } from "next/navigation"
 import { WebPhotoGallery } from "@/components/web/photo-gallery"
 import { getTeamGallery } from "@/app/web/photos-data"
@@ -34,6 +35,7 @@ export default async function TeamPhotosPage({
       initialTotal={photoCount}
       initialSnapshot={snapshot}
       currentLocale={locale}
+      initialTranslations={await loadTeamspaceTranslations(locale)}
       languageOptions={supportedLocaleOptions}
       labels={{
         back: t(locale, "web.back"),

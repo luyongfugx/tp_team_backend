@@ -1,4 +1,6 @@
-const messages = {
+import { resolveLocale } from "@/lib/i18n";
+import type { TeamspaceTranslations } from "@/lib/teamspace/translations";
+export const shareBaseCopy = {
   loadFailed: [
     "照片加载失败，已保留您的选择。",
     "Could not load photos. Your selection is saved.",
@@ -140,8 +142,9 @@ const messages = {
   language: ["语言", "Language", "語言"],
   close: ["关闭", "Close", "關閉"],
 } as const;
-export function shareCopy(locale: string) {
-  const index = locale === "zh-Hans" ? 0 : locale.startsWith("zh-") ? 2 : 1;
-  return (key: keyof typeof messages) => messages[key][index];
+export function shareCopy(locale: string, translations?: TeamspaceTranslations) {
+  const resolved = resolveLocale(locale || "en");
+  const index = resolved === "zh-Hans" ? 0 : resolved === "zh-Hant" ? 2 : 1;
+  return (key: keyof typeof shareBaseCopy) => translations?.s[key] ?? shareBaseCopy[key][index];
 }
 export type ShareCopy = ReturnType<typeof shareCopy>;

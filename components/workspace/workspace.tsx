@@ -30,7 +30,11 @@ import {
   Link,
 } from "lucide-react";
 import { Dashboard } from "@/components/dashboard";
-import { clientLocale, setClientLocale, type AppLocale } from "@/lib/i18n";
+import { clientLocale, setClientLocale, localeDateCode, supportedLocaleOptions, type AppLocale } from "@/lib/i18n";
+import { teamspaceDateOptions } from "@/lib/teamspace/date-format";
+import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
+import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
+import { shareCopy } from "@/lib/web/share-copy";
 import { authenticatedFetch } from "@/lib/client-auth";
 import {
   dateKey,
@@ -164,10 +168,11 @@ async function saveResponse(
 export function Workspace(props: Props) {
   const { token, user, onLogout } = props;
   const [url, navigate] = useWorkspaceURL(),
-    [locale, setLocale] = useState<AppLocale>("zh-Hans");
-  const t = useMemo(() => workspaceCopy(locale), [locale]),
-    dateLocale =
-      locale === "zh-Hans" ? "zh-CN" : locale === "zh-Hant" ? "zh-TW" : "en";
+    [locale, setLocale] = useState<AppLocale>("zh-Hans"),
+    [changingLanguage, setChangingLanguage] = useState(false);
+  const translations = useTeamspaceTranslations(locale);
+  const t = useMemo(() => workspaceCopy(locale, translations.data), [locale, translations.data]),
+    dateLocale = localeDateCode(locale);
   const parsed = useMemo(() => new URL(url, "http://workspace.local"), [url]),
     segments = parsed.pathname.split("/").filter(Boolean),
     isGlobalPage =
@@ -491,7 +496,7 @@ export function Workspace(props: Props) {
   const formatDate = (timestamp: number) =>
     new Intl.DateTimeFormat(dateLocale, {
       timeZone: filters.tz,
-      dateStyle: "medium",
+      ...teamspaceDateOptions(dateLocale),
     }).format(timestamp);
   const formatTime = (timestamp: number) =>
     new Intl.DateTimeFormat(dateLocale, {
@@ -745,10 +750,11 @@ export function Workspace(props: Props) {
     },
   ];
 
+  if (!translations.ready) return <TranslationLoading locale={locale} failed={translations.failed} />;
   if (["settings", "administration"].includes(section))
     return (
       <div className="ws-legacy">
-        <button className="ws-button ws-back" onClick={() => go("photos")}>
+        <button className="ws-button ws-back" lang={locale} dir={isRTLTeamspaceLocale(locale) ? "rtl" : "ltr"} onClick={() => go("photos")}>
           <ChevronLeft size={17} />
           {t("back")}
         </button>
@@ -756,7 +762,7 @@ export function Workspace(props: Props) {
       </div>
     );
   return (
-    <div className="ws-app" lang={dateLocale}>
+    <div className="ws-app" lang={locale} dir={isRTLTeamspaceLocale(locale) ? "rtl" : "ltr"}>
       {sidebarOpen && (
         <button
           className="ws-sidebar-scrim"
@@ -860,16 +866,26 @@ export function Workspace(props: Props) {
           </div>
           <div>
             <select
-              aria-label="Language"
+              aria-label={shareCopy(locale, translations.data)("language")}
               className="ws-language"
-              value={
-                locale === "zh-Hans" || locale === "zh-Hant" ? locale : "en"
-              }
-              onChange={(e) => setLocale(setClientLocale(e.target.value))}
+              value={locale}
+              disabled={changingLanguage}
+              aria-busy={changingLanguage}
+              onChange={async (e) => {
+                const next = e.target.value;
+                setChangingLanguage(true);
+                try {
+                  // Keep the gallery and active download mounted while fetching a language.
+                  await loadTeamspaceTranslations(next);
+                  setLocale(setClientLocale(next));
+                } catch {
+                  notify(t("error"));
+                } finally {
+                  setChangingLanguage(false);
+                }
+              }}
             >
-              <option value="zh-Hans">简体中文</option>
-              <option value="zh-Hant">繁體中文</option>
-              <option value="en">English</option>
+              {supportedLocaleOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
             <div className="ws-account" ref={accountRef}>
               <button

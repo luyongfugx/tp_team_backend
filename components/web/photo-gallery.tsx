@@ -28,6 +28,8 @@ import { WorkspaceDialog } from "@/components/workspace/dialog";
 import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
 import { shareCopy } from "@/lib/web/share-copy";
+import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
+import { isRTLTeamspaceLocale, type TeamspaceTranslations } from "@/lib/teamspace/translations";
 import {
   defaultFilters,
   filterGallery,
@@ -149,6 +151,7 @@ export function WebPhotoGallery({
   currentLocale,
   languageOptions,
   scope,
+  initialTranslations,
 }: {
   header: GalleryHeader;
   days: WebPhotoDay[];
@@ -158,9 +161,11 @@ export function WebPhotoGallery({
   currentLocale: string;
   languageOptions: { value: string; label: string }[];
   scope: GalleryScope;
+  initialTranslations?: TeamspaceTranslations;
 }) {
-  const t = useMemo(() => shareCopy(currentLocale), [currentLocale]),
-    wt = useMemo(() => workspaceCopy(currentLocale), [currentLocale]);
+  const translations = useTeamspaceTranslations(currentLocale, initialTranslations);
+  const t = useMemo(() => shareCopy(currentLocale, translations.data), [currentLocale, translations.data]),
+    wt = useMemo(() => workspaceCopy(currentLocale, translations.data), [currentLocale, translations.data]);
   const zipDownloadRef = useRef<ZipDownloadHandle>(null);
   const [zipBusy, setZipBusy] = useState(false);
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days]);
@@ -572,11 +577,12 @@ export function WebPhotoGallery({
     ) : (
       <Users />
     );
+  if (!translations.ready) return <TranslationLoading locale={currentLocale} failed={translations.failed} />;
   return (
     <main
       className="share-page"
       lang={currentLocale}
-      dir={["ar", "he", "fa", "ur"].includes(currentLocale) ? "rtl" : "ltr"}
+      dir={isRTLTeamspaceLocale(currentLocale) ? "rtl" : "ltr"}
     >
       <GalleryPerformanceProbe />
       <ZipDownloadPanel ref={zipDownloadRef} t={wt} onBusyChange={setZipBusy} />

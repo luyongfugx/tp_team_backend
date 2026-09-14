@@ -3,6 +3,9 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import sharp from "sharp";
 import ExcelJS from "exceljs";
+import { shareCopy } from "../lib/web/share-copy";
+import { loadTeamspaceTranslations, isRTLTeamspaceLocale } from "../lib/teamspace/translations";
+import { gpsColumnLabels } from "../lib/teamspace/gps-labels";
 const database = new URL(process.env.DATABASE_URL || "");
 if (!["127.0.0.1", "localhost"].includes(database.hostname) || database.pathname !== "/tp_team_backend_local") throw new Error("Local demo database only");
 const db = new PrismaClient();
@@ -70,6 +73,24 @@ try {
   const legacyBook = new ExcelJS.Workbook(); await legacyBook.xlsx.load(Buffer.from(await legacy.arrayBuffer()) as never);
   assert.equal(legacyBook.worksheets[0].getCell("A1").value, "文件名");
   assert.equal(legacyBook.worksheets[0].getImages().length, 0);
+  for (const locale of ["de", "ar", "ja", "rw"]) {
+    const result = await request({ includeImages: false, locale });
+    assert.equal(result.status, 200);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(Buffer.from(await result.arrayBuffer()) as never);
+    const localized = workbook.worksheets[0];
+    const t = shareCopy(locale, await loadTeamspaceTranslations(locale));
+    assert.equal(localized.name, t("photo"));
+    assert.equal(localized.columnCount, 10);
+    assert.equal(localized.rowCount, 4);
+    assert.equal(localized.getCell("C1").value, t("excelTimezone"));
+    assert.deepEqual([localized.getCell("G1").value, localized.getCell("H1").value], gpsColumnLabels(locale));
+    assert.equal(localized.getCell("I1").value, t("excelMediaType"));
+    assert.equal(!!localized.views[0].rightToLeft, isRTLTeamspaceLocale(locale));
+    if (locale === "rw") assert.ok(localized.getRow(1).height >= 70);
+    assert.equal(localized.getCell("C2").value, "GMT+0800");
+    assert.ok(ids.includes(String(localized.getCell("J2").value)));
+  }
   assert.equal((await request({ includeImages: "true" })).status, 400);
   assert.equal((await request({ ids: Array.from({ length: 201 }, (_, i) => `photo-${i}`) })).status, 400);
   assert.equal((await request({ ids: ["not-in-this-scope"] })).status, 404);

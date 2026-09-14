@@ -127,7 +127,7 @@ function formatDate(date: Date, locale: AppLocale, timeZoneInput: string) {
   return formatter(dateLocale, {
     timeZone,
     year: "numeric",
-    month: "short",
+    month: Intl.DateTimeFormat.supportedLocalesOf([dateLocale]).length ? "short" : "2-digit",
     day: "2-digit",
   }).format(zonedDate);
 }

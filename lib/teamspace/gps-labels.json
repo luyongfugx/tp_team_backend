@@ -1,0 +1,450 @@
+{
+  "en": [
+    "GPS latitude",
+    "GPS longitude"
+  ],
+  "zh-Hans": [
+    "GPS 纬度",
+    "GPS 经度"
+  ],
+  "zh-Hant": [
+    "GPS 緯度",
+    "GPS 經度"
+  ],
+  "zh-HK": [
+    "GPS 緯度",
+    "GPS 經度"
+  ],
+  "vi": [
+    "Vĩ độ GPS",
+    "Kinh độ GPS"
+  ],
+  "id": [
+    "Lintang GPS",
+    "Bujur GPS"
+  ],
+  "es": [
+    "Latitud GPS",
+    "Longitud GPS"
+  ],
+  "es-ES": [
+    "Latitud GPS",
+    "Longitud GPS"
+  ],
+  "fr": [
+    "Latitude GPS",
+    "Longitude GPS"
+  ],
+  "de": [
+    "GPS-Breitengrad",
+    "GPS-Längengrad"
+  ],
+  "pt": [
+    "Latitude GPS",
+    "Longitude GPS"
+  ],
+  "pt-PT": [
+    "Latitude GPS",
+    "Longitude GPS"
+  ],
+  "ja": [
+    "GPS 緯度",
+    "GPS 経度"
+  ],
+  "ko": [
+    "GPS 위도",
+    "GPS 경도"
+  ],
+  "ar": [
+    "خط العرض GPS",
+    "خط الطول GPS"
+  ],
+  "ru": [
+    "Широта GPS",
+    "Долгота GPS"
+  ],
+  "hi": [
+    "GPS अक्षांश",
+    "GPS देशांतर"
+  ],
+  "it": [
+    "Latitudine GPS",
+    "Longitudine GPS"
+  ],
+  "nl": [
+    "GPS-breedtegraad",
+    "GPS-lengtegraad"
+  ],
+  "tr": [
+    "GPS enlemi",
+    "GPS boylamı"
+  ],
+  "ms": [
+    "Latitud GPS",
+    "Longitud GPS"
+  ],
+  "fil": [
+    "Latitud ng GPS",
+    "Longhitud ng GPS"
+  ],
+  "fil-PH": [
+    "Latitud ng GPS",
+    "Longhitud ng GPS"
+  ],
+  "pl": [
+    "Szerokość GPS",
+    "Długość GPS"
+  ],
+  "pl-PL": [
+    "Szerokość GPS",
+    "Długość GPS"
+  ],
+  "sv": [
+    "GPS-latitud",
+    "GPS-longitud"
+  ],
+  "sv-SE": [
+    "GPS-latitud",
+    "GPS-longitud"
+  ],
+  "da": [
+    "GPS-breddegrad",
+    "GPS-længdegrad"
+  ],
+  "nb": [
+    "GPS-breddegrad",
+    "GPS-lengdegrad"
+  ],
+  "nn": [
+    "GPS-breiddegrad",
+    "GPS-lengdegrad"
+  ],
+  "fi": [
+    "GPS-leveysaste",
+    "GPS-pituusaste"
+  ],
+  "ro": [
+    "Latitudine GPS",
+    "Longitudine GPS"
+  ],
+  "cs": [
+    "Zeměpisná šířka GPS",
+    "Zeměpisná délka GPS"
+  ],
+  "sk": [
+    "Zemepisná šírka GPS",
+    "Zemepisná dĺžka GPS"
+  ],
+  "hu": [
+    "GPS-szélesség",
+    "GPS-hosszúság"
+  ],
+  "uk": [
+    "Широта GPS",
+    "Довгота GPS"
+  ],
+  "hr": [
+    "GPS širina",
+    "GPS dužina"
+  ],
+  "bs": [
+    "GPS širina",
+    "GPS dužina"
+  ],
+  "sr": [
+    "GPS ширина",
+    "GPS дужина"
+  ],
+  "sl": [
+    "Zemljepisna širina GPS",
+    "Zemljepisna dolžina GPS"
+  ],
+  "bg": [
+    "GPS ширина",
+    "GPS дължина"
+  ],
+  "af": [
+    "GPS-breedtegraad",
+    "GPS-lengtegraad"
+  ],
+  "arz": [
+    "خط العرض GPS",
+    "خط الطول GPS"
+  ],
+  "be": [
+    "Шырата GPS",
+    "Даўгата GPS"
+  ],
+  "ceb": [
+    "Latitud sa GPS",
+    "Longhitud sa GPS"
+  ],
+  "el": [
+    "Γεωγραφικό πλάτος GPS",
+    "Γεωγραφικό μήκος GPS"
+  ],
+  "fa": [
+    "عرض جغرافیایی GPS",
+    "طول جغرافیایی GPS"
+  ],
+  "gl": [
+    "Latitude GPS",
+    "Lonxitude GPS"
+  ],
+  "he": [
+    "קו רוחב GPS",
+    "קו אורך GPS"
+  ],
+  "ig": [
+    "Latituudu GPS",
+    "Lọnjituudu GPS"
+  ],
+  "ka": [
+    "GPS განედი",
+    "GPS გრძედი"
+  ],
+  "kn": [
+    "GPS ಅಕ್ಷಾಂಶ",
+    "GPS ರೇಖಾಂಶ"
+  ],
+  "lb": [
+    "GPS-Breedegrad",
+    "GPS-Längtegrad"
+  ],
+  "lv": [
+    "GPS platums",
+    "GPS garums"
+  ],
+  "mk": [
+    "GPS географска ширина",
+    "GPS географска должина"
+  ],
+  "mr": [
+    "GPS अक्षांश",
+    "GPS रेखांश"
+  ],
+  "ne": [
+    "GPS अक्षांश",
+    "GPS देशान्तर"
+  ],
+  "or": [
+    "GPS ଅକ୍ଷାଂଶ",
+    "GPS ଦ୍ରାଘିମା"
+  ],
+  "rw": [
+    "Intera mu majyaruguru cyangwa mu majyepfo ya ekwateri (GPS)",
+    "Intera mu burasirazuba cyangwa mu burengerazuba bwa meridiyani shingiro (GPS)"
+  ],
+  "so": [
+    "Loolka GPS",
+    "Dhigta GPS"
+  ],
+  "sw": [
+    "Latitudo ya GPS",
+    "Longitudo ya GPS"
+  ],
+  "tg": [
+    "Арзи ҷуғрофии GPS",
+    "Тӯли ҷуғрофии GPS"
+  ],
+  "tk": [
+    "GPS geografik giňlik",
+    "GPS geografik uzaklyk"
+  ],
+  "xh": [
+    "Ilatityudi ye-GPS",
+    "Ilonjityudi ye-GPS"
+  ],
+  "zu": [
+    "Ububanzi be-GPS",
+    "Ubude be-GPS"
+  ],
+  "ak": [
+    "GPS atifi ne anafo beae",
+    "GPS apuei ne atɔe beae"
+  ],
+  "as": [
+    "GPS অক্ষাংশ",
+    "GPS দ্ৰাঘিমাংশ"
+  ],
+  "bn": [
+    "GPS অক্ষাংশ",
+    "GPS দ্রাঘিমাংশ"
+  ],
+  "cy": [
+    "Lledred GPS",
+    "Hydred GPS"
+  ],
+  "et": [
+    "GPS-laiuskraad",
+    "GPS-pikkuskraad"
+  ],
+  "ga": [
+    "Domhanleithead GPS",
+    "Domhanfhad GPS"
+  ],
+  "gu": [
+    "GPS અક્ષાંશ",
+    "GPS રેખાંશ"
+  ],
+  "ht": [
+    "Latitid GPS",
+    "Lonjitid GPS"
+  ],
+  "is": [
+    "GPS-breiddargráða",
+    "GPS-lengdargráða"
+  ],
+  "kk-KZ": [
+    "GPS ендігі",
+    "GPS бойлығы"
+  ],
+  "ku": [
+    "Firehiya GPS",
+    "Dirêjahiya GPS"
+  ],
+  "lo-LA": [
+    "ເສັ້ນຂະໜານ GPS",
+    "ເສັ້ນແວງ GPS"
+  ],
+  "mg": [
+    "Latitida GPS",
+    "Longitida GPS"
+  ],
+  "ml": [
+    "GPS അക്ഷാംശം",
+    "GPS രേഖാംശം"
+  ],
+  "mt": [
+    "Latitudni GPS",
+    "Lonġitudni GPS"
+  ],
+  "ny": [
+    "Latitudo ya GPS",
+    "Longitudo ya GPS"
+  ],
+  "pa": [
+    "GPS ਅਕਸ਼ਾਂਸ਼",
+    "GPS ਲੰਬਕਾਰ"
+  ],
+  "si": [
+    "GPS අක්ෂාංශ",
+    "GPS දේශාංශ"
+  ],
+  "sq": [
+    "Gjerësia gjeografike GPS",
+    "Gjatësia gjeografike GPS"
+  ],
+  "ta": [
+    "GPS அட்சரேகை",
+    "GPS தீர்க்கரேகை"
+  ],
+  "th": [
+    "ละติจูด GPS",
+    "ลองจิจูด GPS"
+  ],
+  "ur": [
+    "GPS عرض بلد",
+    "GPS طول بلد"
+  ],
+  "yi": [
+    "GPS ברייט",
+    "GPS לענג"
+  ],
+  "zu-ZA": [
+    "Ububanzi be-GPS",
+    "Ubude be-GPS"
+  ],
+  "am": [
+    "የGPS ኬክሮስ",
+    "የGPS ኬንትሮስ"
+  ],
+  "az": [
+    "GPS enliyi",
+    "GPS uzunluğu"
+  ],
+  "ca": [
+    "Latitud GPS",
+    "Longitud GPS"
+  ],
+  "dv": [
+    "GPS ލެޓިޓިއުޑް",
+    "GPS ލޮންޖިޓިއުޑް"
+  ],
+  "eu": [
+    "GPS latitudea",
+    "GPS longitudea"
+  ],
+  "gd": [
+    "Domhan-leud GPS",
+    "Domhan-fhad GPS"
+  ],
+  "ha": [
+    "Latitude na GPS",
+    "Longitude na GPS"
+  ],
+  "hy": [
+    "GPS լայնություն",
+    "GPS երկայնություն"
+  ],
+  "jv": [
+    "Lintang GPS",
+    "Bujur GPS"
+  ],
+  "km-KH": [
+    "រយៈទទឹង GPS",
+    "រយៈបណ្តោយ GPS"
+  ],
+  "ky": [
+    "GPS кеңдиги",
+    "GPS узундугу"
+  ],
+  "lt": [
+    "GPS platuma",
+    "GPS ilguma"
+  ],
+  "mi": [
+    "Ahopae GPS",
+    "Ahopou GPS"
+  ],
+  "mn": [
+    "GPS өргөрөг",
+    "GPS уртраг"
+  ],
+  "my": [
+    "GPS လတ္တီတွဒ်",
+    "GPS လောင်ဂျီတွဒ်"
+  ],
+  "om": [
+    "Laatituudii GPS",
+    "Longituudii GPS"
+  ],
+  "ps": [
+    "د GPS عرض البلد",
+    "د GPS طول البلد"
+  ],
+  "sn": [
+    "Latitudo yeGPS",
+    "Longitudo yeGPS"
+  ],
+  "st": [
+    "Latitjude ea GPS",
+    "Longitjude ea GPS"
+  ],
+  "te": [
+    "GPS అక్షాంశం",
+    "GPS రేఖాంశం"
+  ],
+  "ti": [
+    "ኬክሮስ GPS",
+    "ኬንትሮስ GPS"
+  ],
+  "uz": [
+    "GPS kengligi",
+    "GPS uzunligi"
+  ],
+  "yo": [
+    "Ìbú àgbáyé GPS",
+    "Ìgùn àgbáyé GPS"
+  ]
+}

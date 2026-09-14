@@ -857,14 +857,16 @@
   }
   .share-filters select,
   .share-filters > button {
-    font-size: 11px;
-    padding: 6px 3px;
-    max-width: 27%;
+    font-size: 12px;
+    padding: 6px;
+    flex: 1 1 calc(50% - 4px);
+    max-width: calc(50% - 4px);
     min-width: 0;
   }
   .share-filters {
+    width: 100%;
     justify-content: space-between;
-    gap: 0;
+    gap: 4px 8px;
   }
   .share-day-heading {
     margin: 18px 0 12px;
@@ -1007,4 +1009,14 @@
   .share-photo {
     contain-intrinsic-size: auto 158px;
   }
+}
+
+.share-actions { flex-wrap: wrap; }
+.share-actions button { max-width: 100%; }
+.share-actions button > svg { flex-shrink: 0; }
+.share-page[dir="rtl"] h1 { letter-spacing: normal; }
+.share-selection {
+  max-width: calc(100vw - 32px);
+  flex-wrap: wrap;
+  white-space: normal;
 }

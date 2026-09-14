@@ -11,6 +11,8 @@ import { sourceFile, downloadHeaders, safeName } from "@/lib/workspace/files";
 import { shareCopy } from "@/lib/web/share-copy";
 import { MAX_EXCEL_PHOTOS, photoWorkbook } from "@/lib/web/excel-photos";
 import { exportGalleryURL } from "@/lib/web/gallery-url";
+import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
+import { gpsColumnLabels } from "@/lib/teamspace/gps-labels";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 let activeExports = 0;
@@ -77,23 +79,24 @@ export async function POST(req: Request) {
     }
     if (body.format === "xlsx") {
       const locale = typeof body.locale === "string" ? body.locale : "";
-      const t = shareCopy(locale);
+      const t = shareCopy(locale, await loadTeamspaceTranslations(locale));
+      const [latitude, longitude] = gpsColumnLabels(locale);
       const book = new ExcelJS.Workbook();
       book.creator = "Timeprint";
-      const sheet = book.addWorksheet("Photos", {
-        views: [{ state: "frozen", ySplit: 1 }],
+      const sheet = book.addWorksheet(t("photo"), {
+        views: [{ state: "frozen", ySplit: 1, rightToLeft: isRTLTeamspaceLocale(locale) }],
       });
       sheet.columns = [
         { header: t("filename"), key: "file", width: 42 },
         { header: t("time"), key: "time", width: 25 },
-        { header: "Timezone", key: "zone", width: 23 },
+        { header: t("excelTimezone"), key: "zone", width: 23 },
         { header: t("project"), key: "project", width: 26 },
         { header: t("member"), key: "member", width: 22 },
         { header: t("location"), key: "location", width: 65 },
-        { header: "GPS latitude", key: "lat", width: 18 },
-        { header: "GPS longitude", key: "lng", width: 18 },
-        { header: t("type"), key: "type", width: 12 },
-        { header: "Photo ID", key: "id", width: 32 },
+        { header: latitude, key: "lat", width: 18 },
+        { header: longitude, key: "lng", width: 18 },
+        { header: t("excelMediaType"), key: "type", width: 12 },
+        { header: `${t("photo")} ID`, key: "id", width: 32 },
       ];
       for (const p of photos)
         sheet.addRow({
@@ -113,6 +116,13 @@ export async function POST(req: Request) {
           id: p.photoID,
         });
       sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+      // Some languages describe coordinates with several words. ExcelJS does
+      // not auto-fit row height, so reserve enough space for wrapped headers.
+      sheet.getRow(1).height = Math.max(42, ...sheet.columns.map(column => {
+        const units = Array.from(String(column.header)).reduce((sum, char) => sum + (char.codePointAt(0)! >= 0x2e80 ? 2 : 1), 0);
+        return Math.ceil(units / Math.max(8, (column.width || 18) - 2)) * 14 + 10;
+      }));
+      sheet.getRow(1).alignment = { vertical: "middle", wrapText: true };
       sheet.getRow(1).fill = {
         type: "pattern",
         pattern: "solid",

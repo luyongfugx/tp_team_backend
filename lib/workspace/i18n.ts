@@ -1,6 +1,7 @@
-// The first web-workspace release supports these three reviewed UI locales.
-// Other existing account locales use English here; legacy screens retain their translations.
-const copy = {
+import { resolveLocale } from "@/lib/i18n";
+import type { TeamspaceTranslations } from "@/lib/teamspace/translations";
+// Base UI languages stay synchronous; other languages load their own small pack.
+export const workspaceBaseCopy = {
   INVALID_PROJECT: [
     "请填写项目名称（最多 100 字），地址最多 191 字。",
     "Enter a project name (up to 100 characters). Addresses can have up to 191 characters.",
@@ -326,12 +327,13 @@ const copy = {
     "匯出服務中斷，請重試。",
   ],
 } as const;
-export type CopyKey = keyof typeof copy;
-export function workspaceCopy(locale: string) {
-  const index = locale === "zh-Hans" ? 0 : locale === "zh-Hant" ? 2 : 1;
-  return (key: CopyKey) => copy[key][index] as string;
+export type CopyKey = keyof typeof workspaceBaseCopy;
+export function workspaceCopy(locale: string, translations?: TeamspaceTranslations) {
+  const resolved = resolveLocale(locale || "en");
+  const index = resolved === "zh-Hans" ? 0 : resolved === "zh-Hant" ? 2 : 1;
+  return (key: CopyKey) => translations?.w[key] ?? workspaceBaseCopy[key][index] as string;
 }
 export type WorkspaceCopy = ReturnType<typeof workspaceCopy>;
 export function errorCopy(t: WorkspaceCopy, code: string) {
-  return t(code in copy ? (code as CopyKey) : "error");
+  return t(code in workspaceBaseCopy ? (code as CopyKey) : "error");
 }

@@ -18,6 +18,8 @@ import {
 import { WorkspaceDialog } from "./dialog";
 import type { WorkspacePhoto } from "@/lib/workspace/model";
 import type { WorkspaceCopy } from "@/lib/workspace/i18n";
+import { isRTLTeamspaceLocale } from "@/lib/teamspace/translations";
+import { teamspaceDateOptions } from "@/lib/teamspace/date-format";
 export function PhotoPreview({
   photo,
   photos,
@@ -52,6 +54,7 @@ export function PhotoPreview({
     stage = useRef<HTMLDivElement>(null);
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const index = photos.findIndex((p) => p.photoID === photo.photoID);
+  const rtl = isRTLTeamspaceLocale(locale);
   const move = (delta: number) => {
     const p = photos[index + delta];
     if (p) onChoose(p.photoID);
@@ -70,11 +73,11 @@ export function PhotoPreview({
         return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        move(-1);
+        move(rtl ? 1 : -1);
       }
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        move(1);
+        move(rtl ? -1 : 1);
       }
     };
     window.addEventListener("keydown", key);
@@ -160,7 +163,7 @@ export function PhotoPreview({
                 const dx = e.changedTouches[0].clientX - start.x,
                   dy = e.changedTouches[0].clientY - start.y;
                 if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5)
-                  move(dx < 0 ? 1 : -1);
+                  move((dx < 0 ? 1 : -1) * (rtl ? -1 : 1));
               }}
               onDoubleClick={() => setScale(zoom > 1 ? 1 : 2)}
               onPointerDown={(e) => {
@@ -315,8 +318,7 @@ export function PhotoPreview({
                 captureTimeText ||
                   new Intl.DateTimeFormat(locale, {
                     timeZone: tz,
-                    dateStyle: "medium",
-                    timeStyle: "medium",
+                    ...teamspaceDateOptions(locale, true),
                   }).format(photo.timestamp),
               )}
               {row(t("project"), photo.projectName)}

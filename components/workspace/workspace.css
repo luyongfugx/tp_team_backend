@@ -69,7 +69,7 @@
   width: 240px;
   flex-shrink: 0;
   background: #f9fafd;
-  border-right: 1px solid var(--ws-border);
+  border-inline-end: 1px solid var(--ws-border);
   display: flex;
   flex-direction: column;
   padding: 28px 16px 0;
@@ -189,7 +189,7 @@
 .ws-account-menu {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;
+  inset-inline-end: 0;
   width: min(260px, calc(100vw - 24px));
   padding: 14px;
   border: 1px solid var(--ws-border);
@@ -263,7 +263,7 @@
   border: 0;
   background: transparent;
   font-size: 11px !important;
-  max-width: 96px;
+  max-width: min(180px, 30vw);
 }
 .ws-content {
   flex: 1;
@@ -356,11 +356,13 @@
   .ws-download-panel { display: none !important; }
 }
 .ws-button {
+  max-width: 100%;
+  text-align: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  white-space: nowrap;
+  white-space: normal;
   background: #fff;
   border: 1px solid #e1e4e9;
   border-radius: 7px;
@@ -535,7 +537,7 @@
   flex: 1;
   height: 1px;
   background: #ebeef1;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 .ws-photo-grid {
   display: grid;
@@ -585,7 +587,7 @@
 .ws-photo-checkbox {
   position: absolute;
   top: 11px;
-  left: 11px;
+  inset-inline-start: 11px;
   z-index: 2;
   box-shadow: 0 1px 8px #0003;
   outline: 2px solid white;
@@ -639,7 +641,7 @@
 .ws-video-badge {
   position: absolute;
   bottom: 7px;
-  right: 7px;
+  inset-inline-end: 7px;
   background: #0009;
   color: #fff;
   font-size: 10px;
@@ -787,7 +789,7 @@
 .ws-cover-count {
   position: absolute;
   bottom: 10px;
-  right: 10px;
+  inset-inline-end: 10px;
   background: #202934aa;
   color: #fff;
   display: flex;
@@ -1101,7 +1103,7 @@
 .ws-export-info ul {
   max-height: 160px;
   overflow: auto;
-  padding-left: 16px;
+  padding-inline-start: 16px;
   line-height: 2;
 }
 .ws-inline-error {
@@ -1208,7 +1210,7 @@
   font-size: 12px;
   font-weight: 400;
   color: #8f9aaa;
-  margin-left: 8px;
+  margin-inline-start: 8px;
 }
 .ws-modal-note {
   font-size: 11px;
@@ -1244,7 +1246,7 @@
   max-width: calc(100vw - 40px);
 }
 .ws-toast button {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   color: #b7c2cc;
 }
 .ws-toast > span {
@@ -1261,7 +1263,7 @@
 .ws-back {
   position: fixed;
   top: 8px;
-  left: 15px;
+  inset-inline-start: 15px;
   z-index: 60;
 }
 .ws-preview-overlay {
@@ -1383,10 +1385,10 @@
   border-radius: 7px;
 }
 .ws-prev-photo {
-  left: 12px;
+  inset-inline-start: 12px;
 }
 .ws-next-photo {
-  right: 12px;
+  inset-inline-end: 12px;
 }
 .ws-prev-photo:hover,
 .ws-next-photo:hover {
@@ -1456,7 +1458,7 @@
 }
 .ws-photo-details {
   overflow: auto;
-  border-left: 1px solid #ffffff0c;
+  border-inline-start: 1px solid #ffffff0c;
   background: #fff;
   color: #323c49;
   padding: 24px 23px;
@@ -1635,7 +1637,7 @@
     justify-content: space-between;
   }
   .ws-selection-bar > .ws-primary {
-    margin-left: auto;
+    margin-inline-start: auto;
   }
   .ws-header-actions {
     flex-direction: column;
@@ -1645,7 +1647,8 @@
 @media (max-width: 760px) {
   .ws-sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset-block: 0;
+    inset-inline-start: 0;
     transform: translateX(-100%);
     transition: transform 0.2s;
     width: 240px;
@@ -1817,4 +1820,26 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Mirror navigation and controls without flipping photos or map content. */
+.ws-app[dir="rtl"] .lucide-chevron-left,
+.ws-app[dir="rtl"] .lucide-chevron-right,
+.ws-back[dir="rtl"] .lucide-chevron-left,
+.share-page[dir="rtl"] .lucide-chevron-left,
+.share-page[dir="rtl"] .lucide-chevron-right {
+  transform: scaleX(-1);
+}
+.ws-app[dir="rtl"] .ws-nav-label,
+.ws-app[dir="rtl"] .ws-page-header h1 {
+  letter-spacing: normal;
+}
+.ws-button > svg { flex-shrink: 0; }
+.ws-selection-bar > div { flex-wrap: wrap; }
+.ws-dialog footer { flex-wrap: wrap; }
+.ws-page-header > div { min-width: 0; }
+.ws-header-actions { flex-shrink: 0; max-width: 55%; }
+@media (max-width: 760px) {
+  .ws-app[dir="rtl"] .ws-sidebar { transform: translateX(100%); }
+  .ws-app[dir="rtl"] .ws-sidebar.open { transform: translateX(0); }
 }

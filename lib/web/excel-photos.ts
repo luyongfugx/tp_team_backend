@@ -4,6 +4,7 @@ import type { Photo } from "@prisma/client";
 import { sourceFile } from "@/lib/workspace/files";
 import { parseOffsetMinutes, photoTimeZone } from "@/app/web/photos-data";
 import { shareCopy } from "./share-copy";
+import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
 
 export const MAX_EXCEL_PHOTOS = 200;
 export const MAX_THUMBNAIL_BYTES = 90 * 1024;
@@ -85,11 +86,11 @@ export async function photoWorkbook(options: {
 }) {
   const { photos, galleryURL, locale, signal, load = loadThumbnail } = options;
   if (photos.length > MAX_EXCEL_PHOTOS) throw new Error("TOO_MANY_PHOTOS");
-  const t = shareCopy(locale);
+  const t = shareCopy(locale, await loadTeamspaceTranslations(locale));
   const book = new ExcelJS.Workbook();
   book.creator = "Timeprint";
-  const sheet = book.addWorksheet("Photos", {
-    views: [{ state: "frozen", ySplit: 2, xSplit: 1, showGridLines: false }],
+  const sheet = book.addWorksheet(t("photo"), {
+    views: [{ state: "frozen", ySplit: 2, xSplit: 1, showGridLines: false, rightToLeft: isRTLTeamspaceLocale(locale) }],
     pageSetup: { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: "1:2" },
   });
   sheet.columns = [
@@ -104,11 +105,11 @@ export async function photoWorkbook(options: {
   sheet.getRow(1).height = 35;
   sheet.getRow(1).alignment = { vertical: "middle" };
   sheet.getRow(2).values = [t("photo"), t("project"), t("member"), t("excelDate"), t("excelTime"), t("location"), t("excelGPS"), t("filename"), t("excelTimezone"), t("excelMediaType"), t("excelViewOriginal")];
-  sheet.getRow(2).height = 28;
+  sheet.getRow(2).height = 42;
   sheet.getRow(2).eachCell(cell => {
     cell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF303844" } };
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEAF3FF" } };
-    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
   });
   for (const photo of photos) {
     const date = excelCaptureDate(photo.timestamp, photo.takePhotoTimezoneID);
