@@ -8,10 +8,17 @@ import {
   workspaceFailure,
 } from "@/lib/workspace/server";
 import { resolvePhotoURL } from "@/app/web/photo-url";
+import { workspaceAvatarURL } from "@/lib/workspace/avatar";
 
 export async function GET(req: Request) {
   try {
     const user = await workspaceUser(req);
+    const currentUser = {
+      id: user.id,
+      name: user.userName || user.shortName || user.email || "Timeprint",
+      email: user.email,
+      avatar: workspaceAvatarURL(user.avatar),
+    };
     // Workspace picker lists memberships; platform-wide administration stays separate.
     const teams = await prisma.team.findMany({
       where: {
@@ -26,6 +33,7 @@ export async function GET(req: Request) {
     if (!groupID)
       return workspaceResponse({
         teams,
+        currentUser,
         backgroundExports: process.env.WORKSPACE_BACKGROUND_EXPORTS === "1",
         current: null,
         canManage: false,
@@ -142,6 +150,7 @@ export async function GET(req: Request) {
         .slice(0, 3);
     return workspaceResponse({
       teams,
+      currentUser,
       backgroundExports: process.env.WORKSPACE_BACKGROUND_EXPORTS === "1",
       current: access.team,
       canManage: access.canManage,
@@ -164,7 +173,7 @@ export async function GET(req: Request) {
         return {
           userID: m.userID,
           name: m.user.userName || m.user.email || "—",
-          avatar: m.user.avatar,
+          avatar: workspaceAvatarURL(m.user.avatar),
           role: m.role,
           count: stats?._count || 0,
           latest: stats?._max.timestamp ? Number(stats._max.timestamp) : null,

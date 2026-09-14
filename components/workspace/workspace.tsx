@@ -109,6 +109,16 @@ function Thumbnail({ src, alt = "" }: { src: string | null; alt?: string }) {
     </div>
   );
 }
+function Avatar({ src, name, className }: { src?: string | null; name: string; className: string }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  return (
+    <span className={className}>
+      {src && failed !== src ? (
+        <img src={src} alt="" decoding="async" onError={() => setFailed(src)} />
+      ) : name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
 async function saveResponse(
   request: () => Promise<Response>,
   filename: string,
@@ -227,7 +237,30 @@ export function Workspace(props: Props) {
     [projectError, setProjectError] = useState("");
   const [toast, setToast] = useState(""),
     [sidebarOpen, setSidebarOpen] = useState(false),
+    [accountOpen, setAccountOpen] = useState(false),
+    [customDatesOpen, setCustomDatesOpen] = useState(false),
+    accountRef = useRef<HTMLDivElement>(null),
     contentRef = useRef<HTMLDivElement>(null);
+  const accountName = workspace?.currentUser?.name || user.userName || user.shortName || user.email;
+  const accountAvatar = workspace?.currentUser?.avatar || workspace?.members.find(m => m.userID === user.id)?.avatar;
+  useEffect(() => {
+    if (!accountOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) setAccountOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAccountOpen(false);
+        accountRef.current?.querySelector("button")?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [accountOpen]);
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
       const response = await authenticatedFetch(path, token, init);
@@ -302,6 +335,7 @@ export function Workspace(props: Props) {
   };
   const go = (target: string) => {
     setSidebarOpen(false);
+    setAccountOpen(false);
     setCardQuery("");
     navigate(
       groupID || workspace?.current?.groupID
@@ -454,6 +488,7 @@ export function Workspace(props: Props) {
       ...(["from", "to"].includes(key) ? { range: null } : {}),
     });
   const clearFilters = () => {
+    setCustomDatesOpen(false);
     setQuery("");
     updateParams({
       q: null,
@@ -718,14 +753,13 @@ export function Workspace(props: Props) {
           }}
         >
           <img src="/logo.png" alt="" />
-          <span>
-            Timeprint<small>TEAMSPACE</small>
-          </span>
+          <span>Timeprint</span>
         </a>
         <div className="ws-workspace-picker">
-          <label htmlFor="workspace-picker">{t("workspace")}</label>
           <select
             id="workspace-picker"
+            aria-label={t("switchTeam")}
+            title={t("switchTeam")}
             value={groupID}
             onChange={(e) => {
               navigate(
@@ -774,7 +808,6 @@ export function Workspace(props: Props) {
             <Archive size={19} />
             <span>{t("exports")}</span>
           </a>
-          <p className="ws-nav-label ws-tools-label">{t("tools")}</p>
           <button className="ws-nav-item" onClick={() => go("settings")}>
             <Settings size={19} />
             <span>{t("settings")}</span>
@@ -789,31 +822,13 @@ export function Workspace(props: Props) {
             </button>
           )}
         </nav>
-        <div className="ws-sidebar-bottom">
-          <div className="ws-user-avatar">
-            {(user.userName || user.email || "T").slice(0, 1).toUpperCase()}
-          </div>
-          <div>
-            <strong>
-              {user.userName || user.shortName || user.email.split("@")[0]}
-            </strong>
-            <span>{user.email}</span>
-          </div>
-          <button
-            aria-label={t("logout")}
-            title={t("logout")}
-            onClick={onLogout}
-          >
-            <LogOut size={17} />
-          </button>
-        </div>
       </aside>
       <div className="ws-main">
         <header className="ws-topbar">
           <div>
             <button
               className="ws-mobile-menu ws-icon-button"
-              aria-label={t("workspace")}
+              aria-label={t("openMenu")}
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={20} />
@@ -823,7 +838,6 @@ export function Workspace(props: Props) {
             <strong>{title}</strong>
           </div>
           <div>
-            <span className="ws-topbar-product">TeamSpace</span>
             <select
               aria-label="Language"
               className="ws-language"
@@ -836,18 +850,31 @@ export function Workspace(props: Props) {
               <option value="zh-Hant">繁體中文</option>
               <option value="en">English</option>
             </select>
+            <div className="ws-account" ref={accountRef}>
+              <button
+                className="ws-account-button"
+                aria-label={`${t("account")} · ${accountName}`}
+                title={accountName}
+                aria-expanded={accountOpen}
+                aria-controls="ws-account-menu"
+                onClick={() => setAccountOpen(open => !open)}
+              >
+                <Avatar src={accountAvatar} name={accountName} className="ws-user-avatar" />
+              </button>
+              {accountOpen && (
+                <div className="ws-account-menu" id="ws-account-menu">
+                  <strong>{accountName}</strong>
+                  {(workspace?.currentUser?.email || user.email) !== accountName && <small>{workspace?.currentUser?.email || user.email}</small>}
+                  <button onClick={() => go("settings")}><Settings size={16} />{t("settings")}</button>
+                  <button onClick={onLogout}><LogOut size={16} />{t("logout")}</button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <div className="ws-content" ref={contentRef}>
           <div className="ws-page-header">
             <div>
-              <div className="ws-eyebrow">
-                {section === "exports"
-                  ? t("exports")
-                  : detailID
-                    ? t(section === "projects" ? "project" : "author")
-                    : t("library")}
-              </div>
               <h1>
                 {title}
                 {isGallery && !photoBusy && (
@@ -856,23 +883,9 @@ export function Workspace(props: Props) {
                   </span>
                 )}
               </h1>
-              <p>
-                {detailID
-                  ? selectedProject?.address ||
-                    (selectedMember ? t("membersDesc") : "")
-                  : t(
-                      section === "projects"
-                        ? "projectsDesc"
-                        : section === "members"
-                          ? "membersDesc"
-                          : section === "exports"
-                            ? workspace?.backgroundExports ? "exportDesc" : "directExportHistory"
-                            : "allDesc",
-                    )}
-                {workspace && !workspace.canManage && isGallery && (
-                  <span className="ws-own-scope">{t("ownOnly")}</span>
-                )}
-              </p>
+              {selectedProject?.address && <p>{selectedProject.address}</p>}
+              {section === "exports" && <p>{t(workspace?.backgroundExports ? "exportDesc" : "directExportHistory")}</p>}
+              {workspace && !workspace.canManage && isGallery && <p>{t("ownOnly")}</p>}
             </div>
             <div className="ws-header-actions">
               {selectedProject && workspace?.canManage && (
@@ -985,18 +998,21 @@ export function Workspace(props: Props) {
                       </select>
                       <select
                         aria-label={t("allDates")}
-                        value={datePreset}
-                        onChange={(e) => setDateRange(e.target.value)}
+                        value={customDatesOpen ? "custom" : datePreset}
+                        onChange={(e) => {
+                          setCustomDatesOpen(e.target.value === "custom");
+                          if (e.target.value !== "custom") setDateRange(e.target.value);
+                        }}
                       >
                         <option value="all">{t("allDates")}</option>
                         <option value="today">{t("today")}</option>
                         <option value="week">{t("week")}</option>
                         <option value="month">{t("month")}</option>
-                        <option value="custom" disabled>
+                        <option value="custom">
                           {t("custom")}
                         </option>
                       </select>
-                      <div className="ws-date-inputs">
+                      {(customDatesOpen || datePreset === "custom") && <div className="ws-date-inputs" title={`${t("timezone")} ${filters.tz}`}>
                         <input
                           type="date"
                           aria-label={t("from")}
@@ -1012,7 +1028,7 @@ export function Workspace(props: Props) {
                           min={filters.from || undefined}
                           onChange={(e) => setFilter("to", e.target.value)}
                         />
-                      </div>
+                      </div>}
                       {filtered && (
                         <button className="ws-link" onClick={clearFilters}>
                           <X size={14} />
@@ -1038,9 +1054,6 @@ export function Workspace(props: Props) {
                       </span>
                     </div>
                     <div>
-                      <span className="ws-timezone" title={t("timezone")}>
-                        {filters.tz}
-                      </span>
                       <div className="ws-view-toggle">
                         {iconButton(
                           t("grid"),
@@ -1372,13 +1385,7 @@ export function Workspace(props: Props) {
                             <div className="ws-project-info">
                               <div className="ws-project-title">
                                 {section === "members" && (
-                                  <span className="ws-card-avatar">
-                                    {c.avatar ? (
-                                      <img src={c.avatar} alt="" />
-                                    ) : (
-                                      c.name.slice(0, 1)
-                                    )}
-                                  </span>
+                                  <Avatar src={c.avatar} name={c.name} className="ws-card-avatar" />
                                 )}
                                 <h2>{c.name}</h2>
                                 <ArrowUpRight size={18} />
