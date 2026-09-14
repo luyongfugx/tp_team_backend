@@ -3,12 +3,25 @@ import assert from "node:assert/strict";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
 import { compressExcelThumbnail, MAX_THUMBNAIL_BYTES, photoWorkbook } from "../lib/web/excel-photos";
+import { exportGalleryURL } from "../lib/web/gallery-url";
 const photo = {
   photoID: "photo-a", localPhotoName: '=SUM(1,2).jpg', timestamp: BigInt(Date.UTC(2026, 8, 14, 16, 30)),
   takePhotoTimezoneID: "Asia/Shanghai", projectName: "Project", userName: "Member", location: "Site",
   lat: null, lng: null, mediaType: 0, smallURL: null, largeURL: null,
 };
 const signal = () => new AbortController().signal;
+
+test("export links use the public origin for project, team and member scopes", () => {
+  for (const kind of ["project", "team", "user"] as const) {
+    assert.equal(exportGalleryURL({ kind, id: "22" }, "zh-Hans", "https://teamspace.timeprint.net"),
+      `https://teamspace.timeprint.net/web/${kind}/22/photos?lang=zh-Hans`);
+  }
+  assert.equal(exportGalleryURL({ kind: "team", id: "a/b?c" }, "", "https://staging.timeprint.net/"),
+    "https://staging.timeprint.net/web/team/a%2Fb%3Fc/photos");
+  for (const origin of ["javascript:alert(1)", "https://user:pass@example.com", "https://example.com/path", "https://example.com?query=1"]) {
+    assert.throws(() => exportGalleryURL({ kind: "team", id: "22" }, "en", origin));
+  }
+});
 
 test("capture dates accept client offset timezones as well as IANA zones", async () => {
   const cases = [

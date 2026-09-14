@@ -33,7 +33,9 @@ try {
     largeURL: null, mediaType: 0,
   } });
   const request = (extra = {}) => fetch("http://127.0.0.1:3000/api/web/photos/export", {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    // A proxy's internal origin and untrusted forwarding headers must never
+    // become links in a workbook downloaded by another person.
+    method: "POST", headers: { "Content-Type": "application/json", "X-Forwarded-Host": "untrusted.example", "X-Forwarded-Proto": "https" },
     body: JSON.stringify({ scope: { kind: "team", id: base.groupID }, ids, format: "xlsx", locale: "zh-Hans", includeImages: true, ...extra }),
   });
   const response = await request();
@@ -43,6 +45,20 @@ try {
   await writeFile(".local/excel-reference/api-example.xlsx", bytes);
   const book = new ExcelJS.Workbook(); await book.xlsx.load(bytes as never);
   const sheet = book.worksheets[0];
+  const gallery = new URL(`/web/team/${base.groupID}/photos?lang=zh-Hans`, process.env.TEAMSPACE_PUBLIC_ORIGIN || "https://teamspace.timeprint.net").toString();
+  assert.equal(sheet.getCell("A1").hyperlink, gallery);
+  for (const row of [3, 4, 5]) {
+    const link = new URL(sheet.getCell(`K${row}`).hyperlink);
+    assert.equal(link.origin, new URL(gallery).origin);
+    assert.equal(link.pathname, new URL(gallery).pathname);
+    assert.equal(link.searchParams.get("lang"), "zh-Hans");
+    assert.ok(ids.includes(link.searchParams.get("photo")!));
+  }
+  for (const image of sheet.getImages()) {
+    const link = (image.range as ExcelJS.ImageRange & { hyperlinks: { hyperlink: string } }).hyperlinks.hyperlink;
+    assert.equal(new URL(link).origin, new URL(gallery).origin);
+    assert.ok(ids.includes(new URL(link).searchParams.get("photo")!));
+  }
   assert.equal(sheet.rowCount, 5);
   assert.equal(sheet.getCell("A2").value, "照片");
   assert.equal(sheet.getImages().length, 2);

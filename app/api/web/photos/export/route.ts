@@ -10,6 +10,7 @@ import { resolveGallerySelection, readGalleryFilters } from "@/lib/web/query";
 import { sourceFile, downloadHeaders, safeName } from "@/lib/workspace/files";
 import { shareCopy } from "@/lib/web/share-copy";
 import { MAX_EXCEL_PHOTOS, photoWorkbook } from "@/lib/web/excel-photos";
+import { exportGalleryURL } from "@/lib/web/gallery-url";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 let activeExports = 0;
@@ -61,10 +62,9 @@ export async function POST(req: Request) {
     const filename = `Timeprint-${scope.kind}-${new Date().toISOString().slice(0, 10)}`;
     if (includeImages) {
       const locale = typeof body.locale === "string" ? body.locale : "";
-      const galleryURL = new URL(`/web/${scope.kind}/${encodeURIComponent(scope.id)}/photos`, req.url);
-      if (locale) galleryURL.searchParams.set("lang", resolveLocale(locale));
+      const galleryURL = exportGalleryURL(scope, locale);
       const signal = AbortSignal.any([req.signal, AbortSignal.timeout(240_000)]);
-      const book = await photoWorkbook({ photos, galleryURL: galleryURL.toString(), locale, signal });
+      const book = await photoWorkbook({ photos, galleryURL, locale, signal });
       signal.throwIfAborted();
       const data = await book.xlsx.writeBuffer();
       signal.throwIfAborted();
