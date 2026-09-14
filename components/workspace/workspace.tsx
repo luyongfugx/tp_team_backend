@@ -128,7 +128,7 @@ async function saveResponse(
     window as unknown as {
       showSaveFilePicker?: (o: {
         suggestedName: string;
-      }) => Promise<{ createWritable: () => Promise<WritableStream> }>;
+      }) => Promise<{ name: string; createWritable: () => Promise<WritableStream> }>;
     }
   ).showSaveFilePicker;
   let handle;
@@ -146,6 +146,7 @@ async function saveResponse(
   if (handle && response.body) {
     const output = await handle.createWritable();
     await response.body.pipeTo(output);
+    return { destination: "chosen-folder" as const, filename: handle.name || filename };
   } else {
     const url = URL.createObjectURL(await response.blob()),
       link = document.createElement("a");
@@ -153,8 +154,8 @@ async function saveResponse(
     link.download = filename;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return { destination: "browser-downloads" as const, filename };
   }
-  return true;
 }
 
 export function Workspace(props: Props) {
@@ -565,7 +566,7 @@ export function Workspace(props: Props) {
         );
         if (saved) {
           setExportDialog(false);
-          notify(t("exportDownloaded"));
+          notify(t(saved.destination === "chosen-folder" ? "exportSaved" : "exportDownloadStarted").replace("{filename}", () => saved.filename));
         }
         return;
       }
@@ -1788,7 +1789,7 @@ export function Workspace(props: Props) {
       {toast && (
         <div className="ws-toast" role="status">
           <Check size={18} />
-          {toast}
+          <span>{toast}</span>
           <button onClick={() => setToast("")} aria-label={t("close")}>
             <X size={16} />
           </button>

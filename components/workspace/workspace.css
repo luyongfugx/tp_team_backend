@@ -1185,6 +1185,14 @@
   margin-left: 8px;
   color: #b7c2cc;
 }
+.ws-toast > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ws-toast > svg,
+.ws-toast > button {
+  flex-shrink: 0;
+}
 .ws-legacy {
   padding-top: 48px;
 }

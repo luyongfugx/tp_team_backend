@@ -175,7 +175,16 @@ const copy = {
     "Downloaded ZIP files are saved on your device. Only background exports appear here.",
     "直接下載的 ZIP 儲存在你的裝置中；這裡僅顯示背景匯出記錄。",
   ],
-  exportDownloaded: ["ZIP 已准备好，请查看下载文件。", "ZIP is ready. Check your downloads.", "ZIP 已準備好，請查看下載檔案。"],
+  exportSaved: [
+    "“{filename}”已保存到你选择的文件夹。",
+    "“{filename}” was saved in the folder you chose.",
+    "「{filename}」已儲存到你選擇的資料夾。",
+  ],
+  exportDownloadStarted: [
+    "已发起“{filename}”的下载，请在浏览器的“下载”列表中查看。",
+    "Download started for “{filename}”. Find it in your browser’s Downloads list.",
+    "已開始下載「{filename}」，請在瀏覽器的「下載」清單中查看。",
+  ],
   DIRECT_EXPORT_LIMIT: ["每次直接下载最多 200 个文件，请分批选择。", "Download up to 200 files at a time. Select a smaller batch.", "每次直接下載最多 200 個檔案，請分批選擇。"],
   DIRECT_EXPORT_SIZE_LIMIT: ["所选文件超过 100 MB，请分批下载。", "Selected files exceed 100 MB. Download a smaller batch.", "所選檔案超過 100 MB，請分批下載。"],
   DOWNLOAD_BUSY: ["当前下载任务较多，请稍后重试。", "Downloads are busy. Try again shortly.", "目前下載工作較多，請稍後重試。"],
