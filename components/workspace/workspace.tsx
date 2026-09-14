@@ -126,7 +126,7 @@ async function saveResponse(
     try {
       handle = await picker.call(window, { suggestedName: filename });
     } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (e instanceof DOMException && e.name === "AbortError") return false;
       throw e;
     }
   }
@@ -144,6 +144,7 @@ async function saveResponse(
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
+  return true;
 }
 
 export function Workspace(props: Props) {
@@ -517,6 +518,22 @@ export function Workspace(props: Props) {
     setExportBusy(true);
     setExportError("");
     try {
+      if (!workspace?.backgroundExports) {
+        const count = selectionCount(exportSelection, total);
+        if (!count || count > 200) throw new Error(count ? "DIRECT_EXPORT_LIMIT" : "NO_PHOTOS");
+        const saved = await saveResponse(
+          () => authenticatedFetch("/api/workspace/photos/export", token, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groupID, filters, selection: exportSelection, title: exportTitle, groupBy, expectedCount: count }),
+          }),
+          `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
+        );
+        if (saved) {
+          setExportDialog(false);
+          notify(t("exportDownloaded"));
+        }
+        return;
+      }
       await api("/api/workspace/exports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -849,7 +866,7 @@ export function Workspace(props: Props) {
                         : section === "members"
                           ? "membersDesc"
                           : section === "exports"
-                            ? "exportDesc"
+                            ? workspace?.backgroundExports ? "exportDesc" : "directExportHistory"
                             : "allDesc",
                     )}
                 {workspace && !workspace.canManage && isGallery && (
@@ -1159,7 +1176,6 @@ export function Workspace(props: Props) {
                                 <th>{t("project")}</th>
                                 <th>{t("takenAt")}</th>
                                 <th>{t("location")}</th>
-                                <th>{t("photoCode")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1204,7 +1220,6 @@ export function Workspace(props: Props) {
                                     <small>{formatTime(p.timestamp)}</small>
                                   </td>
                                   <td>{p.location || "—"}</td>
-                                  <td>{p.photoCode || "—"}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1409,7 +1424,7 @@ export function Workspace(props: Props) {
                       {t("loading")}
                     </div>
                   ) : !jobs.length ? (
-                    empty(t("noExports"), t("noExportsDesc"))
+                    empty(t("noExports"), t(workspace?.backgroundExports ? "noExportsDesc" : "directExportHistory"))
                   ) : (
                     <div className="ws-export-list">
                       {jobs.map((job) => (
@@ -1661,7 +1676,7 @@ export function Workspace(props: Props) {
               <p className="ws-muted">
                 {t("timezone")} {filters.tz}
               </p>
-              <p className="ws-modal-note">{t("exportNote")}</p>
+              <p className="ws-modal-note">{t(workspace?.backgroundExports ? "exportNote" : "directExportNote")}</p>
               {exportError && (
                 <p role="alert" className="ws-inline-error">
                   {errorCopy(t, exportError)}
@@ -1687,7 +1702,7 @@ export function Workspace(props: Props) {
                 ) : (
                   <Download size={17} />
                 )}{" "}
-                {t("startExport")}
+                {t(exportBusy && !workspace?.backgroundExports ? "downloading" : "startExport")}
               </button>
             </footer>
           </form>

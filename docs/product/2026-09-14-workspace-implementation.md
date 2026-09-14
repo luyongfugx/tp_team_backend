@@ -66,7 +66,7 @@ launchctl bootstrap gui/$(id -u) .local/local.tp-team-backend.exports.plist
 
 ## 后续部署需要的配置
 
-本版未部署生产。正式部署前需要迁移数据库、启动独立 worker，并提供私有持久磁盘：
+后续 ZIP 兼容修复默认使用直接下载，普通 ZIP 不需要迁移数据库或启动 worker。仅在启用后台导出时，需要迁移数据库、启动独立 worker，并提供私有持久磁盘；确认就绪后设置 `WORKSPACE_BACKGROUND_EXPORTS=1`。详见 `2026-09-14-zip-export-fix.md`。后台导出部署步骤：
 
 ```sh
 npm ci

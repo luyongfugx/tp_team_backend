@@ -159,6 +159,8 @@ export function workspaceResponse(data: unknown, status = 200) {
   });
 }
 export function workspaceFailure(error: unknown) {
+  if (isWorkspaceExportTableMissing(error))
+    return workspaceResponse({ error: "EXPORT_SERVICE_UNAVAILABLE" }, 503);
   if (error instanceof WorkspaceError)
     return workspaceResponse({ error: error.code }, error.status);
   if (error instanceof Error && /^INVALID_/.test(error.message))
@@ -175,4 +177,9 @@ export function workspaceFailure(error: unknown) {
     error instanceof Error ? error.message : "Unexpected failure",
   );
   return workspaceResponse({ error: "SERVER_ERROR" }, 500);
+}
+
+export function isWorkspaceExportTableMissing(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021" &&
+    (error.meta?.modelName === "WorkspaceExport" || String(error.meta?.table || "").includes("WorkspaceExport"));
 }

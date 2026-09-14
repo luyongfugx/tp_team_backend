@@ -66,6 +66,8 @@ LOCAL_TEST_BASE_URL=http://127.0.0.1:3101 node --env-file=.env --import tsx scri
 
 ## 测试环境部署顺序
 
+ZIP 回退修复后的默认模式是直接下载，无需 WorkspaceExport 表或 worker。保持 `WORKSPACE_BACKGROUND_EXPORTS=0`（或不设置）即可。以下数据库迁移、私有持久目录及 worker 步骤用于启用后台导出；确认全部就绪后再设置 `WORKSPACE_BACKGROUND_EXPORTS=1`。详见 `2026-09-14-zip-export-fix.md`。
+
 使用 Node 24，在完整项目目录执行。复用现有登录/二维码配置，不重新生成会话密钥，不清空 User/Session 表。
 
 ```sh

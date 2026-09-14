@@ -165,6 +165,7 @@ export type WorkspaceMember = {
   covers: string[];
 };
 export type WorkspaceData = {
+  backgroundExports?: boolean;
   teams: { groupID: string; groupName: string }[];
   current: { groupID: string; groupName: string } | null;
   canManage: boolean;

@@ -7,6 +7,7 @@ import {
   workspaceResponse,
   workspaceFailure,
   WorkspaceError,
+  isWorkspaceExportTableMissing,
 } from "@/lib/workspace/server";
 import { publicJob, enqueueExport } from "@/lib/workspace/exports";
 export async function GET(req: Request) {
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
     });
     return workspaceResponse({ jobs: jobs.map(publicJob) });
   } catch (e) {
+    if (isWorkspaceExportTableMissing(e)) return workspaceResponse({ jobs: [], backgroundAvailable: false });
     return workspaceFailure(e);
   }
 }

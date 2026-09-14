@@ -1,5 +1,5 @@
 .share-page {
-  --share-accent: #2e65e7;
+  --share-accent: #0070f4;
   --share-muted: #777d88;
   background: #fff;
   color: #22252b;
@@ -156,7 +156,7 @@
   color: white;
 }
 .share-page .share-primary:hover {
-  background: #2056d4;
+  background: #0063d9;
 }
 .share-actions .share-copy {
   margin-inline-start: auto;
@@ -193,8 +193,8 @@
   font-size: 13px;
 }
 .share-tabs button[aria-selected="true"] {
-  background: #edf3ff;
-  color: #245bcf;
+  background: #ebf4ff;
+  color: var(--share-accent);
 }
 .share-tabs button:hover {
   background: #f0f4fa;
@@ -217,7 +217,7 @@
 }
 .share-filters .is-filtered {
   color: var(--share-accent);
-  background: #edf3ff;
+  background: #ebf4ff;
 }
 .share-search {
   display: flex;
@@ -313,7 +313,7 @@
   color: #616a78;
 }
 .share-day-heading button:hover {
-  background: #edf3ff;
+  background: #ebf4ff;
   color: var(--share-accent);
 }
 .share-days > section {
@@ -338,7 +338,7 @@
 }
 .share-photo.is-selected {
   border-color: var(--share-accent);
-  background: #edf3ff;
+  background: #ebf4ff;
 }
 .share-open-photo {
   display: flex !important;

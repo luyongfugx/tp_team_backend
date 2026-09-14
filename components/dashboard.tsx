@@ -12,7 +12,6 @@ import {
   Download,
   FolderKanban,
   Globe2,
-  Hash,
   ImageOff,
   Images,
   Inbox,
@@ -231,7 +230,6 @@ function PhotoCaptureDetails({ photo, teamName, locale }: { photo: TeamPhoto; te
     { icon: <Smartphone className="size-4" />, label: copy.systemVersion, value: systemVersion },
     { icon: <Camera className="size-4" />, label: copy.captureSource, value: "Timeprint" },
     { icon: <Globe2 className="size-4" />, label: copy.timezone, value: photo.timeZone || "-" },
-    { icon: <Hash className="size-4" />, label: copy.photoCode, value: capture?.photoCode || "-" },
   ]
 
   return (

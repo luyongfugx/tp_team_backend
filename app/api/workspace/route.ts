@@ -26,6 +26,7 @@ export async function GET(req: Request) {
     if (!groupID)
       return workspaceResponse({
         teams,
+        backgroundExports: process.env.WORKSPACE_BACKGROUND_EXPORTS === "1",
         current: null,
         canManage: false,
         isSuperAdmin: isSuperAdmin(user),
@@ -141,6 +142,7 @@ export async function GET(req: Request) {
         .slice(0, 3);
     return workspaceResponse({
       teams,
+      backgroundExports: process.env.WORKSPACE_BACKGROUND_EXPORTS === "1",
       current: access.team,
       canManage: access.canManage,
       isSuperAdmin: isSuperAdmin(user),

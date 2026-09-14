@@ -362,22 +362,6 @@ export function PhotoPreview({
               {row(t("os"), photo.os)}
               {row(t("filename"), photo.localPhotoName)}
             </dl>
-            <h3>{t("photoCode")}</h3>
-            {photo.photoCode ? (
-              <>
-                <div className="ws-code">
-                  <code>{photo.photoCode}</code>
-                  <button
-                    aria-label={t("copy")}
-                    onClick={() => copy(photo.photoCode!)}
-                  >
-                    <Copy size={15} />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p className="ws-muted">{t("noRecord")}</p>
-            )}
           </aside>
         )}
       </div>
