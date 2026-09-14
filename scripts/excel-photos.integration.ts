@@ -8,6 +8,7 @@ if (!["127.0.0.1", "localhost"].includes(database.hostname) || database.pathname
 const db = new PrismaClient();
 const prefix = `local-excel-${Date.now()}`;
 const ids = [prefix + "-portrait", prefix + "-landscape", prefix + "-missing"];
+const bulkIds = Array.from({ length: 200 }, (_, i) => `${prefix}-bulk-${i}`);
 const files = [`public/workspace-demo/${prefix}-portrait.jpg`, `public/workspace-demo/${prefix}-landscape.jpg`];
 async function run() {
 try {
@@ -15,13 +16,17 @@ try {
   await mkdir(".local/excel-reference", { recursive: true });
   await mkdir("public/workspace-demo", { recursive: true });
   for (const [i, size] of [[480, 640], [960, 540]].entries()) {
-    const image = await sharp({ create: { width: size[0], height: size[1], channels: 3, background: i ? "#509d80" : "#508ddd" } }).jpeg().toBuffer();
+    // Detailed, deterministic raster inputs exercise compression and workbook size.
+    const pixels = Buffer.alloc(size[0] * size[1] * 3);
+    let seed = 123 + i;
+    for (let n = 0; n < pixels.length; n++) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; pixels[n] = seed >>> 24; }
+    const image = await sharp(pixels, { raw: { width: size[0], height: size[1], channels: 3 } }).jpeg({ quality: 85 }).toBuffer();
     await writeFile(files[i], image);
   }
   for (const [i, id] of ids.entries()) await db.photo.create({ data: {
     photoID: id, groupID: base.groupID, projectID: base.projectID, userID: base.userID,
-    timestamp: base.timestamp, takePhotoFormatTime: base.takePhotoFormatTime,
-    takePhotoTimezoneID: base.takePhotoTimezoneID, ossFileName: id,
+    timestamp: BigInt(Date.UTC(2026, 8, 14, 16, 30)), takePhotoFormatTime: "2026-09-15 00:30:00",
+    takePhotoTimezoneID: "GMT+0800", ossFileName: id,
     projectName: base.projectName, userName: base.userName, location: base.location,
     lat: base.lat, lng: base.lng, localPhotoName: `Excel-test-${i + 1}.jpg`,
     smallURL: i < 2 ? `/workspace-demo/${prefix}-${i ? "landscape" : "portrait"}.jpg` : null,
@@ -34,12 +39,14 @@ try {
   const response = await request();
   assert.equal(response.status, 200);
   const bytes = Buffer.from(await response.arrayBuffer());
+  assert.equal(Number(response.headers.get("content-length")), bytes.length);
   await writeFile(".local/excel-reference/api-example.xlsx", bytes);
   const book = new ExcelJS.Workbook(); await book.xlsx.load(bytes as never);
   const sheet = book.worksheets[0];
   assert.equal(sheet.rowCount, 5);
   assert.equal(sheet.getCell("A2").value, "照片");
   assert.equal(sheet.getImages().length, 2);
+  assert.equal((sheet.getCell("D3").value as Date).toISOString(), "2026-09-15T00:30:00.000Z");
   const missingRow = [3, 4, 5].find(n => sheet.getCell(`K${n}`).hyperlink.includes(ids[2]));
   assert.ok(missingRow);
   assert.equal(sheet.getCell(`A${missingRow}`).value, "图片未能加载");
@@ -51,8 +58,33 @@ try {
   assert.equal((await request({ ids: Array.from({ length: 201 }, (_, i) => `photo-${i}`) })).status, 400);
   assert.equal((await request({ ids: ["not-in-this-scope"] })).status, 404);
   console.log(JSON.stringify({ imageCount: 2, rows: 3, missingPreviewPreserved: true, legacyTextCompatible: true, bytes: bytes.length }));
+  await db.photo.createMany({ data: bulkIds.map((id, i) => ({
+    photoID: id, groupID: base.groupID, projectID: base.projectID, userID: base.userID,
+    timestamp: BigInt(Date.UTC(2026, 8, 14, 16, 30)), takePhotoFormatTime: "2026-09-15 00:30:00",
+    takePhotoTimezoneID: "GMT+0800", ossFileName: id,
+    projectName: base.projectName, userName: base.userName, location: base.location,
+    localPhotoName: `Bulk-${i}.jpg`, mediaType: 0,
+    smallURL: `/workspace-demo/${prefix}-${i % 2 ? "landscape" : "portrait"}.jpg`,
+  })) });
+  for (const count of [48, 200]) {
+    const started = performance.now();
+    const result = await request({ ids: bulkIds.slice(0, count) });
+    assert.equal(result.status, 200);
+    const data = Buffer.from(await result.arrayBuffer());
+    const elapsedMs = Math.round(performance.now() - started);
+    const workbook = new ExcelJS.Workbook(); await workbook.xlsx.load(data as never);
+    assert.equal(workbook.worksheets[0].rowCount, count + 2);
+    const images = workbook.worksheets[0].getImages();
+    assert.equal(images.length, count);
+    for (const image of images) {
+      const media = workbook.getImage(Number(image.imageId));
+      assert.ok(media.buffer!.byteLength <= 90 * 1024);
+      assert.equal(image.range.tl.nativeRow, image.range.br!.nativeRow);
+    }
+    console.log(JSON.stringify({ rows: count, embeddedImages: images.length, bytes: data.length, elapsedMs }));
+  }
 } finally {
-  await db.photo.deleteMany({ where: { photoID: { in: ids } } });
+  await db.photo.deleteMany({ where: { photoID: { in: [...ids, ...bulkIds] } } });
   await Promise.all(files.map(file => rm(file, { force: true })));
   await db.$disconnect();
 }

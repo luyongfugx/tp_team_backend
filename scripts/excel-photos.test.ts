@@ -10,6 +10,29 @@ const photo = {
 };
 const signal = () => new AbortController().signal;
 
+test("capture dates accept client offset timezones as well as IANA zones", async () => {
+  const cases = [
+    ["GMT+0800", "2026-09-15T00:30:00.000Z"],
+    ["UTC+8", "2026-09-15T00:30:00.000Z"],
+    ["+08:00", "2026-09-15T00:30:00.000Z"],
+    ["GMT-0330", "2026-09-14T13:00:00.000Z"],
+    ["Z", "2026-09-14T16:30:00.000Z"],
+    ["America/New_York", "2026-09-14T12:30:00.000Z"],
+    ["invalid-zone", "2026-09-15T00:30:00.000Z"],
+  ];
+  const book = await photoWorkbook({
+    photos: cases.map(([zone], i) => ({ ...photo, photoID: `zone-${i}`, takePhotoTimezoneID: zone })),
+    galleryURL: 'https://teamspace.timeprint.net/web/team/demo/photos', locale: 'zh-Hans',
+    signal: signal(), load: async () => null,
+  });
+  const restored = new ExcelJS.Workbook();
+  await restored.xlsx.load(await book.xlsx.writeBuffer() as never);
+  for (const [i, [zone, expected]] of cases.entries()) {
+    assert.equal((restored.worksheets[0].getCell(`D${i + 3}`).value as Date).toISOString(), expected, zone);
+    assert.equal((restored.worksheets[0].getCell(`E${i + 3}`).value as Date).toISOString(), expected, zone);
+  }
+});
+
 test("thumbnail compression bounds size, preserves aspect ratio and applies EXIF rotation", async () => {
   const pixels = Buffer.alloc(1200 * 800 * 3);
   let seed = 123;

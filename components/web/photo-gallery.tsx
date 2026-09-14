@@ -163,7 +163,6 @@ export function WebPhotoGallery({
     wt = useMemo(() => workspaceCopy(currentLocale), [currentLocale]);
   const zipDownloadRef = useRef<ZipDownloadHandle>(null);
   const [zipBusy, setZipBusy] = useState(false);
-  const [excelImages, setExcelImages] = useState(true);
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days]);
   const [filters, setFilters] = useState<GalleryFilters>(defaultFilters),
     [view, setView] = useState("gallery"),
@@ -310,8 +309,7 @@ export function WebPhotoGallery({
     locale: currentLocale,
     expectedCount: exportCount,
   });
-  const maxExport =
-    exportFormat === "zip" || exportFormat === "print" || (exportFormat === "xlsx" && excelImages) ? 200 : 5000;
+  const maxExport = 200;
   useEffect(() => {
     const read = () => {
       const q = new URLSearchParams(window.location.search);
@@ -532,12 +530,15 @@ export function WebPhotoGallery({
         body: JSON.stringify({
           ...selectionBody(),
           format: exportFormat,
-          includeImages: exportFormat === "xlsx" && excelImages,
+          includeImages: true,
           locale: currentLocale,
         }),
         signal: abort.current.signal,
       });
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.error || "EXPORT_FAILED");
+      }
       saveBlob(
         await response.blob(),
         `${header.title.replace(/[\\/:*?"<>|]/g, "_")}.${exportFormat}`,
@@ -545,7 +546,10 @@ export function WebPhotoGallery({
       setExportFormat(null);
       setNotice(t("saved"));
     } catch (e) {
-      if ((e as Error).name !== "AbortError") setNotice(t("failed"));
+      if ((e as Error).name !== "AbortError") {
+        const code = (e as Error).message;
+        setNotice(t(code === "EXPORT_BUSY" ? "exportBusy" : code === "EXPORT_TIMEOUT" ? "exportTimeout" : "excelFailed"));
+      }
     } finally {
       setBusy(false);
     }
@@ -1123,13 +1127,7 @@ export function WebPhotoGallery({
               <span>{t("count")}</span>
             </div>
             {exportFormat === "xlsx" && (
-              <>
-                <label className="share-excel-images">
-                  <input type="checkbox" checked={excelImages} disabled={busy} onChange={e => setExcelImages(e.target.checked)} />
-                  {t("excelIncludeImages")}
-                </label>
-                <p>{t(excelImages ? "excelImagesHint" : "excelTextHint")}</p>
-              </>
+              <p>{t("excelImagesHint")}</p>
             )}
             {exportCount > maxExport && (
               <p className="share-error">

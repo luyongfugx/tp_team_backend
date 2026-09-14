@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import sharp from "sharp";
 import type { Photo } from "@prisma/client";
 import { sourceFile } from "@/lib/workspace/files";
-import { photoTimeZone } from "@/app/web/photos-data";
+import { parseOffsetMinutes, photoTimeZone } from "@/app/web/photos-data";
 import { shareCopy } from "./share-copy";
 
 export const MAX_EXCEL_PHOTOS = 200;
@@ -61,13 +61,18 @@ async function loadThumbnail(photo: ExportPhoto, signal: AbortSignal): Promise<T
 }
 
 function excelCaptureDate(timestamp: bigint, zone: string) {
+  const timeZone = photoTimeZone(zone);
+  const offset = parseOffsetMinutes(timeZone);
+  // Mobile clients also store GMT+0800 / UTC+8. Intl accepts IANA names,
+  // so shift fixed-offset capture times explicitly and format them in UTC.
+  const date = new Date(Number(timestamp) + (offset ?? 0) * 60_000);
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: photoTimeZone(zone), year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: offset == null ? timeZone : "UTC", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date(Number(timestamp)));
+  }).formatToParts(date);
   const part = (name: string) => Number(parts.find(p => p.type === name)?.value);
   // Excel has no timezone type: store the capture wall-clock time and retain
-  // its IANA timezone in a separate column, independent of the server timezone.
+  // its capture timezone in a separate column, independent of the server timezone.
   return new Date(Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second")));
 }
 

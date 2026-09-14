@@ -615,18 +615,6 @@
   border-radius: 6px !important;
   background: #fff !important;
 }
-.share-export-body .share-excel-images {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-.share-excel-images input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: #007bff;
-}
 .share-export-count {
   background: #f5f8fd;
   border-radius: 8px;

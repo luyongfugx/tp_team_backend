@@ -69,7 +69,10 @@ export async function POST(req: Request) {
       const data = await book.xlsx.writeBuffer();
       signal.throwIfAborted();
       return new Response(new Uint8Array(data), {
-        headers: downloadHeaders(`${filename}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        headers: {
+          ...downloadHeaders(`${filename}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+          "Content-Length": String(data.byteLength),
+        },
       });
     }
     if (body.format === "xlsx") {
@@ -171,7 +174,14 @@ export async function POST(req: Request) {
       archive.abort();
       throw e;
     }
-  } catch {
+  } catch (error) {
+    // Keep a diagnostic without logging photo metadata, source URLs or request bodies.
+    console.error("[photos/export] Generation failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      frame: error instanceof Error ? error.stack?.split("\n")[1]?.trim() : undefined,
+    });
+    if (error instanceof Error && error.name === "TimeoutError")
+      return NextResponse.json({ error: "EXPORT_TIMEOUT" }, { status: 504 });
     return NextResponse.json({ error: "EXPORT_FAILED" }, { status: 502 });
   } finally {
     activeExports--;
