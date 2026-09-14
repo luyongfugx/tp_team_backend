@@ -1148,18 +1148,20 @@ export function Workspace(props: Props) {
                                       }
                                     />
                                   )}
-                                  <div className="ws-photo-caption">
-                                    <span title={p.userName || ""}>
-                                      {p.userName || "—"}
-                                    </span>
-                                    <time>{formatTime(p.timestamp)}</time>
-                                  </div>
-                                  {p.projectName && (
-                                    <div className="ws-photo-project">
-                                      <FolderOpen size={12} />
-                                      <span>{p.projectName}</span>
+                                  <div className="ws-photo-meta">
+                                    <div className="ws-photo-caption">
+                                      <span title={p.userName || ""}>
+                                        {p.userName || "—"}
+                                      </span>
+                                      <time>{formatTime(p.timestamp)}</time>
                                     </div>
-                                  )}
+                                    {p.projectName && (
+                                      <div className="ws-photo-project">
+                                        <FolderOpen size={12} />
+                                        <span>{p.projectName}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </article>
                               ))}
                             </div>
