@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { PhotoPreview } from "@/components/workspace/photo-preview";
 import { WorkspaceDialog } from "@/components/workspace/dialog";
+import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
 import { shareCopy } from "@/lib/web/share-copy";
 import {
@@ -160,6 +161,8 @@ export function WebPhotoGallery({
 }) {
   const t = useMemo(() => shareCopy(currentLocale), [currentLocale]),
     wt = useMemo(() => workspaceCopy(currentLocale), [currentLocale]);
+  const zipDownloadRef = useRef<ZipDownloadHandle>(null);
+  const [zipBusy, setZipBusy] = useState(false);
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days]);
   const [filters, setFilters] = useState<GalleryFilters>(defaultFilters),
     [view, setView] = useState("gallery"),
@@ -464,7 +467,19 @@ export function WebPhotoGallery({
     }
   }
   async function startExport() {
-    if (!exportCount || exportCount > maxExport || dataBusy) return;
+    if (!exportCount || exportCount > maxExport || dataBusy || zipBusy) return;
+    if (exportFormat === "zip") {
+      const body = JSON.stringify({ ...selectionBody(), format: "zip", locale: currentLocale });
+      setExportFormat(null);
+      await zipDownloadRef.current?.start({
+        filename: `${header.title.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
+        count: exportCount,
+        request: signal => fetch("/api/web/photos/export", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body, signal,
+        }),
+      });
+      return;
+    }
     if (exportFormat === "print") {
       setBusy(true);
       abort.current = new AbortController();
@@ -558,6 +573,7 @@ export function WebPhotoGallery({
       dir={["ar", "he", "fa", "ur"].includes(currentLocale) ? "rtl" : "ltr"}
     >
       <GalleryPerformanceProbe />
+      <ZipDownloadPanel ref={zipDownloadRef} t={wt} onBusyChange={setZipBusy} />
       <div className="share-shell">
         <header className="share-brand">
           <a href="https://www.timeprint.net">
@@ -1115,7 +1131,7 @@ export function WebPhotoGallery({
             <button
               className="share-primary"
               disabled={
-                busy || dataBusy || !exportCount || exportCount > maxExport
+                busy || zipBusy || dataBusy || !exportCount || exportCount > maxExport
               }
               onClick={startExport}
             >

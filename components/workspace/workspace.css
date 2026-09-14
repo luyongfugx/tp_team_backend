@@ -309,6 +309,52 @@
   gap: 9px;
   flex-shrink: 0;
 }
+.ws-select-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.ws-download-panel {
+  position: fixed;
+  inset-inline-end: 22px;
+  bottom: 92px;
+  z-index: 90;
+  width: min(360px, calc(100vw - 32px));
+  background: #fff;
+  color: #303844;
+  border: 1px solid #e1e4e9;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px #15233526;
+  font-size: 13px;
+}
+.ws-download-panel header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+}
+.ws-download-panel header strong { flex: 1; }
+.ws-download-panel header button { padding: 4px; }
+.ws-download-body { padding: 0 16px 16px; }
+.ws-download-file { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+.ws-download-file span { flex: 1; overflow-wrap: anywhere; }
+.ws-download-file small { flex-shrink: 0; color: #657183; }
+.ws-download-status { display: flex; align-items: center; gap: 7px; }
+.ws-download-status svg { color: #007bff; }
+.ws-download-panel progress { display: block; width: 100%; height: 4px; margin: 12px 0; appearance: none; border: 0; border-radius: 4px; overflow: hidden; background: #eaf3ff; color: #007bff; }
+.ws-download-panel progress::-webkit-progress-bar { background: #eaf3ff; }
+.ws-download-panel progress::-webkit-progress-value { background: #007bff; }
+.ws-download-panel progress::-moz-progress-bar { background: #007bff; }
+.ws-download-panel progress:not([value]) { background: linear-gradient(90deg, #eaf3ff 25%, #007bff 50%, #eaf3ff 75%); background-size: 200% 100%; animation: ws-download-wait 1.5s linear infinite; }
+@keyframes ws-download-wait { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .ws-download-panel progress:not([value]) { animation: none; } }
+.ws-download-panel p { font-size: 12px; line-height: 1.6; color: #657183; margin: 12px 0; }
+.ws-download-panel footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+@media print {
+  .ws-download-panel { display: none !important; }
+}
 .ws-button {
   display: inline-flex;
   align-items: center;

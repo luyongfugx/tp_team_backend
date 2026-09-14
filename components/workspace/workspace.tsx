@@ -20,7 +20,6 @@ import {
   Plus,
   MapPin,
   ArrowUpRight,
-  CheckSquare,
   Clock3,
   LoaderCircle,
   CircleAlert,
@@ -49,6 +48,7 @@ import { workspaceCopy, errorCopy, type CopyKey } from "@/lib/workspace/i18n";
 import { WorkspaceDialog } from "./dialog";
 import { PhotoPreview } from "./photo-preview";
 import { SharePhotosDialog, type PhotoShare } from "./share-dialog";
+import { ZipDownloadPanel, type ZipDownloadHandle } from "./download-panel";
 import "./workspace.css";
 
 type Props = {
@@ -219,7 +219,6 @@ export function Workspace(props: Props) {
   const [query, setQuery] = useState(filters.q),
     [cardQuery, setCardQuery] = useState(""),
     [sort, setSort] = useState("latest"),
-    [selecting, setSelecting] = useState(false),
     [selection, setSelection] = useState<Selection>(emptySelection);
   const [exportDialog, setExportDialog] = useState(false),
     [exportSelection, setExportSelection] = useState<Selection>(emptySelection),
@@ -227,6 +226,8 @@ export function Workspace(props: Props) {
     [groupBy, setGroupBy] = useState("date"),
     [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
+  const zipDownloadRef = useRef<ZipDownloadHandle>(null);
+  const [downloadBusy, setDownloadBusy] = useState(false);
   const [photoShare, setPhotoShare] = useState<PhotoShare | null>(null);
   useEffect(() => setPhotoShare(null), [url]);
   const [jobs, setJobs] = useState<ExportJob[]>([]),
@@ -362,7 +363,6 @@ export function Workspace(props: Props) {
   }, [query, filters.q, isGallery, paramString]);
   useEffect(() => {
     setSelection(emptySelection());
-    setSelecting(false);
   }, [groupID, filterKey, section, detailID]);
   const galleryQuery = new URLSearchParams({
     ...filters,
@@ -471,7 +471,8 @@ export function Workspace(props: Props) {
   );
   const photos = photoPage?.photos || [],
     total = photoPage?.total || 0,
-    selectedCount = selectionCount(selection, total);
+    selectedCount = selectionCount(selection, total),
+    selecting = selectedCount > 0;
   const preview =
     photos.find((p) => p.photoID === previewID) ||
     (photoPage?.focused?.photoID === previewID ? photoPage.focused : null);
@@ -571,17 +572,15 @@ export function Workspace(props: Props) {
       if (!workspace?.backgroundExports) {
         const count = selectionCount(exportSelection, total);
         if (!count || count > 200) throw new Error(count ? "DIRECT_EXPORT_LIMIT" : "NO_PHOTOS");
-        const saved = await saveResponse(
-          () => authenticatedFetch("/api/workspace/photos/export", token, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+        setExportDialog(false);
+        await zipDownloadRef.current?.start({
+          filename: `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
+          count,
+          request: (signal) => authenticatedFetch("/api/workspace/photos/export", token, {
+            method: "POST", headers: { "Content-Type": "application/json" }, signal,
             body: JSON.stringify({ groupID, filters, selection: exportSelection, title: exportTitle, groupBy, expectedCount: count }),
           }),
-          `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
-        );
-        if (saved) {
-          setExportDialog(false);
-          notify(t(saved.destination === "chosen-folder" ? "exportSaved" : "exportDownloadStarted").replace("{filename}", () => saved.filename));
-        }
+        });
         return;
       }
       await api("/api/workspace/exports", {
@@ -597,7 +596,6 @@ export function Workspace(props: Props) {
         }),
       });
       setExportDialog(false);
-      setSelecting(false);
       setSelection(emptySelection());
       notify(t("exportQueued"));
       go("exports");
@@ -940,6 +938,8 @@ export function Workspace(props: Props) {
                     className="ws-button"
                     disabled={
                       bootstrapBusy ||
+                      downloadBusy ||
+                      exportBusy ||
                       photoBusy ||
                       query.trim() !== filters.q ||
                       !total
@@ -1068,16 +1068,17 @@ export function Workspace(props: Props) {
                   </div>
                   <div className="ws-gallery-toolbar">
                     <div>
-                      <button
-                        className={`ws-button ${selecting ? "ws-selected-button" : ""}`}
-                        onClick={() => {
-                          setSelecting(!selecting);
-                          setSelection(emptySelection());
-                        }}
-                      >
-                        <CheckSquare size={16} />
-                        {t(selecting ? "done" : "select")}
-                      </button>
+                      <label className="ws-select-page">
+                        <input
+                          type="checkbox"
+                          aria-label={t("selectPage")}
+                          disabled={photoBusy || !photos.length}
+                          checked={photos.length > 0 && photos.every(p => isSelected(selection, p.photoID))}
+                          ref={node => { if (node) node.indeterminate = photos.some(p => isSelected(selection, p.photoID)) && !photos.every(p => isSelected(selection, p.photoID)); }}
+                          onChange={e => setSelection(s => toggleIDs(s, photos.map(p => p.photoID), e.target.checked))}
+                        />
+                        {t("selectPage")}
+                      </label>
                       <span className="ws-result-count">
                         {total.toLocaleString()} {t("photos")}
                       </span>
@@ -1118,24 +1119,18 @@ export function Workspace(props: Props) {
                         days.map(([day, dayPhotos]) => (
                           <section className="ws-day" key={day}>
                             <div className="ws-day-heading">
-                              {selecting && (
-                                <input
-                                  type="checkbox"
-                                  aria-label={`${t("daySelect")} ${day}`}
-                                  checked={dayPhotos.every((p) =>
-                                    isSelected(selection, p.photoID),
-                                  )}
-                                  onChange={(e) =>
-                                    setSelection((s) =>
-                                      toggleIDs(
-                                        s,
-                                        dayPhotos.map((p) => p.photoID),
-                                        e.target.checked,
-                                      ),
-                                    )
-                                  }
-                                />
-                              )}
+                              <input
+                                type="checkbox"
+                                aria-label={`${t("daySelect")} ${day}`}
+                                checked={dayPhotos.every((p) =>
+                                  isSelected(selection, p.photoID),
+                                )}
+                                onChange={(e) =>
+                                  setSelection((s) =>
+                                    toggleIDs(s, dayPhotos.map((p) => p.photoID), e.target.checked),
+                                  )
+                                }
+                              />
                               <h2>{day}</h2>
                               <span>
                                 {dayPhotos.length} {t("photos")}
@@ -1173,23 +1168,21 @@ export function Workspace(props: Props) {
                                       </span>
                                     )}
                                   </button>
-                                  {selecting && (
-                                    <input
-                                      className="ws-photo-checkbox"
-                                      type="checkbox"
-                                      aria-label={`${t("select")} ${p.localPhotoName || p.photoID}`}
-                                      checked={isSelected(selection, p.photoID)}
-                                      onChange={(e) =>
-                                        setSelection((s) =>
-                                          toggleIDs(
-                                            s,
-                                            [p.photoID],
-                                            e.target.checked,
-                                          ),
-                                        )
-                                      }
-                                    />
-                                  )}
+                                  <input
+                                    className="ws-photo-checkbox"
+                                    type="checkbox"
+                                    aria-label={`${t("select")} ${p.localPhotoName || p.photoID}`}
+                                    checked={isSelected(selection, p.photoID)}
+                                    onChange={(e) =>
+                                      setSelection((s) =>
+                                        toggleIDs(
+                                          s,
+                                          [p.photoID],
+                                          e.target.checked,
+                                        ),
+                                      )
+                                    }
+                                  />
                                   <div className="ws-photo-meta">
                                     <div className="ws-photo-caption">
                                       <span title={p.userName || ""}>
@@ -1214,7 +1207,7 @@ export function Workspace(props: Props) {
                           <table className="ws-table">
                             <thead>
                               <tr>
-                                {selecting && <th />}
+                                <th />
                                 <th>{t("photo")}</th>
                                 <th>{t("author")}</th>
                                 <th>{t("project")}</th>
@@ -1225,27 +1218,19 @@ export function Workspace(props: Props) {
                             <tbody>
                               {photos.map((p) => (
                                 <tr key={p.photoID}>
-                                  {selecting && (
-                                    <td>
-                                      <input
-                                        type="checkbox"
-                                        aria-label={`${t("select")} ${p.localPhotoName || p.photoID}`}
-                                        checked={isSelected(
-                                          selection,
-                                          p.photoID,
-                                        )}
-                                        onChange={(e) =>
-                                          setSelection((s) =>
-                                            toggleIDs(
-                                              s,
-                                              [p.photoID],
-                                              e.target.checked,
-                                            ),
-                                          )
-                                        }
-                                      />
-                                    </td>
-                                  )}
+                                  <td>
+                                    <input
+                                      type="checkbox"
+                                      aria-label={`${t("select")} ${p.localPhotoName || p.photoID}`}
+                                      checked={isSelected(
+                                        selection,
+                                        p.photoID,
+                                      )}
+                                      onChange={(e) =>
+                                        setSelection((s) => toggleIDs(s, [p.photoID], e.target.checked))
+                                      }
+                                    />
+                                  </td>
                                   <td>
                                     <button
                                       className="ws-table-photo"
@@ -1630,7 +1615,7 @@ export function Workspace(props: Props) {
             <button
               className="ws-button ws-primary"
               disabled={
-                !selectedCount || photoBusy || query.trim() !== filters.q
+                !selectedCount || photoBusy || downloadBusy || exportBusy || query.trim() !== filters.q
               }
               onClick={openExport}
             >
@@ -1664,6 +1649,7 @@ export function Workspace(props: Props) {
           </footer>
         </WorkspaceDialog>
       )}
+      <ZipDownloadPanel ref={zipDownloadRef} t={t} onBusyChange={setDownloadBusy} />
       {photoShare && (
         <SharePhotosDialog share={photoShare} t={t} onClose={() => setPhotoShare(null)} />
       )}
