@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Pencil,
   Menu,
+  Link,
 } from "lucide-react";
 import { Dashboard } from "@/components/dashboard";
 import { clientLocale, setClientLocale, type AppLocale } from "@/lib/i18n";
@@ -47,6 +48,7 @@ import {
 import { workspaceCopy, errorCopy, type CopyKey } from "@/lib/workspace/i18n";
 import { WorkspaceDialog } from "./dialog";
 import { PhotoPreview } from "./photo-preview";
+import { SharePhotosDialog, type PhotoShare } from "./share-dialog";
 import "./workspace.css";
 
 type Props = {
@@ -225,6 +227,8 @@ export function Workspace(props: Props) {
     [groupBy, setGroupBy] = useState("date"),
     [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
+  const [photoShare, setPhotoShare] = useState<PhotoShare | null>(null);
+  useEffect(() => setPhotoShare(null), [url]);
   const [jobs, setJobs] = useState<ExportJob[]>([]),
     [jobsBusy, setJobsBusy] = useState(false),
     [jobsError, setJobsError] = useState(""),
@@ -430,6 +434,16 @@ export function Workspace(props: Props) {
       (p) => String(p.projectID) === detailID,
     ),
     selectedMember = workspace?.members.find((m) => m.userID === detailID);
+  // Reuse the App's public collection links, never the authenticated URL or filters.
+  const shareTarget = !bootstrapBusy && workspace?.current
+    ? section === "photos"
+      ? { kind: "team" as const, id: workspace.current.groupID, name: workspace.current.groupName }
+      : section === "projects" && selectedProject
+        ? { kind: "project" as const, id: String(selectedProject.projectID), name: selectedProject.projectName }
+        : section === "members" && selectedMember
+          ? { kind: "user" as const, id: selectedMember.userID, name: selectedMember.name }
+          : null
+    : null;
   const title =
     section === "projects" && detailID
       ? selectedProject?.projectName || t("project")
@@ -908,19 +922,34 @@ export function Workspace(props: Props) {
                 </button>
               )}
               {isGallery && !selecting && (
-                <button
-                  className="ws-button ws-primary"
-                  disabled={
-                    bootstrapBusy ||
-                    photoBusy ||
-                    query.trim() !== filters.q ||
-                    !total
-                  }
-                  onClick={openExport}
-                >
-                  <Download size={17} />
-                  {t("export")}
-                </button>
+                <>
+                  {shareTarget && (
+                    <button
+                      className="ws-button ws-primary"
+                      onClick={() => setPhotoShare({
+                        kind: shareTarget.kind,
+                        name: shareTarget.name,
+                        url: `${window.location.origin}/web/${shareTarget.kind}/${encodeURIComponent(shareTarget.id)}/photos`,
+                      })}
+                    >
+                      <Link size={17} />
+                      {t(shareTarget.kind === "team" ? "shareTeam" : shareTarget.kind === "project" ? "shareProject" : "shareMember")}
+                    </button>
+                  )}
+                  <button
+                    className="ws-button"
+                    disabled={
+                      bootstrapBusy ||
+                      photoBusy ||
+                      query.trim() !== filters.q ||
+                      !total
+                    }
+                    onClick={openExport}
+                  >
+                    <Download size={17} />
+                    {t("export")}
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -1634,6 +1663,9 @@ export function Workspace(props: Props) {
             </button>
           </footer>
         </WorkspaceDialog>
+      )}
+      {photoShare && (
+        <SharePhotosDialog share={photoShare} t={t} onClose={() => setPhotoShare(null)} />
       )}
       {exportDialog && (
         <WorkspaceDialog

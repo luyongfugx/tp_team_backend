@@ -1114,6 +1114,22 @@
 .ws-modal-body {
   padding: 24px 25px;
 }
+.ws-share-body {
+  display: grid;
+  gap: 16px;
+}
+.ws-share-name {
+  overflow-wrap: anywhere;
+}
+.ws-share-body p {
+  margin: 0;
+}
+.ws-share-body label {
+  margin-bottom: 0;
+}
+.ws-share-body [role="status"] {
+  min-height: 1.5em;
+}
 .ws-modal-body label {
   display: block;
   margin: 0 0 19px;
