@@ -61,7 +61,7 @@ function MobilePhotoPreview(props: Props) {
   const zoom = (scale: number) => { clearTap(); gesture.current.zoom(scale, bounds()); render(); };
   const transform = gesture.current.transform;
   const row = (label: string, value?: string | null) => value ? <div><dt>{label}</dt><dd>{value}</dd></div> : null;
-  return <WorkspaceDialog label={t("openPhoto")} onClose={onClose} className="share-lightbox">
+  return <WorkspaceDialog label={t("openPhoto")} onClose={details ? () => setDetails(false) : onClose} className="share-lightbox" initialFocus="dialog">
     <div className="share-lightbox-stage" ref={stage}
       onPointerDown={event => {
         if (isVideo || details || event.button !== 0) return;
@@ -94,7 +94,15 @@ function MobilePhotoPreview(props: Props) {
       <button aria-label={details ? t("hideDetails") : t("details")} aria-expanded={details} onClick={() => { clearTap(); gesture.current.cancel(); setDetails(value => !value); }}><Info size={20} /></button>
       <button aria-label={t("close")} onClick={onClose}><X size={23} /></button>
     </div>
-    {details && <aside className="share-lightbox-details" aria-label={t("details")}>
+    {details && <>
+    <button
+      className="share-lightbox-details-backdrop"
+      aria-label={t("hideDetails")}
+      tabIndex={-1}
+      onPointerDown={event => event.preventDefault()}
+      onClick={() => { clearTap(); gesture.current.cancel(); setDetails(false); }}
+    />
+    <aside className="share-lightbox-details" aria-label={t("details")}>
       <h2>{t("details")}</h2>
       <p className="share-lightbox-record-note">{t("recordNote")}</p>
       <dl>{row(t("takenAt"), captureTimeText)}{row(t("captureZone"), photo.timeZone)}{row(t("project"), photo.projectName)}{row(t("member"), photo.userName)}{row(t("location"), photo.location)}{row("GPS", photo.lat != null && photo.lng != null ? `${photo.lat}, ${photo.lng}` : null)}{row(t("device"), photo.device)}{row(t("os"), photo.os)}{row(t("filename"), photo.localPhotoName)}</dl>
@@ -102,6 +110,6 @@ function MobilePhotoPreview(props: Props) {
         {!isVideo && <><button aria-label={t("zoomOut")} onClick={() => zoom(transform.scale - .5)}><ZoomOut /></button><button aria-label={t("zoomIn")} onClick={() => zoom(transform.scale + .5)}><ZoomIn /></button></>}
         <button disabled={busy} onClick={async () => { setBusy(true); try { await download(photo); } finally { setBusy(false); } }}><Download size={18} />{t("download")}</button>
       </div>
-    </aside>}
+    </aside></>}
   </WorkspaceDialog>;
 }

@@ -5,11 +5,13 @@ export function WorkspaceDialog({
   onClose,
   label,
   className = "",
+  initialFocus = "first-control",
 }: {
   children: ReactNode;
   onClose: () => void;
   label: string;
   className?: string;
+  initialFocus?: "first-control" | "dialog";
 }) {
   const ref = useRef<HTMLDivElement>(null),
     close = useRef(onClose);
@@ -19,9 +21,10 @@ export function WorkspaceDialog({
       previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const root = ref.current!;
-    (
-      root.querySelector("[autofocus],button,input") as HTMLElement | null
-    )?.focus();
+    const target = initialFocus === "dialog"
+      ? root
+      : root.querySelector<HTMLElement>("[autofocus],button,input");
+    target?.focus({ preventScroll: true });
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -38,6 +41,7 @@ export function WorkspaceDialog({
         if (
           event.shiftKey &&
           (document.activeElement === first ||
+            document.activeElement === root ||
             !root.contains(document.activeElement))
         ) {
           event.preventDefault();
@@ -55,7 +59,7 @@ export function WorkspaceDialog({
       document.removeEventListener("keydown", key);
       before?.focus({ preventScroll: true });
     };
-  }, []);
+  }, [initialFocus]);
   return (
     <div
       className={`ws-overlay ${className}`}
@@ -68,6 +72,7 @@ export function WorkspaceDialog({
         role="dialog"
         aria-modal="true"
         aria-label={label}
+        tabIndex={initialFocus === "dialog" ? -1 : undefined}
         className="ws-dialog"
       >
         {children}
