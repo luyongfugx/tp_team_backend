@@ -953,6 +953,8 @@ export function Workspace(props: Props) {
                       className="ws-button ws-primary"
                       onClick={() => setPhotoShare({
                         kind: shareTarget.kind,
+                        id: shareTarget.id,
+                        groupID: workspace!.current!.groupID,
                         name: shareTarget.name,
                         url: `${window.location.origin}/web/${shareTarget.kind}/${encodeURIComponent(shareTarget.id)}/photos`,
                       })}
@@ -1694,7 +1696,7 @@ export function Workspace(props: Props) {
       )}
       <ZipDownloadPanel ref={zipDownloadRef} t={t} onBusyChange={setDownloadBusy} />
       {photoShare && (
-        <SharePhotosDialog share={photoShare} t={t} onClose={() => setPhotoShare(null)} />
+        <SharePhotosDialog share={photoShare} t={t} token={token} locale={locale} onClose={() => setPhotoShare(null)} />
       )}
       {exportDialog && (
         <WorkspaceDialog

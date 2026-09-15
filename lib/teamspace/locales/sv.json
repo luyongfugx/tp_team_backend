@@ -265,6 +265,9 @@
     "dateError": "Slutdatum får inte vara före startdatum.",
     "photoFailed": "Bild saknas",
     "language": "Språk",
-    "filters": "Filter"
+    "filters": "Filter",
+    "workspace": "Arbetsyta",
+    "copyTo": "Kopiera till",
+    "yesterday": "I går"
   }
 }

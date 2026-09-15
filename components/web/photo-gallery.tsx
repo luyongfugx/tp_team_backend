@@ -9,7 +9,6 @@ import {
   LayoutGrid,
   Table2,
   Map as MapIcon,
-  Search,
   ChevronLeft,
   ChevronRight,
   X,
@@ -22,19 +21,35 @@ import {
   LoaderCircle,
   MapPin,
   SlidersHorizontal,
+  CopyPlus,
 } from "lucide-react";
+import { viewerToken } from "@/lib/web/viewer-auth";
+import { CopyPhotosDialog, type CopyTargets } from "./copy-photos-dialog";
+import { GalleryFiltersPanel, filterChips } from "./gallery-filters";
+import { galleryImageSources } from "@/lib/web/gallery-images";
 import { SharedPhotoPreview } from "./mobile-photo-preview";
 import { AdaptiveLanguageSelect } from "@/components/adaptive-language-select";
 import { WorkspaceDialog } from "@/components/workspace/dialog";
-import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
+import {
+  ZipDownloadPanel,
+  type ZipDownloadHandle,
+} from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
 import { shareCopy } from "@/lib/web/share-copy";
-import { excelExportFilename, excelResponseFilename } from "@/lib/web/excel-filename";
-import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
-import { isRTLTeamspaceLocale, type TeamspaceTranslations } from "@/lib/teamspace/translations";
+import {
+  excelExportFilename,
+  excelResponseFilename,
+} from "@/lib/web/excel-filename";
+import {
+  useTeamspaceTranslations,
+  TranslationLoading,
+} from "@/lib/teamspace/use-translations";
+import {
+  isRTLTeamspaceLocale,
+  type TeamspaceTranslations,
+} from "@/lib/teamspace/translations";
 import {
   defaultFilters,
-  filterGallery,
   type GalleryFilters,
   type GalleryScope,
 } from "@/lib/web/gallery";
@@ -76,6 +91,7 @@ type GalleryHeader = {
   subtitle: string;
   subtitleLines?: string[];
   meta: string;
+  sharedBy?: string;
 };
 export type GalleryLabels = {
   back: string;
@@ -120,14 +136,29 @@ function Checkbox({
     />
   );
 }
-function Thumb({ photo, label }: { photo: WebPhoto; label: string }) {
-  const [failed, setFailed] = useState(false);
+function Thumb({
+  photo,
+  label,
+  grid = false,
+}: {
+  photo: WebPhoto;
+  label: string;
+  grid?: boolean;
+}) {
+  const [failed, setFailed] = useState(false),
+    [fallback, setFallback] = useState(false);
+  const sources =
+    grid && photo.mediaType === 0 && !fallback
+      ? galleryImageSources(photo.imageURL)
+      : null;
   return photo.thumbnailURL && !failed ? (
     <img
-      src={photo.thumbnailURL}
+      src={sources?.src || photo.thumbnailURL}
+      srcSet={sources?.srcSet}
+      decoding="async"
       alt={photo.localPhotoName || label}
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => (sources ? setFallback(true) : setFailed(true))}
     />
   ) : (
     <span className="share-thumb-failed">
@@ -165,9 +196,18 @@ export function WebPhotoGallery({
   scope: GalleryScope;
   initialTranslations?: TeamspaceTranslations;
 }) {
-  const translations = useTeamspaceTranslations(currentLocale, initialTranslations);
-  const t = useMemo(() => shareCopy(currentLocale, translations.data), [currentLocale, translations.data]),
-    wt = useMemo(() => workspaceCopy(currentLocale, translations.data), [currentLocale, translations.data]);
+  const translations = useTeamspaceTranslations(
+    currentLocale,
+    initialTranslations,
+  );
+  const t = useMemo(
+      () => shareCopy(currentLocale, translations.data),
+      [currentLocale, translations.data],
+    ),
+    wt = useMemo(
+      () => workspaceCopy(currentLocale, translations.data),
+      [currentLocale, translations.data],
+    );
   const zipDownloadRef = useRef<ZipDownloadHandle>(null);
   const [zipBusy, setZipBusy] = useState(false);
   const allPhotos = useMemo(() => days.flatMap((day) => day.photos), [days]);
@@ -179,8 +219,56 @@ export function WebPhotoGallery({
     [allSelected, setAllSelected] = useState(false),
     [excluded, setExcluded] = useState<Set<string>>(new Set()),
     [activeID, setActiveID] = useState<string | null>(null),
-    [dateOpen, setDateOpen] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false);
+  const [copyTargets, setCopyTargets] = useState<CopyTargets | null>(null);
+  const [copyRequest, setCopyRequest] = useState<{
+    body: Record<string, unknown>;
+    count: number;
+  } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      const token = viewerToken();
+      if (!token) return;
+      fetch(
+        `/api/web/photos/copy?kind=${scope.kind}&id=${encodeURIComponent(scope.id)}`,
+        {
+          signal: controller.signal,
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then((value) => {
+          if (!controller.signal.aborted) setCopyTargets(value);
+        })
+        .catch(() => {});
+    }, 1200);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [scope.kind, scope.id]);
+  function openCopy() {
+    setCopyRequest({
+      body: {
+        scope,
+        filters,
+        snapshot: paging.snapshot.current,
+        all: !selected.size || allSelected,
+        ids: [...selectedIDs],
+        excluded: [...excluded],
+      },
+      count: selected.size || total,
+    });
+  }
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const selectionEpoch = useRef(0),
     dayRequests = useRef(new Map<string, number>()),
     selectionMode = useRef(allSelected);
@@ -374,6 +462,12 @@ export function WebPhotoGallery({
     const timer = setTimeout(() => setNotice(""), 6000);
     return () => clearTimeout(timer);
   }, [notice]);
+  function applyFilters(next: GalleryFilters) {
+    setFilters(next);
+    setPage(1);
+    setSelected(new Set());
+    setFocusedPhoto(null);
+  }
   function changeFilter(key: keyof GalleryFilters, value: string) {
     setFilters((f) => ({ ...f, [key]: value }));
     setPage(1);
@@ -399,7 +493,11 @@ export function WebPhotoGallery({
   }
   const filterIdentity = useRef(JSON.stringify(filters));
   filterIdentity.current = JSON.stringify(filters);
-  async function chooseDay(date: string, checked: boolean, download = false) {
+  async function chooseDay(
+    date: string,
+    checked: boolean,
+    download: false | "zip" | "xlsx" = false,
+  ) {
     const day = dayPhotos(date)[0]?.dateKey;
     if (!day) return;
     const identity = filterIdentity.current,
@@ -422,13 +520,14 @@ export function WebPhotoGallery({
       const { ids } = await r.json();
       if (
         identity !== filterIdentity.current ||
-        epoch !== selectionEpoch.current || dayRequests.current.get(day) !== request
+        epoch !== selectionEpoch.current ||
+        dayRequests.current.get(day) !== request
       )
         return;
       if (download) {
         setSelected(new Set(ids));
         setRange("selected");
-        setExportFormat("zip");
+        setExportFormat(download);
       } else choose(ids, checked, false);
     } catch {
       setNotice(t("selectionLimit"));
@@ -476,14 +575,22 @@ export function WebPhotoGallery({
   async function startExport() {
     if (!exportCount || exportCount > maxExport || dataBusy || zipBusy) return;
     if (exportFormat === "zip") {
-      const body = JSON.stringify({ ...selectionBody(), format: "zip", locale: currentLocale });
+      const body = JSON.stringify({
+        ...selectionBody(),
+        format: "zip",
+        locale: currentLocale,
+      });
       setExportFormat(null);
       await zipDownloadRef.current?.start({
         filename: `${header.title.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
         count: exportCount,
-        request: signal => fetch("/api/web/photos/export", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body, signal,
-        }),
+        request: (signal) =>
+          fetch("/api/web/photos/export", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+            signal,
+          }),
       });
       return;
     }
@@ -550,14 +657,29 @@ export function WebPhotoGallery({
       }
       saveBlob(
         await response.blob(),
-        excelResponseFilename(response, excelExportFilename("Timeprint", header.title, Intl.DateTimeFormat().resolvedOptions().timeZone)),
+        excelResponseFilename(
+          response,
+          excelExportFilename(
+            "Timeprint",
+            header.title,
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+          ),
+        ),
       );
       setExportFormat(null);
       setNotice(t("saved"));
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
         const code = (e as Error).message;
-        setNotice(t(code === "EXPORT_BUSY" ? "exportBusy" : code === "EXPORT_TIMEOUT" ? "exportTimeout" : "excelFailed"));
+        setNotice(
+          t(
+            code === "EXPORT_BUSY"
+              ? "exportBusy"
+              : code === "EXPORT_TIMEOUT"
+                ? "exportTimeout"
+                : "excelFailed",
+          ),
+        );
       }
     } finally {
       setBusy(false);
@@ -581,7 +703,10 @@ export function WebPhotoGallery({
     ) : (
       <Users />
     );
-  if (!translations.ready) return <TranslationLoading locale={currentLocale} failed={translations.failed} />;
+  if (!translations.ready)
+    return (
+      <TranslationLoading locale={currentLocale} failed={translations.failed} />
+    );
   return (
     <main
       className="share-page"
@@ -594,8 +719,10 @@ export function WebPhotoGallery({
         <header className="share-brand">
           <a href="https://www.timeprint.net">
             <img src="/logo.png" alt="" />
-            <strong>Timeprint</strong>
-            <span>{t("shared")}</span>
+            <span className="share-attribution">
+              {header.sharedBy && <strong>{header.sharedBy} · </strong>}
+              {t("shared")}
+            </span>
           </a>
           <label>
             <Globe2 size={16} />
@@ -610,11 +737,12 @@ export function WebPhotoGallery({
         <section className="share-heading">
           <div className="share-scope">
             {icon}
-            <span>
-              {t(scope.kind === "user" ? "member" : scope.kind)} · {t("photo")}
-            </span>
+            <span>{t(scope.kind === "user" ? "member" : scope.kind)}</span>
           </div>
-          <h1>{header.title}</h1>
+          <h1>
+            {header.title}
+            <span className="share-workspace-title"> · {t("workspace")}</span>
+          </h1>
           <div className="share-subtitle">
             {(header.subtitleLines?.length
               ? header.subtitleLines
@@ -628,162 +756,146 @@ export function WebPhotoGallery({
           <p className="share-meta">{header.meta}</p>
         </section>
         <div className="share-controls" data-filters-open={filtersOpen}>
-        <div className="share-actions">
-          <button
-            className="share-primary"
-            disabled={dataBusy || !total}
-            onClick={() => openExport("zip")}
-          >
-            <Download size={17} />
-            {t("download")}
-          </button>
-          <button
-            disabled={dataBusy || !total}
-            onClick={() => openExport("xlsx")}
-          >
-            <FileSpreadsheet size={17} />
-            {t("excel")}
-          </button>
-          <button
-            disabled={dataBusy || !total}
-            onClick={() => openExport("print")}
-          >
-            <Printer size={17} />
-            {t("pdf")}
-          </button>
-          <button
-            className="share-copy"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(window.location.href);
-                setNotice(t("copied"));
-              } catch {
-                setNotice(t("copyFailed"));
-              }
-            }}
-          >
-            <Link2 size={17} />
-            {t("link")}
-          </button>
-        </div>
-        <div className="share-toolbar">
-          <div className="share-tabs" role="tablist" aria-label={t("gallery")}>
-            {(
-              [
-                ["gallery", <LayoutGrid size={17} />],
-                ["table", <Table2 size={17} />],
-                ["map", <MapIcon size={17} />],
-              ] as [string, ReactNode][]
-            ).map(([key, ico]) => (
+          <div className="share-actions">
+            {!!copyTargets?.projects.length && (
               <button
-                key={key}
-                role="tab"
-                aria-selected={view === key}
-                onClick={() => setView(key)}
+                className="share-primary"
+                disabled={dataBusy || !total}
+                onClick={openCopy}
               >
-                {ico}
-                {t(key as "gallery" | "table" | "map")}
+                <CopyPlus size={17} />
+                {t("copyTo")}
+              </button>
+            )}
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("zip")}
+            >
+              <Download size={17} />
+              {t("download")}
+            </button>
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("xlsx")}
+            >
+              <FileSpreadsheet size={17} />
+              {t("excel")}
+            </button>
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("print")}
+            >
+              <Printer size={17} />
+              {t("pdf")}
+            </button>
+            <button
+              className="share-copy"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  setNotice(t("copied"));
+                } catch {
+                  setNotice(t("copyFailed"));
+                }
+              }}
+            >
+              <Link2 size={17} />
+              {t("link")}
+            </button>
+          </div>
+          <div className="share-toolbar">
+            <div
+              className="share-tabs"
+              role="tablist"
+              aria-label={t("gallery")}
+            >
+              {(
+                [
+                  ["gallery", <LayoutGrid size={17} />],
+                  ["table", <Table2 size={17} />],
+                  ["map", <MapIcon size={17} />],
+                ] as [string, ReactNode][]
+              ).map(([key, ico]) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={view === key}
+                  onClick={() => setView(key)}
+                >
+                  {ico}
+                  {t(key as "gallery" | "table" | "map")}
+                </button>
+              ))}
+            </div>
+            <button
+              className={`share-filter-toggle ${hasFilters ? "is-filtered" : ""}`}
+              aria-label={`${t("filters")}${hasFilters ? ` · ${filterChips(filters, projects, members, t).length}` : ""}`}
+              title={t("filters")}
+              aria-expanded={filtersOpen}
+              aria-controls={
+                mobile
+                  ? "share-mobile-filter-controls"
+                  : "share-filter-controls"
+              }
+              onClick={() => setFiltersOpen((value) => !value)}
+            >
+              <SlidersHorizontal size={19} />
+              {hasFilters && (
+                <span className="share-filter-count">
+                  {filterChips(filters, projects, members, t).length}
+                </span>
+              )}
+            </button>
+          </div>
+          {!mobile && (
+            <GalleryFiltersPanel
+              filters={filters}
+              onChange={applyFilters}
+              projects={projects}
+              members={members}
+              scope={scope}
+              title={header.title}
+              t={t}
+              wt={wt}
+              locale={currentLocale}
+              onClose={() => setFiltersOpen(false)}
+            />
+          )}
+        </div>
+        {mobile && filtersOpen && (
+          <GalleryFiltersPanel
+            mobile
+            filters={filters}
+            onChange={applyFilters}
+            projects={projects}
+            members={members}
+            scope={scope}
+            title={header.title}
+            t={t}
+            wt={wt}
+            locale={currentLocale}
+            onClose={() => setFiltersOpen(false)}
+          />
+        )}
+        {hasFilters && (
+          <div className="share-filter-chips">
+            {filterChips(filters, projects, members, t).map((chip) => (
+              <button
+                key={chip.key}
+                onClick={() =>
+                  applyFilters({
+                    ...filters,
+                    [chip.key]: "",
+                    ...(chip.key === "from" ? { to: "" } : {}),
+                  })
+                }
+              >
+                {chip.label}
+                <X size={14} />
               </button>
             ))}
           </div>
-          <button
-            className={`share-filter-toggle ${hasFilters ? "is-filtered" : ""}`}
-            aria-label={t("filters")}
-            title={t("filters")}
-            aria-expanded={filtersOpen}
-            aria-controls="share-filter-controls"
-            onClick={() => setFiltersOpen(value => !value)}
-          >
-            <SlidersHorizontal size={19} />
-            {hasFilters && <span className="share-filter-dot" />}
-          </button>
-          <div id="share-filter-controls" className="share-filter-controls">
-          <div className="share-filters">
-            <select
-              aria-label={t("project")}
-              value={filters.project}
-              onChange={(e) => changeFilter("project", e.target.value)}
-            >
-              <option value="">{t("allProjects")}</option>
-              {projects.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label={t("member")}
-              value={filters.member}
-              onChange={(e) => changeFilter("member", e.target.value)}
-            >
-              <option value="">{t("allMembers")}</option>
-              {members.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <button
-              aria-expanded={dateOpen}
-              className={filters.from || filters.to ? "is-filtered" : ""}
-              onClick={() => setDateOpen((v) => !v)}
-            >
-              <SlidersHorizontal size={15} />
-              {t("dates")}
-            </button>
-            <select
-              aria-label={t("type")}
-              value={filters.type}
-              onChange={(e) => changeFilter("type", e.target.value)}
-            >
-              <option value="">{t("type")}</option>
-              <option value="0">{t("photo")}</option>
-              <option value="1">{t("video")}</option>
-            </select>
-          </div>
-          <label className="share-search">
-            <Search size={16} />
-            <input
-              aria-label={t("search")}
-              placeholder={t("search")}
-              value={filters.q}
-              onChange={(e) => changeFilter("q", e.target.value)}
-            />
-          </label>
-          </div>
-        </div>
-        {dateOpen && (
-          <div className="share-dates">
-            <label>
-              {t("from")}
-              <input
-                type="date"
-                value={filters.from}
-                max={filters.to || undefined}
-                onInput={(e) => changeFilter("from", e.currentTarget.value)}
-                onChange={(e) => changeFilter("from", e.target.value)}
-              />
-            </label>
-            <span>—</span>
-            <label>
-              {t("to")}
-              <input
-                type="date"
-                value={filters.to}
-                min={filters.from || undefined}
-                onInput={(e) => changeFilter("to", e.currentTarget.value)}
-                onChange={(e) => changeFilter("to", e.target.value)}
-              />
-            </label>
-            <button aria-label={t("close")} onClick={() => setDateOpen(false)}>
-              <X size={17} />
-            </button>
-            {filters.from && filters.to && filters.from > filters.to && (
-              <p role="alert">{t("dateError")}</p>
-            )}
-          </div>
         )}
-        </div>
         <div className="share-result-bar">
           <div>
             <Checkbox
@@ -801,7 +913,9 @@ export function WebPhotoGallery({
             <span>
               {selected.size
                 ? `${t("selected")} ${selected.size}`
-                : `${total} ${t("count")}`}
+                : hasFilters
+                  ? `${t("results")} ${total}`
+                  : t("selectAll")}
             </span>
             {selected.size > 0 && (
               <button onClick={() => setSelected(new Set())}>
@@ -859,8 +973,15 @@ export function WebPhotoGallery({
             </div>
           ) : view === "map" ? (
             <>
-              <p className="share-map-page-note">{t("mapPage")}</p>
-              <PhotoMap photos={photos} onOpen={openPhoto} t={t} />
+              <PhotoMap
+                key={JSON.stringify({ scope, filters, locale: currentLocale })}
+                scope={scope}
+                filters={filters}
+                snapshot={paging.snapshot.current}
+                locale={currentLocale}
+                onOpen={openPhoto}
+                t={t}
+              />
             </>
           ) : view === "table" ? (
             <div className="share-table-wrap">
@@ -967,9 +1088,16 @@ export function WebPhotoGallery({
                     <button
                       title={t("download")}
                       aria-label={`${t("download")} ${date}`}
-                      onClick={() => chooseDay(date, true, true)}
+                      onClick={() => chooseDay(date, true, "zip")}
                     >
                       <Download size={15} />
+                    </button>
+                    <button
+                      title={t("excel")}
+                      aria-label={`${t("excel")} ${date}`}
+                      onClick={() => chooseDay(date, true, "xlsx")}
+                    >
+                      <FileSpreadsheet size={15} />
                     </button>
                   </div>
                   <div className="share-grid">
@@ -983,7 +1111,7 @@ export function WebPhotoGallery({
                           onClick={() => openPhoto(p.photoID)}
                           aria-label={`${labels.viewLarge} ${p.localPhotoName || p.photoID}`}
                         >
-                          <Thumb photo={p} label={t("photoFailed")} />
+                          <Thumb photo={p} label={t("photoFailed")} grid />
                           {p.mediaType === 1 && (
                             <span className="share-video">
                               <Play size={13} />
@@ -1011,7 +1139,7 @@ export function WebPhotoGallery({
               ))}
             </div>
           )}
-          {total > 0 && (
+          {total > 0 && view !== "map" && (
             <nav className="share-pagination" aria-label={t("next")}>
               <span>
                 {(currentPage - 1) * PAGE_SIZE + 1}–
@@ -1056,22 +1184,43 @@ export function WebPhotoGallery({
           <span>{t("shared")}</span>
         </footer>
       </div>
-      {selected.size > 0 && !active && !exportFormat && (
-        <div className="share-selection">
-          <span>
-            {t("selected")} <strong>{selected.size}</strong>
-          </span>
-          <button onClick={() => openExport("zip")}>
-            <Download size={16} />
-            {labels.download}
-          </button>
-          <button
-            aria-label={t("deselect")}
-            onClick={() => setSelected(new Set())}
-          >
-            <X size={18} />
-          </button>
-        </div>
+      {selected.size > 0 &&
+        !active &&
+        !exportFormat &&
+        !copyRequest &&
+        !filtersOpen && (
+          <div className="share-selection">
+            <span>
+              {t("selected")} <strong>{selected.size}</strong>
+            </span>
+            {!!copyTargets?.projects.length && (
+              <button className="share-primary" onClick={openCopy}>
+                <CopyPlus size={16} />
+                {t("copyTo")}
+              </button>
+            )}
+            <button onClick={() => openExport("zip")}>
+              <Download size={16} />
+              {labels.download}
+            </button>
+            <button
+              aria-label={t("deselect")}
+              onClick={() => setSelected(new Set())}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+      {copyRequest && copyTargets && (
+        <CopyPhotosDialog
+          targets={copyTargets}
+          body={copyRequest.body}
+          count={copyRequest.count}
+          t={t}
+          wt={wt}
+          locale={currentLocale}
+          onClose={() => setCopyRequest(null)}
+        />
       )}
       {notice && (
         <div className="share-toast" role="status">
@@ -1146,9 +1295,7 @@ export function WebPhotoGallery({
               <strong>{exportCount}</strong>
               <span>{t("count")}</span>
             </div>
-            {exportFormat === "xlsx" && (
-              <p>{t("excelImagesHint")}</p>
-            )}
+            {exportFormat === "xlsx" && <p>{t("excelImagesHint")}</p>}
             {exportCount > maxExport && (
               <p className="share-error">
                 {t("exportRange")}: {maxExport} {t("count")}
@@ -1160,7 +1307,11 @@ export function WebPhotoGallery({
             <button
               className="share-primary"
               disabled={
-                busy || zipBusy || dataBusy || !exportCount || exportCount > maxExport
+                busy ||
+                zipBusy ||
+                dataBusy ||
+                !exportCount ||
+                exportCount > maxExport
               }
               onClick={startExport}
             >

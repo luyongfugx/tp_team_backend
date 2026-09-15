@@ -265,6 +265,9 @@
     "dateError": "Tarikh tamat mesti sama dengan atau selepas tarikh mula.",
     "photoFailed": "Imej tidak tersedia",
     "language": "Bahasa",
-    "filters": "Penapis"
+    "filters": "Penapis",
+    "workspace": "Ruang kerja",
+    "copyTo": "Salin ke",
+    "yesterday": "Semalam"
   }
 }

@@ -265,6 +265,9 @@
     "dateError": "Tokony ho amin'ny daty fanombohana na aorian'izany ny daty fiafarana.",
     "photoFailed": "Tsy misy ny sary",
     "language": "Fiteny",
-    "filters": "Sivana"
+    "filters": "Sivana",
+    "workspace": "Sehatra fiasana",
+    "copyTo": "Adikao ao amin'ny",
+    "yesterday": "Omaly"
   }
 }

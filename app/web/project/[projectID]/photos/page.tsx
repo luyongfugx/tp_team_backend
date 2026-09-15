@@ -1,3 +1,4 @@
+import { verifiedShareAttribution } from "@/lib/web/share-attribution"
 import { loadTeamspaceTranslations } from "@/lib/teamspace/translations"
 import { notFound } from "next/navigation"
 import { WebPhotoGallery } from "@/components/web/photo-gallery"
@@ -33,6 +34,7 @@ export default async function ProjectPhotosPage({
       key={String(projectID)}
       scope={{ kind: "project", id: String(projectID) }}
       header={{
+        sharedBy: await verifiedShareAttribution(firstParam(query.shareKey), { kind: "project", id: String(projectID) }),
         title: project.projectName,
         subtitle: subtitleLines[0] || t(locale, "web.noLocation"),
         subtitleLines,

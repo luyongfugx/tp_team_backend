@@ -265,6 +265,9 @@
     "dateError": "Feumaidh an ceann-là crìochnachaidh a bhith air no an dèidh a' chinn-là tòiseachaidh.",
     "photoFailed": "Chan eil an dealbh ri fhaighinn",
     "language": "Cànan",
-    "filters": "Criathragan"
+    "filters": "Criathragan",
+    "workspace": "Àite-obrach",
+    "copyTo": "Dèan lethbhreac gu",
+    "yesterday": "An-dè"
   }
 }

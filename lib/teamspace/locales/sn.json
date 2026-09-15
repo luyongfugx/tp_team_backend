@@ -265,6 +265,9 @@
     "dateError": "Zuva rekupedzisira rinofanira kuva rekutanga kana rinotevera.",
     "photoFailed": "Mufananidzo hauwanikwi",
     "language": "Mutauro",
-    "filters": "Masefa"
+    "filters": "Masefa",
+    "workspace": "Nzvimbo yebasa",
+    "copyTo": "Kopa ku",
+    "yesterday": "Nezuro"
   }
 }

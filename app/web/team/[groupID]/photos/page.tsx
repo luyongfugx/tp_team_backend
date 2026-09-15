@@ -1,3 +1,4 @@
+import { verifiedShareAttribution } from "@/lib/web/share-attribution"
 import { loadTeamspaceTranslations } from "@/lib/teamspace/translations"
 import { notFound } from "next/navigation"
 import { WebPhotoGallery } from "@/components/web/photo-gallery"
@@ -27,6 +28,7 @@ export default async function TeamPhotosPage({
       key={String(groupID)}
       scope={{ kind: "team", id: String(groupID) }}
       header={{
+        sharedBy: await verifiedShareAttribution(firstParam(query.shareKey), { kind: "team", id: String(groupID) }),
         title: team.groupName,
         subtitle: t(locale, "web.teamAllPhotos"),
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,

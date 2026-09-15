@@ -265,6 +265,9 @@
     "dateError": "Lõppkuupäev peab olema alguskuupäeval või hiljem.",
     "photoFailed": "Pilt pole saadaval",
     "language": "Keel",
-    "filters": "Filtrid"
+    "filters": "Filtrid",
+    "workspace": "Tööruum",
+    "copyTo": "Kopeeri asukohta",
+    "yesterday": "Eile"
   }
 }

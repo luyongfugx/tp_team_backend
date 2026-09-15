@@ -265,6 +265,9 @@
     "dateError": "Tarehe ya mwisho lazima iwe tarehe ya kuanza au baada yake.",
     "photoFailed": "Picha haipatikani",
     "language": "Lugha",
-    "filters": "Vichujio"
+    "filters": "Vichujio",
+    "workspace": "Sehemu ya kazi",
+    "copyTo": "Nakili kwenda",
+    "yesterday": "Jana"
   }
 }

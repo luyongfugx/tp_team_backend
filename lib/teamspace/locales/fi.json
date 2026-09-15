@@ -265,6 +265,9 @@
     "dateError": "Loppupäivä ei voi olla ennen alkupäivää.",
     "photoFailed": "Kuva ei ole saatavilla",
     "language": "Kieli",
-    "filters": "Suodattimet"
+    "filters": "Suodattimet",
+    "workspace": "Työtila",
+    "copyTo": "Kopioi kohteeseen",
+    "yesterday": "Eilen"
   }
 }

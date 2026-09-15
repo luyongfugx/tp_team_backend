@@ -265,6 +265,9 @@
     "dateError": "የመጨረሻው ቀን ከመጀመሪያው ቀን ጋር እኩል ወይም ከእሱ በኋላ መሆን አለበት።",
     "photoFailed": "ምስል አይገኝም",
     "language": "ቋንቋ",
-    "filters": "ማጣሪያዎች"
+    "filters": "ማጣሪያዎች",
+    "workspace": "የሥራ ቦታ",
+    "copyTo": "ወደዚህ ቅዳ",
+    "yesterday": "ትናንት"
   }
 }

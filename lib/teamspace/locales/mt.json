@@ -265,6 +265,9 @@
     "dateError": "Id-data tat-tmiem trid tkun fid-data tal-bidu jew warajha.",
     "photoFailed": "L-immaġni mhix disponibbli",
     "language": "Lingwa",
-    "filters": "Filtri"
+    "filters": "Filtri",
+    "workspace": "Spazju tax-xogħol",
+    "copyTo": "Ikkopja lejn",
+    "yesterday": "Ilbieraħ"
   }
 }

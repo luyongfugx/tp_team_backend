@@ -265,6 +265,9 @@
     "dateError": "Das Enddatum darf nicht vor dem Anfangsdatum liegen.",
     "photoFailed": "Bild nicht verfügbar",
     "language": "Sprache",
-    "filters": "Filter"
+    "filters": "Filter",
+    "workspace": "Arbeitsbereich",
+    "copyTo": "Kopieren nach",
+    "yesterday": "Gestern"
   }
 }

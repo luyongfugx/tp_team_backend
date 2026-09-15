@@ -265,6 +265,9 @@
     "dateError": "Den Enndatum muss um oder nom Ufanksdatum leien.",
     "photoFailed": "Bild net verfügbar",
     "language": "Sprooch",
-    "filters": "Filteren"
+    "filters": "Filteren",
+    "workspace": "Aarbechtsberäich",
+    "copyTo": "Kopéieren an",
+    "yesterday": "Gëschter"
   }
 }

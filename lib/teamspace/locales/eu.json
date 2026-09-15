@@ -265,6 +265,9 @@
     "dateError": "Amaiera-data hasiera-data bera edo geroagokoa izan behar da.",
     "photoFailed": "Irudia ez dago erabilgarri",
     "language": "Hizkuntza",
-    "filters": "Iragazkiak"
+    "filters": "Iragazkiak",
+    "workspace": "Lan-eremua",
+    "copyTo": "Kopiatu hona",
+    "yesterday": "Atzo"
   }
 }

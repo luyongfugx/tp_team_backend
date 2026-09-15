@@ -265,6 +265,9 @@
     "photoFailed": "圖片未能載入",
     "language": "語言",
     "close": "關閉",
-    "filters": "篩選"
+    "filters": "篩選",
+    "workspace": "工作區",
+    "copyTo": "複製到",
+    "yesterday": "昨天"
   }
 }

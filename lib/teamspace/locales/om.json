@@ -265,6 +265,9 @@
     "dateError": "Guyyaan xumuraa guyyaa jalqabaa wajjin tokko ykn isa booda ta'uu qaba.",
     "photoFailed": "Suuraan hin argamu",
     "language": "Afaan",
-    "filters": "Calaltuu"
+    "filters": "Calaltuu",
+    "workspace": "Bakka hojii",
+    "copyTo": "Gara kanaatti garagalchi",
+    "yesterday": "Kaleessa"
   }
 }

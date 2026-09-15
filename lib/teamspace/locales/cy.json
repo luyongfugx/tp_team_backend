@@ -265,6 +265,9 @@
     "dateError": "Rhaid i'r dyddiad gorffen fod ar neu ar ôl y dyddiad dechrau.",
     "photoFailed": "Delwedd ddim ar gael",
     "language": "Iaith",
-    "filters": "Hidlyddion"
+    "filters": "Hidlyddion",
+    "workspace": "Gweithle",
+    "copyTo": "Copïo i",
+    "yesterday": "Ddoe"
   }
 }

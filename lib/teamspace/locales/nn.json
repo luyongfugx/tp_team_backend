@@ -265,6 +265,9 @@
     "dateError": "Sluttdatoen kan ikkje vere før startdatoen.",
     "photoFailed": "Biletet er utilgjengeleg",
     "language": "Språk",
-    "filters": "Filter"
+    "filters": "Filter",
+    "workspace": "Arbeidsområde",
+    "copyTo": "Kopier til",
+    "yesterday": "I går"
   }
 }

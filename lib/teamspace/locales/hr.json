@@ -265,6 +265,9 @@
     "dateError": "Završni datum ne može biti prije početnog.",
     "photoFailed": "Slika nije dostupna",
     "language": "Jezik",
-    "filters": "Filtri"
+    "filters": "Filtri",
+    "workspace": "Radni prostor",
+    "copyTo": "Kopiraj u",
+    "yesterday": "Jučer"
   }
 }

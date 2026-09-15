@@ -1,6 +1,9 @@
 import { resolveLocale } from "@/lib/i18n";
 import type { TeamspaceTranslations } from "@/lib/teamspace/translations";
 export const shareBaseCopy = {
+  workspace: ["工作区", "Workspace", "工作區"],
+  copyTo: ["复制到", "Copy to", "複製到"],
+  yesterday: ["昨天", "Yesterday", "昨天"],
   filters: ["筛选", "Filters", "篩選"],
   loadFailed: [
     "照片加载失败，已保留您的选择。",

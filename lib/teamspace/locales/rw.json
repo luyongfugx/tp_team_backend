@@ -265,6 +265,9 @@
     "dateError": "Itariki yo kurangiza igomba kuba ku munsi wo gutangira cyangwa nyuma yawo.",
     "photoFailed": "Ishusho ntiboneka",
     "language": "Ururimi",
-    "filters": "Akayunguruzo"
+    "filters": "Akayunguruzo",
+    "workspace": "Ahakorerwa",
+    "copyTo": "Koporora muri",
+    "yesterday": "Ejo hashize"
   }
 }

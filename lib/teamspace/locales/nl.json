@@ -265,6 +265,9 @@
     "dateError": "De einddatum mag niet vóór de begindatum liggen.",
     "photoFailed": "Afbeelding niet beschikbaar",
     "language": "Taal",
-    "filters": "Filters"
+    "filters": "Filters",
+    "workspace": "Werkruimte",
+    "copyTo": "Kopiëren naar",
+    "yesterday": "Gisteren"
   }
 }

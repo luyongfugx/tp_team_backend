@@ -265,6 +265,9 @@
     "dateError": "Pabaigos data turi sutapti su pradžios data arba būti vėlesnė.",
     "photoFailed": "Vaizdas nepasiekiamas",
     "language": "Kalba",
-    "filters": "Filtrai"
+    "filters": "Filtrai",
+    "workspace": "Darbo sritis",
+    "copyTo": "Kopijuoti į",
+    "yesterday": "Vakar"
   }
 }

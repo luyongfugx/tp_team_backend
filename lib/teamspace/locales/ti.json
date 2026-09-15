@@ -265,6 +265,9 @@
     "dateError": "መወዳእታ ዕለት ምስ መጀመርታ ዕለት ማዕረ ወይ ድሕሪኡ ክኸውን ኣለዎ።",
     "photoFailed": "ስእሊ ኣይርከብን",
     "language": "ቋንቋ",
-    "filters": "መጻረዪታት"
+    "filters": "መጻረዪታት",
+    "workspace": "ናይ ስራሕ ቦታ",
+    "copyTo": "ናብዚ ቅዳሕ",
+    "yesterday": "ትማሊ"
   }
 }

@@ -265,6 +265,9 @@
     "dateError": "Beigu datumam jābūt sākuma datumā vai vēlāk.",
     "photoFailed": "Attēls nav pieejams",
     "language": "Valoda",
-    "filters": "Filtri"
+    "filters": "Filtri",
+    "workspace": "Darbvieta",
+    "copyTo": "Kopēt uz",
+    "yesterday": "Vakar"
   }
 }

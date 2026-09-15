@@ -265,6 +265,9 @@
     "dateError": "Bitmə tarixi başlanğıc tarixi ilə eyni və ya ondan sonra olmalıdır.",
     "photoFailed": "Şəkil əlçatan deyil",
     "language": "Dil",
-    "filters": "Filtrlər"
+    "filters": "Filtrlər",
+    "workspace": "İş sahəsi",
+    "copyTo": "Buraya köçür",
+    "yesterday": "Dünən"
   }
 }

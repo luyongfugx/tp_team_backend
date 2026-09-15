@@ -265,6 +265,9 @@
     "dateError": "Bitiş tarihi başlangıç tarihinden önce olamaz.",
     "photoFailed": "Görsel kullanılamıyor",
     "language": "Dil",
-    "filters": "Filtreler"
+    "filters": "Filtreler",
+    "workspace": "Çalışma alanı",
+    "copyTo": "Şuraya kopyala",
+    "yesterday": "Dün"
   }
 }

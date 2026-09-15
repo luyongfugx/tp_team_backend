@@ -265,6 +265,9 @@
     "dateError": "Tamamlanýan senesi başlangyç senesinden öň bolup bilmez.",
     "photoFailed": "Surat elýeterli däl",
     "language": "Dil",
-    "filters": "Süzgüçler"
+    "filters": "Süzgüçler",
+    "workspace": "Iş meýdançasy",
+    "copyTo": "Şu ýere göçür",
+    "yesterday": "Düýn"
   }
 }

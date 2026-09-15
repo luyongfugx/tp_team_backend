@@ -265,6 +265,9 @@
     "dateError": "Tanggal pungkasan kudu padha utawa sawise tanggal wiwitan.",
     "photoFailed": "Gambar ora kasedhiya",
     "language": "Basa",
-    "filters": "Saringan"
+    "filters": "Saringan",
+    "workspace": "Ruang kerja",
+    "copyTo": "Salin menyang",
+    "yesterday": "Wingi"
   }
 }

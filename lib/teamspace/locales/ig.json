@@ -265,6 +265,9 @@
     "dateError": "Ụbọchị njedebe ga-abụ ụbọchị mmalite ma ọ bụ ụbọchị na-eso ya.",
     "photoFailed": "Onyonyo adịghị",
     "language": "Asụsụ",
-    "filters": "Nzacha"
+    "filters": "Nzacha",
+    "workspace": "Ebe ọrụ",
+    "copyTo": "Detuo na",
+    "yesterday": "Ụnyaahụ"
   }
 }

@@ -1096,3 +1096,73 @@
 .share-lightbox-detail-actions button { background: #2a3038; color: #fff; border-radius: 7px; min-height: 42px; padding: 8px 12px; }
 @media print { .share-lightbox { display: none !important; } }
 .share-lightbox-record-note { color: #aab0ba; font-size: 12px; margin: 0 0 16px; }
+/* Share pages put the work context and browsing controls first. */
+.share-brand .share-attribution { display: block; margin: 0; font-size: 13px; color: var(--share-muted); }
+.share-brand .share-attribution strong { color: #22252b; font-size: inherit; }
+.share-workspace-title { font-weight: 600; }
+.share-filter-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; padding: 14px 0; }
+.share-filter-fields > label, .share-fixed-filter { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.share-filter-fields select, .share-filter-fields input { width: 100%; min-width: 0; min-height: 40px; border: 1px solid #dce0e6; border-radius: 7px; padding: 8px 10px; background: #fff; color: #22252b; }
+.share-fixed-filter { justify-content: center; }
+.share-fixed-filter small { color: var(--share-muted); }
+.share-fixed-filter strong { overflow-wrap: anywhere; }
+.share-filter-dates { grid-column: span 2; margin: 0; min-width: 0; border: 0; padding: 0; }
+.share-date-presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 10px; }
+.share-date-presets button { padding: 6px 10px; min-height: 36px; background: #f3f5f8; border: 0; border-radius: 6px; }
+.share-date-inputs { display: flex; gap: 10px; }
+.share-date-inputs label { flex: 1; min-width: 0; }
+.share-filter-search > span { display: flex; gap: 6px; align-items: center; }
+.share-filter-chips { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 12px; }
+.share-filter-chips button { border: 0; background: #eef5ff; color: #005cc8; padding: 6px 10px; border-radius: 7px; max-width: 100%; overflow-wrap: anywhere; text-align: start; }
+.share-filter-chips svg { flex-shrink: 0; }
+.share-filter-count { min-width: 16px; height: 16px; font-size: 10px; line-height: 16px; border-radius: 8px; background: #0070f4; color: #fff; }
+.share-filter-sheet { z-index: 1100; }
+.share-filter-sheet .share-filter-fields { padding: 16px 22px; }
+.share-filter-sheet footer { position: sticky; bottom: 0; background: #fff; }
+.share-filter-sheet footer button { padding: 10px 16px; min-height: 44px; border: 1px solid #dce0e6; border-radius: 8px; }
+.share-page .share-primary { background: #0070f4; color: white; border-color: #0070f4; }
+.share-copy-dialog .ws-modal-body { display: grid; gap: 14px; }
+.share-copy-dialog label { display: grid; gap: 5px; }
+.share-copy-dialog select { width: 100%; min-height: 44px; padding: 8px; border: 1px solid #dce0e6; border-radius: 7px; }
+.share-copy-dialog footer button, .share-copy-dialog footer a { min-height: 44px; padding: 8px 14px; border: 1px solid #dce0e6; border-radius: 8px; }
+@media (max-width: 760px) {
+  .share-brand { margin-bottom: 14px; gap: 8px; }
+  .share-brand a { min-width: 0; gap: 7px; }
+  .share-brand img { width: 22px; height: 22px; border-radius: 5px; }
+  .share-brand .share-attribution { display: block; font-size: 11px; overflow-wrap: anywhere; }
+  .share-brand label { flex-shrink: 0; max-width: 95px; gap: 3px; }
+  .share-scope { display: flex; font-size: 11px; margin: 0 0 5px; color: var(--share-muted); }
+  .share-scope svg { width: 14px; height: 14px; }
+  .share-subtitle { display: flex; font-size: 12px; margin: 7px 0; }
+  .share-heading h1 { font-size: 25px; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
+  .share-meta { margin: 8px 0 0; }
+  .share-result-bar { padding-block: 10px; gap: 8px; }
+  .share-result-bar > div { gap: 7px; flex-wrap: wrap; }
+  .share-page .share-filter-toggle { width: auto; min-width: 44px; min-height: 44px; padding: 7px; }
+  .share-filter-sheet { padding: 0; align-items: flex-end; backdrop-filter: none; }
+  .share-filter-sheet .ws-dialog { width: 100%; max-height: 85dvh; border-radius: 18px 18px 0 0; }
+  .share-filter-sheet .ws-dialog header { padding: 14px 20px; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .share-filter-sheet header > button { min-height: 44px; min-width: 44px; }
+  .share-filter-fields { grid-template-columns: 1fr; }
+  .share-filter-dates { grid-column: auto; }
+  .share-filter-sheet input, .share-filter-sheet select { font-size: 16px; min-height: 44px; }
+  .share-filter-sheet footer { padding: 12px 20px max(16px,env(safe-area-inset-bottom)); }
+  .share-day-heading { gap: 8px; flex-wrap: wrap; }
+  .share-day-heading > span { display: inline; font-size: 11px; }
+  .share-day-heading h2 { font-size: 14px; }
+  .share-day-heading button { width: 36px; height: 40px; }
+  .share-photo-check input { background: #fff9; }
+}
+@media (min-width: 761px) {
+  .share-filter-fields { grid-template-columns: repeat(3,minmax(100px,1fr)) auto minmax(170px,1.4fr); align-items: end; }
+  .share-desktop-dates { min-height: 40px; padding: 8px 14px; border: 1px solid #dce0e6; border-radius: 7px; background: #fff; }
+  .share-filter-dates { grid-column: 1/-1; grid-row: 2; max-width: 600px; }
+}
+.share-brand .tp-language-select { min-inline-size: 70px; }
+@media (max-width: 760px) {
+  .share-controls > .share-filter-fields { display: none; }
+}
+.share-brand .tp-language-select { min-inline-size: 82px; }
+@media (max-width: 760px) {
+  .share-brand label { max-width: none; }
+}

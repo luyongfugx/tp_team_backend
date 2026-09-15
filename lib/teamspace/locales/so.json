@@ -265,6 +265,9 @@
     "dateError": "Taariikhda dhammaadku waa inay noqotaa taariikhda bilowga ama ka dambaysa.",
     "photoFailed": "Sawirka lama heli karo",
     "language": "Luqad",
-    "filters": "Shaandhooyin"
+    "filters": "Shaandhooyin",
+    "workspace": "Goobta shaqada",
+    "copyTo": "Ku koobiyee",
+    "yesterday": "Shalay"
   }
 }

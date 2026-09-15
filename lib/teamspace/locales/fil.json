@@ -265,6 +265,9 @@
     "dateError": "Hindi maaaring mas maaga sa petsa ng simula ang petsa ng pagtatapos.",
     "photoFailed": "Hindi makuha ang larawan",
     "language": "Wika",
-    "filters": "Mga filter"
+    "filters": "Mga filter",
+    "workspace": "Workspace",
+    "copyTo": "Kopyahin sa",
+    "yesterday": "Kahapon"
   }
 }

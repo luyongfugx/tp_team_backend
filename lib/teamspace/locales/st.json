@@ -265,6 +265,9 @@
     "dateError": "Letsatsi la ho qetela le lokela ho tšoana le la ho qala kapa le be ka mor'a lona.",
     "photoFailed": "Setšoantšo ha se fumanehe",
     "language": "Puo",
-    "filters": "Lisefe"
+    "filters": "Lisefe",
+    "workspace": "Sebaka sa mosebetsi",
+    "copyTo": "Kopitsa ho",
+    "yesterday": "Maobane"
   }
 }

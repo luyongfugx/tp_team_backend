@@ -265,6 +265,9 @@
     "dateError": "La date de fin ne peut pas précéder la date de début.",
     "photoFailed": "Image indisponible",
     "language": "Langue",
-    "filters": "Filtres"
+    "filters": "Filtres",
+    "workspace": "Espace de travail",
+    "copyTo": "Copier vers",
+    "yesterday": "Hier"
   }
 }

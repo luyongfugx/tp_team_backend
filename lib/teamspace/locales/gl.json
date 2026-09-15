@@ -265,6 +265,9 @@
     "dateError": "A data de fin debe ser igual ou posterior á data de inicio.",
     "photoFailed": "Imaxe non dispoñible",
     "language": "Idioma",
-    "filters": "Filtros"
+    "filters": "Filtros",
+    "workspace": "Espazo de traballo",
+    "copyTo": "Copiar a",
+    "yesterday": "Onte"
   }
 }

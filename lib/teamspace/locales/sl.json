@@ -265,6 +265,9 @@
     "dateError": "Končni datum ne sme biti pred začetnim.",
     "photoFailed": "Slika ni na voljo",
     "language": "Jezik",
-    "filters": "Filtri"
+    "filters": "Filtri",
+    "workspace": "Delovni prostor",
+    "copyTo": "Kopiraj v",
+    "yesterday": "Včeraj"
   }
 }

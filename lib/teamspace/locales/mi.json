@@ -265,6 +265,9 @@
     "dateError": "Me ōrite te rā mutunga ki te rā tīmata, me whai rānei i muri.",
     "photoFailed": "Kāore te whakaahua e wātea ana",
     "language": "Reo",
-    "filters": "Ngā tātari"
+    "filters": "Ngā tātari",
+    "workspace": "Mokowā mahi",
+    "copyTo": "Tārua ki",
+    "yesterday": "Inanahi"
   }
 }

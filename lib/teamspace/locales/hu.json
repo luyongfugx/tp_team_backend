@@ -265,6 +265,9 @@
     "dateError": "A záró dátum nem lehet korábbi a kezdő dátumnál.",
     "photoFailed": "A kép nem érhető el",
     "language": "Nyelv",
-    "filters": "Szűrők"
+    "filters": "Szűrők",
+    "workspace": "Munkaterület",
+    "copyTo": "Másolás ide",
+    "yesterday": "Tegnap"
   }
 }

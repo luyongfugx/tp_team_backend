@@ -265,6 +265,9 @@
     "dateError": "Lokadagur verður að vera á eða eftir upphafsdegi.",
     "photoFailed": "Mynd ekki tiltæk",
     "language": "Tungumál",
-    "filters": "Síur"
+    "filters": "Síur",
+    "workspace": "Vinnusvæði",
+    "copyTo": "Afrita í",
+    "yesterday": "Í gær"
   }
 }

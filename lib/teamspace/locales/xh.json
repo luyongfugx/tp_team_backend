@@ -265,6 +265,9 @@
     "dateError": "Umhla wokugqibela kufuneka ube ngumhla wokuqala okanye emva kwawo.",
     "photoFailed": "Umfanekiso awufumaneki",
     "language": "Ulwimi",
-    "filters": "Izihluzi"
+    "filters": "Izihluzi",
+    "workspace": "Indawo yokusebenza",
+    "copyTo": "Khuphela ku",
+    "yesterday": "Izolo"
   }
 }

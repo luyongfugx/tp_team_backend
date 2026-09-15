@@ -265,6 +265,9 @@
     "dateError": "Usuku lokugcina kufanele lube ngosuku lokuqala noma ngemva kwalo.",
     "photoFailed": "Isithombe asitholakali",
     "language": "Ulimi",
-    "filters": "Izihlungi"
+    "filters": "Izihlungi",
+    "workspace": "Indawo yokusebenza",
+    "copyTo": "Kopishela ku",
+    "yesterday": "Izolo"
   }
 }

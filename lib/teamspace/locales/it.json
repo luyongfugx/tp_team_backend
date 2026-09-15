@@ -265,6 +265,9 @@
     "dateError": "La data finale non può precedere quella iniziale.",
     "photoFailed": "Immagine non disponibile",
     "language": "Lingua",
-    "filters": "Filtri"
+    "filters": "Filtri",
+    "workspace": "Area di lavoro",
+    "copyTo": "Copia in",
+    "yesterday": "Ieri"
   }
 }

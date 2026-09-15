@@ -265,6 +265,9 @@
     "dateError": "Sluttdatoen kan ikke være før startdatoen.",
     "photoFailed": "Bildet er utilgjengelig",
     "language": "Språk",
-    "filters": "Filtre"
+    "filters": "Filtre",
+    "workspace": "Arbeidsområde",
+    "copyTo": "Kopier til",
+    "yesterday": "I går"
   }
 }

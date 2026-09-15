@@ -265,6 +265,9 @@
     "dateError": "Einddatum moet op of na die begindatum wees.",
     "photoFailed": "Beeld nie beskikbaar nie",
     "language": "Taal",
-    "filters": "Filters"
+    "filters": "Filters",
+    "workspace": "Werkruimte",
+    "copyTo": "Kopieer na",
+    "yesterday": "Gister"
   }
 }

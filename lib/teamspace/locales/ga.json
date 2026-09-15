@@ -265,6 +265,9 @@
     "dateError": "Caithfidh an dáta deiridh a bheith ar an dáta tosaigh nó ina dhiaidh.",
     "photoFailed": "Níl íomhá ar fáil",
     "language": "Teanga",
-    "filters": "Scagairí"
+    "filters": "Scagairí",
+    "workspace": "Spás oibre",
+    "copyTo": "Cóipeáil chuig",
+    "yesterday": "Inné"
   }
 }

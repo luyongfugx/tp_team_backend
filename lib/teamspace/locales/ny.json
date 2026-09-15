@@ -265,6 +265,9 @@
     "dateError": "Deti lomaliza liyenera kukhala deti loyambira kapena pambuyo pake.",
     "photoFailed": "Chithunzi sichikupezeka",
     "language": "Chilankhulo",
-    "filters": "Zosefera"
+    "filters": "Zosefera",
+    "workspace": "Malo ogwirira ntchito",
+    "copyTo": "Koperani ku",
+    "yesterday": "Dzulo"
   }
 }

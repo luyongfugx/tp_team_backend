@@ -265,6 +265,9 @@
     "dateError": "La data de fi ha de ser igual o posterior a la data d'inici.",
     "photoFailed": "Imatge no disponible",
     "language": "Llengua",
-    "filters": "Filtres"
+    "filters": "Filtres",
+    "workspace": "Espai de treball",
+    "copyTo": "Copia a",
+    "yesterday": "Ahir"
   }
 }

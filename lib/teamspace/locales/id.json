@@ -265,6 +265,9 @@
     "dateError": "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.",
     "photoFailed": "Gambar tidak tersedia",
     "language": "Bahasa",
-    "filters": "Filter"
+    "filters": "Filter",
+    "workspace": "Ruang kerja",
+    "copyTo": "Salin ke",
+    "yesterday": "Kemarin"
   }
 }

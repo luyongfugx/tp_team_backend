@@ -265,6 +265,9 @@
     "dateError": "Koncové datum nesmí předcházet počátečnímu.",
     "photoFailed": "Obrázek není dostupný",
     "language": "Jazyk",
-    "filters": "Filtry"
+    "filters": "Filtry",
+    "workspace": "Pracovní prostor",
+    "copyTo": "Kopírovat do",
+    "yesterday": "Včera"
   }
 }

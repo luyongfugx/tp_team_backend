@@ -265,6 +265,9 @@
     "dateError": "Dat fen an dwe menm jou ak dat kòmansman an oswa apre li.",
     "photoFailed": "Imaj pa disponib",
     "language": "Lang",
-    "filters": "Filtè"
+    "filters": "Filtè",
+    "workspace": "Espas travay",
+    "copyTo": "Kopye nan",
+    "yesterday": "Yè"
   }
 }

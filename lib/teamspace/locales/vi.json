@@ -265,6 +265,9 @@
     "dateError": "Ngày kết thúc không được trước ngày bắt đầu.",
     "photoFailed": "Không tải được ảnh",
     "language": "Ngôn ngữ",
-    "filters": "Bộ lọc"
+    "filters": "Bộ lọc",
+    "workspace": "Không gian làm việc",
+    "copyTo": "Sao chép vào",
+    "yesterday": "Hôm qua"
   }
 }

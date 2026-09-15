@@ -265,6 +265,9 @@
     "dateError": "Data e mbarimit duhet të jetë në ose pas datës së fillimit.",
     "photoFailed": "Imazhi nuk është i disponueshëm",
     "language": "Gjuha",
-    "filters": "Filtrat"
+    "filters": "Filtrat",
+    "workspace": "Hapësira e punës",
+    "copyTo": "Kopjo në",
+    "yesterday": "Dje"
   }
 }

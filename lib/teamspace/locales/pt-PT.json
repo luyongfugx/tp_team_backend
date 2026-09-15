@@ -265,6 +265,9 @@
     "dateError": "A data final não pode ser anterior à data inicial.",
     "photoFailed": "Imagem indisponível",
     "language": "Idioma",
-    "filters": "Filtros"
+    "filters": "Filtros",
+    "workspace": "Espaço de trabalho",
+    "copyTo": "Copiar para",
+    "yesterday": "Ontem"
   }
 }

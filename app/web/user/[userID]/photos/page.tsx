@@ -1,3 +1,4 @@
+import { verifiedShareAttribution } from "@/lib/web/share-attribution"
 import { loadTeamspaceTranslations } from "@/lib/teamspace/translations"
 import { notFound } from "next/navigation"
 import { WebPhotoGallery } from "@/components/web/photo-gallery"
@@ -29,6 +30,7 @@ export default async function UserPhotosPage({
       key={String(userID)}
       scope={{ kind: "user", id: String(userID) }}
       header={{
+        sharedBy: await verifiedShareAttribution(firstParam(query.shareKey), { kind: "user", id: String(userID) }),
         title: displayName,
         subtitle: t(locale, "web.userAllPhotos"),
         meta: t(locale, "web.photoCount", { count: photoCount }),

@@ -265,6 +265,9 @@
     "dateError": "Ranar ƙarewa dole ta zama ranar farawa ko bayanta.",
     "photoFailed": "Ba a samun hoto",
     "language": "Harshe",
-    "filters": "Tacewa"
+    "filters": "Tacewa",
+    "workspace": "Wurin aiki",
+    "copyTo": "Kwafa zuwa",
+    "yesterday": "Jiya"
   }
 }
