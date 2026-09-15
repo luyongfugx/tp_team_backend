@@ -1181,6 +1181,21 @@
 }
 .share-export-options button:hover { background: #f6f8fb; }
 @media (max-width: 760px) {
-  .share-actions[data-selection="true"] .share-top-operation { display: none; }
+
   .share-selection { max-width: calc(100vw - 24px); gap: 12px; padding: 10px; flex-wrap: wrap; justify-content: center; }
+}
+
+/* Shared-page header follows the compact source / workspace / count hierarchy. */
+@media (max-width: 760px) {
+  .share-page .share-shell { padding-top: 12px; }
+  .share-page .share-brand { min-height: 28px; margin: 0 0 12px; padding: 0; }
+  .share-page .share-brand img { display: none; }
+  .share-page .share-brand a > span { margin-inline-start: 0; font-size: 12px; }
+  .share-page .share-brand strong { font-size: inherit; }
+  .share-page .share-brand label { max-width: 90px; }
+  .share-page .share-heading { margin: 0 0 4px; padding: 0; }
+  .share-page .share-heading h1 { font-size: 25px; line-height: 1.25; }
+  .share-page .share-meta { margin: 10px 0 0; font-size: 14px; }
+  .share-page .share-result-bar[data-active="false"] { display: none; }
+  .share-page .share-controls .share-actions { padding: 8px 0; }
 }

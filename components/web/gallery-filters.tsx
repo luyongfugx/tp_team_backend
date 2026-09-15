@@ -56,6 +56,16 @@ export function GalleryFiltersPanel({
       className="share-filter-fields"
       id={mobile ? "share-mobile-filter-controls" : "share-filter-controls"}
     >
+      {mobile && (
+        <select
+          aria-label={t("newest")}
+          value={filters.sort}
+          onChange={(e) => change("sort", e.target.value)}
+        >
+          <option value="desc">{t("newest")}</option>
+          <option value="asc">{t("oldest")}</option>
+        </select>
+      )}
       {scope.kind === "project" ? (
         <div className="share-fixed-filter">
           <small>{t("project")}</small>

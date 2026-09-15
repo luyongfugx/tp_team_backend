@@ -15,9 +15,6 @@ import {
   ImageOff,
   Play,
   Globe2,
-  Folder,
-  Users,
-  User,
   LoaderCircle,
   MapPin,
   SlidersHorizontal,
@@ -697,14 +694,6 @@ export function WebPhotoGallery({
     url.searchParams.set("lang", locale);
     window.location.assign(url);
   };
-  const icon =
-    scope.kind === "project" ? (
-      <Folder />
-    ) : scope.kind === "user" ? (
-      <User />
-    ) : (
-      <Users />
-    );
   if (!translations.ready)
     return (
       <TranslationLoading locale={currentLocale} failed={translations.failed} />
@@ -737,24 +726,10 @@ export function WebPhotoGallery({
           </label>
         </header>
         <section className="share-heading">
-          <div className="share-scope">
-            {icon}
-            <span>{t(scope.kind === "user" ? "member" : scope.kind)}</span>
-          </div>
           <h1>
             {header.title}
             <span className="share-workspace-title"> · {t("workspace")}</span>
           </h1>
-          <div className="share-subtitle">
-            {(header.subtitleLines?.length
-              ? header.subtitleLines
-              : [header.subtitle]
-            )
-              .filter(Boolean)
-              .map((line, i) => (
-                <span key={i}>{line}</span>
-              ))}
-          </div>
           <p className="share-meta">{header.meta}</p>
         </section>
         <div className="share-controls" data-filters-open={filtersOpen}>
@@ -769,40 +744,27 @@ export function WebPhotoGallery({
                 {t("copyTo")}
               </button>
             )}
-            {mobile ? (
-              <button
-                className="share-top-operation"
-                disabled={dataBusy || !total}
-                onClick={() => setExportMenu(true)}
-              >
-                <Download size={17} />
-                {t("export")}
-              </button>
-            ) : (
-              <>
-                <button
-                  disabled={dataBusy || !total}
-                  onClick={() => openExport("zip")}
-                >
-                  <Download size={17} />
-                  {t("download")}
-                </button>
-                <button
-                  disabled={dataBusy || !total}
-                  onClick={() => openExport("xlsx")}
-                >
-                  <FileSpreadsheet size={17} />
-                  {t("excel")}
-                </button>
-                <button
-                  disabled={dataBusy || !total}
-                  onClick={() => openExport("print")}
-                >
-                  <Printer size={17} />
-                  {t("pdf")}
-                </button>
-              </>
-            )}
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("zip")}
+            >
+              <Download size={17} />
+              {t("download")}
+            </button>
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("xlsx")}
+            >
+              <FileSpreadsheet size={17} />
+              {t("excel")}
+            </button>
+            <button
+              disabled={dataBusy || !total}
+              onClick={() => openExport("print")}
+            >
+              <Printer size={17} />
+              {t("pdf")}
+            </button>
             <button
               className="share-copy"
               onClick={async () => {
@@ -911,7 +873,10 @@ export function WebPhotoGallery({
             ))}
           </div>
         )}
-        <div className="share-result-bar">
+        <div
+          className="share-result-bar"
+          data-active={hasFilters || selected.size > 0}
+        >
           <div>
             <Checkbox
               checked={total > 0 && selected.size === total}

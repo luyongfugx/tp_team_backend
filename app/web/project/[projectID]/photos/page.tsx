@@ -35,7 +35,7 @@ export default async function ProjectPhotosPage({
       scope={{ kind: "project", id: String(projectID) }}
       header={{
         sharedBy: await verifiedShareAttribution(firstParam(query.shareKey), { kind: "project", id: String(projectID) }),
-        title: project.projectName,
+        title: `${project.team.groupName} · ${project.projectName}`,
         subtitle: subtitleLines[0] || t(locale, "web.noLocation"),
         subtitleLines,
         meta: `${t(locale, "web.photoCount", { count: photoCount })} · ${t(locale, "web.memberCount", { count: memberCount })}`,
