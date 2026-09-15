@@ -553,7 +553,9 @@ export function WebPhotoGallery({
       window.history.replaceState(window.history.state, "", url);
     }
   }
+  const [exportMenu, setExportMenu] = useState(false);
   function openExport(format: "zip" | "xlsx" | "print") {
+    setExportMenu(false);
     setRange(selected.size ? "selected" : "all");
     setExportFormat(format);
   }
@@ -756,10 +758,10 @@ export function WebPhotoGallery({
           <p className="share-meta">{header.meta}</p>
         </section>
         <div className="share-controls" data-filters-open={filtersOpen}>
-          <div className="share-actions">
+          <div className="share-actions" data-selection={selected.size > 0}>
             {!!copyTargets?.projects.length && (
               <button
-                className="share-primary"
+                className="share-primary share-top-operation"
                 disabled={dataBusy || !total}
                 onClick={openCopy}
               >
@@ -767,27 +769,40 @@ export function WebPhotoGallery({
                 {t("copyTo")}
               </button>
             )}
-            <button
-              disabled={dataBusy || !total}
-              onClick={() => openExport("zip")}
-            >
-              <Download size={17} />
-              {t("download")}
-            </button>
-            <button
-              disabled={dataBusy || !total}
-              onClick={() => openExport("xlsx")}
-            >
-              <FileSpreadsheet size={17} />
-              {t("excel")}
-            </button>
-            <button
-              disabled={dataBusy || !total}
-              onClick={() => openExport("print")}
-            >
-              <Printer size={17} />
-              {t("pdf")}
-            </button>
+            {mobile ? (
+              <button
+                className="share-top-operation"
+                disabled={dataBusy || !total}
+                onClick={() => setExportMenu(true)}
+              >
+                <Download size={17} />
+                {t("export")}
+              </button>
+            ) : (
+              <>
+                <button
+                  disabled={dataBusy || !total}
+                  onClick={() => openExport("zip")}
+                >
+                  <Download size={17} />
+                  {t("download")}
+                </button>
+                <button
+                  disabled={dataBusy || !total}
+                  onClick={() => openExport("xlsx")}
+                >
+                  <FileSpreadsheet size={17} />
+                  {t("excel")}
+                </button>
+                <button
+                  disabled={dataBusy || !total}
+                  onClick={() => openExport("print")}
+                >
+                  <Printer size={17} />
+                  {t("pdf")}
+                </button>
+              </>
+            )}
             <button
               className="share-copy"
               onClick={async () => {
@@ -1085,20 +1100,24 @@ export function WebPhotoGallery({
                     <span>
                       {t("pageOnly")} {dayPhotos(date).length}
                     </span>
-                    <button
-                      title={t("download")}
-                      aria-label={`${t("download")} ${date}`}
-                      onClick={() => chooseDay(date, true, "zip")}
-                    >
-                      <Download size={15} />
-                    </button>
-                    <button
-                      title={t("excel")}
-                      aria-label={`${t("excel")} ${date}`}
-                      onClick={() => chooseDay(date, true, "xlsx")}
-                    >
-                      <FileSpreadsheet size={15} />
-                    </button>
+                    {!mobile && (
+                      <>
+                        <button
+                          title={t("download")}
+                          aria-label={`${t("download")} ${date}`}
+                          onClick={() => chooseDay(date, true, "zip")}
+                        >
+                          <Download size={15} />
+                        </button>
+                        <button
+                          title={t("excel")}
+                          aria-label={`${t("excel")} ${date}`}
+                          onClick={() => chooseDay(date, true, "xlsx")}
+                        >
+                          <FileSpreadsheet size={15} />
+                        </button>
+                      </>
+                    )}
                   </div>
                   <div className="share-grid">
                     {items.map((p) => (
@@ -1187,6 +1206,7 @@ export function WebPhotoGallery({
       {selected.size > 0 &&
         !active &&
         !exportFormat &&
+        !exportMenu &&
         !copyRequest &&
         !filtersOpen && (
           <div className="share-selection">
@@ -1199,9 +1219,9 @@ export function WebPhotoGallery({
                 {t("copyTo")}
               </button>
             )}
-            <button onClick={() => openExport("zip")}>
+            <button onClick={() => setExportMenu(true)}>
               <Download size={16} />
-              {labels.download}
+              {t("export")}
             </button>
             <button
               aria-label={t("deselect")}
@@ -1242,6 +1262,42 @@ export function WebPhotoGallery({
           tz="UTC"
           captureTimeText={active.timeText}
         />
+      )}
+      {exportMenu && (
+        <WorkspaceDialog
+          className="share-export-dialog"
+          label={t("export")}
+          onClose={() => setExportMenu(false)}
+        >
+          <header>
+            <h2>{t("export")}</h2>
+            <button
+              aria-label={t("close")}
+              onClick={() => setExportMenu(false)}
+            >
+              <X />
+            </button>
+          </header>
+          <div className="share-export-body share-export-options">
+            <p>
+              {selected.size
+                ? `${t("selectedOnly")} (${selected.size})`
+                : `${t("allResults")} (${total})`}
+            </p>
+            <button onClick={() => openExport("zip")}>
+              <Download size={20} />
+              {t("download")}
+            </button>
+            <button onClick={() => openExport("xlsx")}>
+              <FileSpreadsheet size={20} />
+              {t("excel")}
+            </button>
+            <button onClick={() => openExport("print")}>
+              <Printer size={20} />
+              {t("pdf")}
+            </button>
+          </div>
+        </WorkspaceDialog>
       )}
       {exportFormat && (
         <WorkspaceDialog
