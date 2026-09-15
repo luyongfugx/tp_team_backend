@@ -199,6 +199,53 @@ async function run() {
   ).json();
   assert.equal(loc.total, 57);
   assert.equal(loc.photos.length, 9);
+  // Missing GPS must not pull the map out to the Gulf of Guinea. A single
+  // zero coordinate is still valid (equator or prime meridian).
+  const coordinates = [
+    { lat: 0, lng: 0 },
+    { lat: null, lng: null },
+    { lat: null, lng: 121.4 },
+    { lat: 31.2, lng: null },
+    { lat: 91, lng: 121.4 },
+    { lat: 0, lng: 121.4 },
+    { lat: 31.2, lng: 0 },
+  ];
+  for (const [i, coords] of coordinates.entries()) {
+    await db.photo.create({
+      data: {
+        photoID: prefix + "-gps-" + i,
+        groupID,
+        userID: memberID,
+        timestamp: original.timestamp,
+        takePhotoFormatTime: original.takePhotoFormatTime,
+        takePhotoTimezoneID: original.takePhotoTimezoneID,
+        ossFileName: prefix + "-gps-" + i + ".jpg",
+        ...coords,
+      },
+    });
+  }
+  const gpsMap = await (
+    await post("/api/web/photos/list", { scope, mode: "map" }, "")
+  ).json();
+  assert.equal(gpsMap.total, 64);
+  assert.equal(gpsMap.located, 59);
+  assert.equal(gpsMap.points.length, 3);
+  assert.ok(
+    !gpsMap.points.some(
+      (p: { lat: number; lng: number }) => p.lat === 0 && p.lng === 0,
+    ),
+  );
+  for (const coords of [coordinates[0], coordinates[5], coordinates[6]]) {
+    const response = await post(
+      "/api/web/photos/list",
+      { scope, mode: "location", ...coords },
+      "",
+    );
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.total, coords.lat === 0 && coords.lng === 0 ? 0 : 1);
+    assert.equal(result.photos.length, result.total);
+  }
   assert.equal(
     (
       await post(

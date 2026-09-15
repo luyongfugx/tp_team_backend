@@ -40,13 +40,15 @@ export async function POST(req: Request) {
       const page = Number(b.page ?? 1);
       if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
         throw Error("INVALID_PAGE");
+      const locatedWhere = {
+        AND: [
+          where,
+          { lat: { gte: -90, lte: 90 }, lng: { gte: -180, lte: 180 } },
+          // Uploads without GPS may store (0, 0) instead of null.
+          { NOT: { lat: 0, lng: 0 } },
+        ],
+      };
       if (b.mode === "map") {
-        const locatedWhere = {
-          AND: [
-            where,
-            { lat: { gte: -90, lte: 90 }, lng: { gte: -180, lte: 180 } },
-          ],
-        };
         const [points, located, total] = await Promise.all([
           prisma.photo.groupBy({
             by: ["lat", "lng"],
@@ -61,13 +63,11 @@ export async function POST(req: Request) {
         ]);
         return NextResponse.json(
           {
-            points: points
-              .slice(0, 1000)
-              .map((p) => ({
-                lat: Number(p.lat),
-                lng: Number(p.lng),
-                count: p._count._all,
-              })),
+            points: points.slice(0, 1000).map((p) => ({
+              lat: Number(p.lat),
+              lng: Number(p.lng),
+              count: p._count._all,
+            })),
             hasMore: points.length > 1000,
             located,
             total,
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         Math.abs(b.lng) > 180
       )
         throw Error("INVALID_FILTER");
-      const locationWhere = { AND: [where, { lat: b.lat, lng: b.lng }] };
+      const locationWhere = { AND: [locatedWhere, { lat: b.lat, lng: b.lng }] };
       const [rows, total] = await Promise.all([
         prisma.photo.findMany({
           where: locationWhere,
