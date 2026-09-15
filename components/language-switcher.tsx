@@ -55,12 +55,13 @@ export function LanguageSwitcher({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted/70"
+        className="inline-flex h-8 max-w-[min(180px,40vw)] items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted/70"
+        title={current.label}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Globe2 className="size-4" />
-        <span>{current.label}</span>
+        <Globe2 className="size-4 shrink-0" />
+        <span className="truncate">{current.label}</span>
       </button>
 
       {open && (

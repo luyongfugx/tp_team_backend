@@ -30,6 +30,7 @@ import {
   Link,
 } from "lucide-react";
 import { Dashboard } from "@/components/dashboard";
+import { AdaptiveLanguageSelect } from "@/components/adaptive-language-select";
 import { clientLocale, setClientLocale, localeDateCode, supportedLocaleOptions, type AppLocale } from "@/lib/i18n";
 import { teamspaceDateOptions } from "@/lib/teamspace/date-format";
 import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
@@ -865,10 +866,11 @@ export function Workspace(props: Props) {
             <strong>{title}</strong>
           </div>
           <div>
-            <select
+            <AdaptiveLanguageSelect
               aria-label={shareCopy(locale, translations.data)("language")}
               className="ws-language"
               value={locale}
+              options={supportedLocaleOptions}
               disabled={changingLanguage}
               aria-busy={changingLanguage}
               onChange={async (e) => {
@@ -884,9 +886,7 @@ export function Workspace(props: Props) {
                   setChangingLanguage(false);
                 }
               }}
-            >
-              {supportedLocaleOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            />
             <div className="ws-account" ref={accountRef}>
               <button
                 className="ws-account-button"

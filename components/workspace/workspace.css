@@ -260,10 +260,11 @@
   flex-shrink: 0;
 }
 .ws-language {
+  font-size: 11px !important;
+}
+.ws-language > select {
   border: 0;
   background: transparent;
-  font-size: 11px !important;
-  max-width: min(180px, 30vw);
 }
 .ws-content {
   flex: 1;

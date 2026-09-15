@@ -87,11 +87,12 @@
   gap: 7px;
   color: #6d7480;
 }
+.share-brand .tp-language-select {
+  font-size: 12px;
+}
 .share-brand select {
   border: 0;
   background: transparent;
-  width: 95px;
-  font-size: 12px;
 }
 .share-scope {
   display: flex;

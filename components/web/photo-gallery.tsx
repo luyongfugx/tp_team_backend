@@ -24,6 +24,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { SharedPhotoPreview } from "./mobile-photo-preview";
+import { AdaptiveLanguageSelect } from "@/components/adaptive-language-select";
 import { WorkspaceDialog } from "@/components/workspace/dialog";
 import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
@@ -596,17 +597,12 @@ export function WebPhotoGallery({
           </a>
           <label>
             <Globe2 size={16} />
-            <select
+            <AdaptiveLanguageSelect
               aria-label={t("language")}
               value={currentLocale}
+              options={languageOptions}
               onChange={(e) => changeLanguage(e.target.value)}
-            >
-              {languageOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            />
           </label>
         </header>
         <section className="share-heading">
