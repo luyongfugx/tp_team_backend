@@ -46,6 +46,8 @@ export function PhotoMap({
             attribution:
               '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             maxZoom: 19,
+            // Fetch denser tiles on high-DPI phones instead of stretching 1x tiles.
+            detectRetina: true,
           },
         ).addTo(m);
         tiles.on("tileerror", () => setFailed(true));
