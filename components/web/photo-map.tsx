@@ -5,6 +5,7 @@ import type { WebPhoto } from "./photo-gallery";
 import type { ShareCopy } from "@/lib/web/share-copy";
 import type { GalleryFilters, GalleryScope } from "@/lib/web/gallery";
 import { MapPin, ImageOff } from "lucide-react";
+import { locationLabel } from "@/lib/web/location-label";
 import "leaflet/dist/leaflet.css";
 type Point = { lat: number; lng: number; count: number };
 export function PhotoMap({
@@ -265,7 +266,9 @@ export function PhotoMap({
                 </option>
               ))}
             </select>
-            <p>{photos[0]?.location}</p>
+            {locationLabel(photos[0]?.location) && (
+              <p>{locationLabel(photos[0]?.location)}</p>
+            )}
             {photos.map((p) => (
               <button
                 className="share-map-photo"
