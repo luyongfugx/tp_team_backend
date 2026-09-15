@@ -7,6 +7,7 @@ import { sourceFile, safeName, downloadHeaders } from "@/lib/workspace/files";
 import { readPublicRequest } from "@/lib/web/request";
 import { photoWorkbook } from "@/lib/web/excel-photos";
 import { exportGalleryURL } from "@/lib/web/gallery-url";
+import { excelExportFilename } from "@/lib/web/excel-filename";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
       if (count !== photos.length) throw new WorkspaceError("SCOPE_CHANGED", 409);
     };
     if (format === "xlsx") {
+      const filename = excelExportFilename(access.team.groupName, title, filters.tz);
       const signal = AbortSignal.any([req.signal, AbortSignal.timeout(240000)]);
       const locale = typeof body.locale === "string" ? body.locale : "";
       const scope = filters.projectID ? { kind: "project" as const, id: filters.projectID }
@@ -55,14 +57,14 @@ export async function POST(req: Request) {
       const book = await photoWorkbook({
         photos: photos.map(photo => ({ ...photo, projectName: photo.project?.projectName || photo.projectName,
           userName: photo.userName || photo.user.userName })),
-        galleryURL: exportGalleryURL(scope, locale), locale, signal,
+        galleryURL: exportGalleryURL(scope, locale), title: filename.slice(0, -5), locale, signal,
       });
       signal.throwIfAborted();
       const data = await book.xlsx.writeBuffer();
       await recheckAccess();
       signal.throwIfAborted();
       return new Response(new Uint8Array(data), {
-        headers: { ...downloadHeaders(`${title}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        headers: { ...downloadHeaders(filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
           "Content-Length": String(data.byteLength) },
       });
     }

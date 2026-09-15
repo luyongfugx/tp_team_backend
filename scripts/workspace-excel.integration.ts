@@ -6,6 +6,7 @@ import sharp from "sharp";
 import ExcelJS from "exceljs";
 import { prisma } from "../lib/prisma";
 import { POST } from "../app/api/workspace/photos/export/route";
+import { excelExportFilename, excelResponseFilename } from "../lib/web/excel-filename";
 
 async function main() {
   const database = new URL(process.env.DATABASE_URL || "");
@@ -15,6 +16,7 @@ async function main() {
   const ids = Array.from({ length: 201 }, (_, i) => `${prefix}-${i}`), sessions: string[] = [];
   const file = `public/workspace-demo/${prefix}.jpg`;
   const originalCount = prisma.photo.count;
+  const team = await prisma.team.findUniqueOrThrow({ where: { groupID } });
   async function tokenFor(email: string) {
     const user = await prisma.user.findUniqueOrThrow({ where: { email } });
     const token = randomBytes(32).toString("hex");
@@ -40,6 +42,7 @@ async function main() {
     assert.equal(response.status, 200, response.status === 200 ? undefined : await response.text());
     assert.equal(response.headers.get("Content-Type"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     assert.match(response.headers.get("Content-Disposition")!, /\.xlsx/);
+    assert.equal(excelResponseFilename(response, ""), excelExportFilename(team.groupName, body.title, body.filters.tz));
     const bytes = Buffer.from(await response.arrayBuffer());
     assert.equal(Number(response.headers.get("Content-Length")), bytes.length);
     const book = new ExcelJS.Workbook(); await book.xlsx.load(bytes as never);
@@ -51,6 +54,7 @@ async function main() {
     for (let row = 3; row <= count + 2; row++) {
       assert.equal(new URL(sheet.getCell(`K${row}`).hyperlink).pathname, galleryPath);
       assert.equal(sheet.getCell(`I${row}`).value, "GMT+0800");
+      assert.equal(new URL(sheet.getCell(`G${row}`).hyperlink).searchParams.get("query"), "22.6788151, 114.1194674");
     }
     return sheet;
   }
@@ -66,6 +70,7 @@ async function main() {
       userName: i < 2 ? "Member" : "Owner", timestamp: BigInt(Date.UTC(2026, 8, i < 2 ? 14 : 13, 16, 30)),
       takePhotoFormatTime: i < 2 ? "2026-09-15 00:30:00" : "2026-09-14 00:30:00",
       takePhotoTimezoneID: "GMT+0800", ossFileName: photoID, localPhotoName: `${photoID}.jpg`,
+      lat: "22.6788151", lng: "114.1194674", location: "Site",
       smallURL: i === 2 ? null : `/workspace-demo/${prefix}.jpg`, mediaType: i === 2 ? 1 : 0,
     })) });
     const teamPath = `/web/team/${groupID}/photos`;

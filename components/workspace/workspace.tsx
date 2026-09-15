@@ -36,6 +36,7 @@ import { teamspaceDateOptions } from "@/lib/teamspace/date-format";
 import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
 import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
 import { shareCopy } from "@/lib/web/share-copy";
+import { excelExportFilename } from "@/lib/web/excel-filename";
 import { authenticatedFetch } from "@/lib/client-auth";
 import {
   dateKey,
@@ -586,7 +587,9 @@ export function Workspace(props: Props) {
         if (!count || count > 200) throw new Error(count ? "DIRECT_EXPORT_LIMIT" : "NO_PHOTOS");
         setExportDialog(false);
         await zipDownloadRef.current?.start({
-          filename: `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.${exportFormat}`,
+          filename: exportFormat === "xlsx"
+            ? excelExportFilename(workspace?.current?.groupName || "Timeprint", exportTitle, filters.tz)
+            : `${exportTitle.replace(/[\\/:*?"<>|]/g, "_")}.zip`,
           mimeType: exportFormat === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "application/zip",
           count,
           request: (signal) => authenticatedFetch("/api/workspace/photos/export", token, {

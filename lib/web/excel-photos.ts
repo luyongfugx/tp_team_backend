@@ -4,6 +4,7 @@ import type { Photo } from "@prisma/client";
 import { sourceFile } from "@/lib/workspace/files";
 import { parseOffsetMinutes, photoTimeZone } from "@/app/web/photos-data";
 import { shareCopy } from "./share-copy";
+import { validCoordinates } from "./gallery";
 import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
 
 export const MAX_EXCEL_PHOTOS = 200;
@@ -80,6 +81,7 @@ function excelCaptureDate(timestamp: bigint, zone: string) {
 export async function photoWorkbook(options: {
   photos: ExportPhoto[];
   galleryURL: string;
+  title?: string;
   locale: string;
   signal: AbortSignal;
   load?: (photo: ExportPhoto, signal: AbortSignal) => Promise<Thumbnail | null>;
@@ -100,10 +102,11 @@ export async function photoWorkbook(options: {
     { key: "type", width: 12 }, { key: "link", width: 20 },
   ];
   sheet.mergeCells("A1:K1");
-  sheet.getCell("A1").value = { text: `${t("excelViewPhotos")} · Timeprint`, hyperlink: galleryURL };
+  book.title = options.title || "Timeprint";
+  sheet.getCell("A1").value = { text: `${options.title || "Timeprint"}\n${t("excelViewPhotos")}: ${galleryURL}`, hyperlink: galleryURL };
   sheet.getCell("A1").font = { name: "Arial", size: 12, color: { argb: "FF007BFF" }, underline: true };
-  sheet.getRow(1).height = 35;
-  sheet.getRow(1).alignment = { vertical: "middle" };
+  sheet.getRow(1).height = 48;
+  sheet.getRow(1).alignment = { vertical: "middle", wrapText: true };
   sheet.getRow(2).values = [t("photo"), t("project"), t("member"), t("excelDate"), t("excelTime"), t("location"), t("excelGPS"), t("filename"), t("excelTimezone"), t("excelMediaType"), t("excelViewOriginal")];
   sheet.getRow(2).height = 42;
   sheet.getRow(2).eachCell(cell => {
@@ -115,8 +118,12 @@ export async function photoWorkbook(options: {
     const date = excelCaptureDate(photo.timestamp, photo.takePhotoTimezoneID);
     const link = new URL(galleryURL);
     link.searchParams.set("photo", photo.photoID);
+    const coordinates = { lat: photo.lat == null ? null : Number(photo.lat), lng: photo.lng == null ? null : Number(photo.lng) };
+    const gps = validCoordinates(coordinates) ? `${coordinates.lat}, ${coordinates.lng}` : null;
+    const mapURL = gps ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(gps)}` : null;
     const row = sheet.addRow({ project: photo.projectName, member: photo.userName, date, time: date,
-      location: photo.location, gps: photo.lat != null && photo.lng != null ? `${photo.lat}, ${photo.lng}` : null,
+      location: photo.location && mapURL ? { text: photo.location, hyperlink: mapURL } : photo.location,
+      gps: gps && mapURL ? { text: gps, hyperlink: mapURL } : null,
       file: photo.localPhotoName || photo.photoID, zone: photoTimeZone(photo.takePhotoTimezoneID),
       type: t(photo.mediaType === 1 ? "video" : "photo"), link: { text: t("excelViewOriginal"), hyperlink: link.toString() },
     });
@@ -128,7 +135,10 @@ export async function photoWorkbook(options: {
     });
     row.getCell("date").numFmt = "yyyy-mm-dd";
     row.getCell("time").numFmt = "hh:mm:ss";
-    row.getCell("link").font = { name: "Arial", size: 11, color: { argb: "FF007BFF" }, underline: true };
+    for (const key of ["location", "gps", "link"]) {
+      const cell = row.getCell(key);
+      if (cell.hyperlink) cell.font = { name: "Arial", size: 11, color: { argb: "FF007BFF" }, underline: true };
+    }
   }
   // Bounded parallelism: fetch at most three images, never all 200 at once.
   let next = 0;

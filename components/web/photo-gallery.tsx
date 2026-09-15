@@ -29,6 +29,7 @@ import { WorkspaceDialog } from "@/components/workspace/dialog";
 import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
 import { shareCopy } from "@/lib/web/share-copy";
+import { excelExportFilename, excelResponseFilename } from "@/lib/web/excel-filename";
 import { useTeamspaceTranslations, TranslationLoading } from "@/lib/teamspace/use-translations";
 import { isRTLTeamspaceLocale, type TeamspaceTranslations } from "@/lib/teamspace/translations";
 import {
@@ -539,6 +540,7 @@ export function WebPhotoGallery({
           format: exportFormat,
           includeImages: true,
           locale: currentLocale,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
         signal: abort.current.signal,
       });
@@ -548,7 +550,7 @@ export function WebPhotoGallery({
       }
       saveBlob(
         await response.blob(),
-        `${header.title.replace(/[\\/:*?"<>|]/g, "_")}.${exportFormat}`,
+        excelResponseFilename(response, excelExportFilename("Timeprint", header.title, Intl.DateTimeFormat().resolvedOptions().timeZone)),
       );
       setExportFormat(null);
       setNotice(t("saved"));

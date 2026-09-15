@@ -3,6 +3,7 @@ import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "reac
 import { Check, ChevronDown, ChevronUp, Download, LoaderCircle, X } from "lucide-react";
 import { errorCopy, type WorkspaceCopy } from "@/lib/workspace/i18n";
 import { readZipResponse } from "@/lib/workspace/download";
+import { excelResponseFilename } from "@/lib/web/excel-filename";
 
 type DownloadRequest = {
   filename: string;
@@ -53,6 +54,9 @@ export function ZipDownloadPanel({ t, ref, onBusyChange }: {
     setTask({ ...base, phase: "preparing" });
     try {
       const response = await options.request(controller.signal);
+      if (options.mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+        base.filename = excelResponseFilename(response, options.filename);
+      }
       const blob = await readZipResponse(response, controller.signal, progress => {
         setTask({ ...base, phase: "receiving", progress });
       }, undefined, options.mimeType);
@@ -61,7 +65,7 @@ export function ZipDownloadPanel({ t, ref, onBusyChange }: {
       fileURL.current = url;
       const link = document.createElement("a");
       link.href = url;
-      link.download = options.filename;
+      link.download = base.filename;
       document.body.appendChild(link);
       link.click();
       link.remove();

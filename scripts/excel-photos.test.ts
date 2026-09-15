@@ -4,12 +4,45 @@ import ExcelJS from "exceljs";
 import sharp from "sharp";
 import { compressExcelThumbnail, MAX_THUMBNAIL_BYTES, photoWorkbook } from "../lib/web/excel-photos";
 import { exportGalleryURL } from "../lib/web/gallery-url";
+import { Prisma } from "@prisma/client";
 const photo = {
   photoID: "photo-a", localPhotoName: '=SUM(1,2).jpg', timestamp: BigInt(Date.UTC(2026, 8, 14, 16, 30)),
   takePhotoTimezoneID: "Asia/Shanghai", projectName: "Project", userName: "Member", location: "Site",
   lat: null, lng: null, mediaType: 0, smallURL: null, largeURL: null,
 };
 const signal = () => new AbortController().signal;
+
+test("GPS and location links open the precise map point and invalid coordinates stay unlinked", async () => {
+  const cases = [["22.6788151", "114.1194674"], ["0", "0"], ["-90", "-180"], ["91", "0"], ["0", "181"], [null, "0"]];
+  const galleryURL = "https://teamspace.timeprint.net/web/project/22/photos?lang=zh-Hans";
+  const title = "10万日活-tp-2026-09-15-bricasalwilliam";
+  const book = await photoWorkbook({ photos: cases.map(([lat, lng], i) => ({ ...photo, photoID: `gps-${i}`,
+    lat: lat == null ? null : new Prisma.Decimal(lat), lng: lng == null ? null : new Prisma.Decimal(lng) })),
+    title, galleryURL, locale: "zh-Hans", signal: signal(), load: async () => null });
+  const restored = new ExcelJS.Workbook();
+  await restored.xlsx.load(await book.xlsx.writeBuffer() as never);
+  const sheet = restored.worksheets[0];
+  assert.equal(sheet.getCell("A1").text, `${title}\n查看照片: ${galleryURL}`);
+  assert.equal(sheet.getCell("A1").hyperlink, galleryURL);
+  assert.equal(restored.title, title);
+  for (let i = 0; i < cases.length; i++) {
+    const cell = sheet.getCell(`G${i + 3}`), location = sheet.getCell(`F${i + 3}`);
+    if (i < 3) {
+      const map = new URL(cell.hyperlink);
+      assert.equal(map.origin, "https://www.google.com");
+      assert.equal(map.pathname, "/maps/search/");
+      assert.equal(map.searchParams.get("api"), "1");
+      assert.equal(map.searchParams.get("query"), cases[i].join(", "));
+      assert.equal(cell.font.underline, true);
+      assert.equal(location.hyperlink, cell.hyperlink);
+    } else {
+      assert.equal(cell.value, null);
+      assert.ok(!location.hyperlink);
+    }
+    assert.equal(location.text, "Site");
+    assert.equal(new URL(sheet.getCell(`K${i + 3}`).hyperlink).searchParams.get("photo"), `gps-${i}`);
+  }
+});
 
 test("export links use the public origin for project, team and member scopes", () => {
   for (const kind of ["project", "team", "user"] as const) {

@@ -11,6 +11,7 @@ import { sourceFile, downloadHeaders, safeName } from "@/lib/workspace/files";
 import { shareCopy } from "@/lib/web/share-copy";
 import { MAX_EXCEL_PHOTOS, photoWorkbook } from "@/lib/web/excel-photos";
 import { exportGalleryURL } from "@/lib/web/gallery-url";
+import { excelExportFilename } from "@/lib/web/excel-filename";
 import { isRTLTeamspaceLocale, loadTeamspaceTranslations } from "@/lib/teamspace/translations";
 import { gpsColumnLabels } from "@/lib/teamspace/gps-labels";
 export const runtime = "nodejs";
@@ -62,17 +63,32 @@ export async function POST(req: Request) {
       orderBy: [{ timestamp: sort }, { photoID: sort }],
     });
     const filename = `Timeprint-${scope.kind}-${new Date().toISOString().slice(0, 10)}`;
+    let excelFilename = "";
+    if (body.format === "xlsx") {
+      // Names come only from the resolved public scope and its selected photos.
+      // A member export spanning teams must not be attributed to the first team.
+      const groupIDs = [...new Set(photos.map(photo => photo.groupID))];
+      const groupID = scope.kind === "team" ? scope.id : groupIDs.length === 1 ? groupIDs[0] : null;
+      const [team, project, member] = await Promise.all([
+        groupID ? prisma.team.findUnique({ where: { groupID }, select: { groupName: true } }) : null,
+        scope.kind === "project" ? prisma.project.findUnique({ where: { projectID: Number(scope.id) }, select: { projectName: true } }) : null,
+        scope.kind === "user" ? prisma.user.findUnique({ where: { id: scope.id }, select: { userName: true, shortName: true } }) : null,
+      ]);
+      excelFilename = excelExportFilename(team?.groupName || "Timeprint",
+        project?.projectName || member?.userName || member?.shortName || team?.groupName || "Timeprint",
+        typeof body.timeZone === "string" ? body.timeZone : "UTC");
+    }
     if (includeImages) {
       const locale = typeof body.locale === "string" ? body.locale : "";
       const galleryURL = exportGalleryURL(scope, locale);
       const signal = AbortSignal.any([req.signal, AbortSignal.timeout(240_000)]);
-      const book = await photoWorkbook({ photos, galleryURL, locale, signal });
+      const book = await photoWorkbook({ photos, galleryURL, title: excelFilename.slice(0, -5), locale, signal });
       signal.throwIfAborted();
       const data = await book.xlsx.writeBuffer();
       signal.throwIfAborted();
       return new Response(new Uint8Array(data), {
         headers: {
-          ...downloadHeaders(`${filename}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+          ...downloadHeaders(excelFilename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
           "Content-Length": String(data.byteLength),
         },
       });
@@ -132,7 +148,7 @@ export async function POST(req: Request) {
       const data = await book.xlsx.writeBuffer();
       return new Response(new Uint8Array(data), {
         headers: downloadHeaders(
-          `${filename}.xlsx`,
+          excelFilename,
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ),
       });

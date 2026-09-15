@@ -6,6 +6,7 @@ import ExcelJS from "exceljs";
 import { shareCopy } from "../lib/web/share-copy";
 import { loadTeamspaceTranslations, isRTLTeamspaceLocale } from "../lib/teamspace/translations";
 import { gpsColumnLabels } from "../lib/teamspace/gps-labels";
+import { excelExportFilename, excelResponseFilename } from "../lib/web/excel-filename";
 const database = new URL(process.env.DATABASE_URL || "");
 if (!["127.0.0.1", "localhost"].includes(database.hostname) || database.pathname !== "/tp_team_backend_local") throw new Error("Local demo database only");
 const db = new PrismaClient();
@@ -16,6 +17,7 @@ const files = [`public/workspace-demo/${prefix}-portrait.jpg`, `public/workspace
 async function run() {
 try {
   const base = await db.photo.findFirstOrThrow({ where: { groupID: "local-workspace-demo", deletedAt: null } });
+  const team = await db.team.findUniqueOrThrow({ where: { groupID: base.groupID } });
   await mkdir(".local/excel-reference", { recursive: true });
   await mkdir("public/workspace-demo", { recursive: true });
   for (const [i, size] of [[480, 640], [960, 540]].entries()) {
@@ -31,7 +33,7 @@ try {
     timestamp: BigInt(Date.UTC(2026, 8, 14, 16, 30)), takePhotoFormatTime: "2026-09-15 00:30:00",
     takePhotoTimezoneID: "GMT+0800", ossFileName: id,
     projectName: base.projectName, userName: base.userName, location: base.location,
-    lat: base.lat, lng: base.lng, localPhotoName: `Excel-test-${i + 1}.jpg`,
+    lat: "22.6788151", lng: "114.1194674", localPhotoName: `Excel-test-${i + 1}.jpg`,
     smallURL: i < 2 ? `/workspace-demo/${prefix}-${i ? "landscape" : "portrait"}.jpg` : null,
     largeURL: null, mediaType: 0,
   } });
@@ -39,10 +41,11 @@ try {
     // A proxy's internal origin and untrusted forwarding headers must never
     // become links in a workbook downloaded by another person.
     method: "POST", headers: { "Content-Type": "application/json", "X-Forwarded-Host": "untrusted.example", "X-Forwarded-Proto": "https" },
-    body: JSON.stringify({ scope: { kind: "team", id: base.groupID }, ids, format: "xlsx", locale: "zh-Hans", includeImages: true, ...extra }),
+    body: JSON.stringify({ scope: { kind: "team", id: base.groupID }, ids, format: "xlsx", locale: "zh-Hans", timeZone: "Asia/Shanghai", includeImages: true, ...extra }),
   });
   const response = await request();
   assert.equal(response.status, 200);
+  assert.equal(excelResponseFilename(response, ""), excelExportFilename(team.groupName, team.groupName, "Asia/Shanghai"));
   const bytes = Buffer.from(await response.arrayBuffer());
   assert.equal(Number(response.headers.get("content-length")), bytes.length);
   await writeFile(".local/excel-reference/api-example.xlsx", bytes);
@@ -50,12 +53,14 @@ try {
   const sheet = book.worksheets[0];
   const gallery = new URL(`/web/team/${base.groupID}/photos?lang=zh-Hans`, process.env.TEAMSPACE_PUBLIC_ORIGIN || "https://teamspace.timeprint.net").toString();
   assert.equal(sheet.getCell("A1").hyperlink, gallery);
+  assert.ok(sheet.getCell("A1").text.includes(gallery));
   for (const row of [3, 4, 5]) {
     const link = new URL(sheet.getCell(`K${row}`).hyperlink);
     assert.equal(link.origin, new URL(gallery).origin);
     assert.equal(link.pathname, new URL(gallery).pathname);
     assert.equal(link.searchParams.get("lang"), "zh-Hans");
     assert.ok(ids.includes(link.searchParams.get("photo")!));
+    assert.equal(new URL(sheet.getCell(`G${row}`).hyperlink).searchParams.get("query"), "22.6788151, 114.1194674");
   }
   for (const image of sheet.getImages()) {
     const link = (image.range as ExcelJS.ImageRange & { hyperlinks: { hyperlink: string } }).hyperlinks.hyperlink;
@@ -73,6 +78,19 @@ try {
   const legacyBook = new ExcelJS.Workbook(); await legacyBook.xlsx.load(Buffer.from(await legacy.arrayBuffer()) as never);
   assert.equal(legacyBook.worksheets[0].getCell("A1").value, "文件名");
   assert.equal(legacyBook.worksheets[0].getImages().length, 0);
+  const member = await db.user.findUniqueOrThrow({ where: { id: base.userID } });
+  const memberResponse = await request({ scope: { kind: "user", id: base.userID }, includeImages: false });
+  assert.equal(memberResponse.status, 200);
+  assert.equal(excelResponseFilename(memberResponse, ""), excelExportFilename(team.groupName,
+    member.userName || member.shortName || team.groupName, "Asia/Shanghai"));
+  await memberResponse.arrayBuffer();
+  if (base.projectID) {
+    const project = await db.project.findUniqueOrThrow({ where: { projectID: base.projectID } });
+    const projectResponse = await request({ scope: { kind: "project", id: String(base.projectID) }, includeImages: false });
+    assert.equal(projectResponse.status, 200);
+    assert.equal(excelResponseFilename(projectResponse, ""), excelExportFilename(team.groupName, project.projectName, "Asia/Shanghai"));
+    await projectResponse.arrayBuffer();
+  }
   for (const locale of ["de", "ar", "ja", "rw"]) {
     const result = await request({ includeImages: false, locale });
     assert.equal(result.status, 200);
