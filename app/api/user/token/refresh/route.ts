@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server"
-import { createSession, getTokenFromRequest } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getTokenFromRequest } from "@/lib/auth"
 import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
 import { fillMissingUserRegistrationMetadata } from "@/lib/user-registration-metadata"
 
 export async function POST(req: Request) {
   try {
-    let user = await requireUser(req)
+    const token = getTokenFromRequest(req)
+    if (!token) return bad("未授权或登录已过期", 401)
+    const user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
-    user = await fillMissingUserRegistrationMetadata(user, body)
-    const oldToken = getTokenFromRequest(req)
-    const { token } = await createSession(
-      user.id,
-      typeof body.appInstanceID === "string" ? body.appInstanceID : undefined,
-    )
-    if (oldToken) await prisma.session.deleteMany({ where: { token: oldToken } }).catch(() => {})
+    await fillMissingUserRegistrationMetadata(user, body)
+    // Persistent sessions do not need rotation. Keep retries and lost responses from
+    // revoking the credential that the client still has saved.
     return ok({ token })
   } catch (err) {
     console.log("[app/user/token/refresh] error:", err)

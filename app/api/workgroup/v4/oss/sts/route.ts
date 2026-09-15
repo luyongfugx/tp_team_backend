@@ -23,7 +23,7 @@ type COSBucketConfig = {
 function durationSeconds() {
   const configured = Number(process.env.COS_STS_DURATION_SECONDS)
   if (!Number.isInteger(configured)) return 900
-  return Math.min(1800, Math.max(300, configured))
+  return Math.min(129600, Math.max(300, configured))
 }
 
 function cleanUserPathID(userID: string) {

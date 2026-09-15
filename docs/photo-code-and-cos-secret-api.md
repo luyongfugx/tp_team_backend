@@ -91,7 +91,10 @@ avatar ownership. The permanent CAM key is never returned to a client.
 
 Configuration:
 
-- `COS_STS_DURATION_SECONDS`: defaults to `900`, clamped to `300...1800`.
+- `COS_STS_DURATION_SECONDS`: defaults to `900`, clamped to `300...129600`
+  seconds (5 minutes to 36 hours). Set `COS_STS_DURATION_SECONDS=129600` for
+  36-hour credentials. Tencent Cloud requires a CAM sub-account key for this
+  duration; a root-account key supports at most `7200` seconds (2 hours).
 - `TENCENT_COS_SECRET_ID` / `TENCENT_COS_SECRET_KEY`: server-only CAM key.
 - `TENCENT_COS_BUCKETS_JSON`: map of client bucket aliases to bucket name,
   region, read/write flags, path prefixes, and optional validator.
