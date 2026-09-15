@@ -264,6 +264,7 @@
     "export": "Eksportyň çägi",
     "dateError": "Tamamlanýan senesi başlangyç senesinden öň bolup bilmez.",
     "photoFailed": "Surat elýeterli däl",
-    "language": "Dil"
+    "language": "Dil",
+    "filters": "Süzgüçler"
   }
 }

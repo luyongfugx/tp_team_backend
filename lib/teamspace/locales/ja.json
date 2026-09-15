@@ -264,6 +264,7 @@
     "export": "書き出し範囲",
     "dateError": "終了日は開始日以降にしてください。",
     "photoFailed": "画像を読み込めません",
-    "language": "言語"
+    "language": "言語",
+    "filters": "絞り込み"
   }
 }

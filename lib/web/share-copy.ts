@@ -1,6 +1,7 @@
 import { resolveLocale } from "@/lib/i18n";
 import type { TeamspaceTranslations } from "@/lib/teamspace/translations";
 export const shareBaseCopy = {
+  filters: ["筛选", "Filters", "篩選"],
   loadFailed: [
     "照片加载失败，已保留您的选择。",
     "Could not load photos. Your selection is saved.",

@@ -264,6 +264,7 @@
     "export": "Exportselectie",
     "dateError": "De einddatum mag niet vóór de begindatum liggen.",
     "photoFailed": "Afbeelding niet beschikbaar",
-    "language": "Taal"
+    "language": "Taal",
+    "filters": "Filters"
   }
 }

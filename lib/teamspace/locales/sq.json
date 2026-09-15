@@ -264,6 +264,7 @@
     "export": "Shtrirja e eksportimit",
     "dateError": "Data e mbarimit duhet të jetë në ose pas datës së fillimit.",
     "photoFailed": "Imazhi nuk është i disponueshëm",
-    "language": "Gjuha"
+    "language": "Gjuha",
+    "filters": "Filtrat"
   }
 }

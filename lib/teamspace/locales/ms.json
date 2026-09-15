@@ -264,6 +264,7 @@
     "export": "Skop eksport",
     "dateError": "Tarikh tamat mesti sama dengan atau selepas tarikh mula.",
     "photoFailed": "Imej tidak tersedia",
-    "language": "Bahasa"
+    "language": "Bahasa",
+    "filters": "Penapis"
   }
 }

@@ -264,6 +264,7 @@
     "export": "Omvang van uitvoer",
     "dateError": "Einddatum moet op of na die begindatum wees.",
     "photoFailed": "Beeld nie beskikbaar nie",
-    "language": "Taal"
+    "language": "Taal",
+    "filters": "Filters"
   }
 }

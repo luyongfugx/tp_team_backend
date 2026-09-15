@@ -264,6 +264,7 @@
     "export": "Exportumfang",
     "dateError": "Das Enddatum darf nicht vor dem Anfangsdatum liegen.",
     "photoFailed": "Bild nicht verfügbar",
-    "language": "Sprache"
+    "language": "Sprache",
+    "filters": "Filter"
   }
 }

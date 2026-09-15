@@ -264,6 +264,7 @@
     "export": "내보내기 범위",
     "dateError": "종료일은 시작일보다 빠를 수 없습니다.",
     "photoFailed": "이미지를 사용할 수 없음",
-    "language": "언어"
+    "language": "언어",
+    "filters": "필터"
   }
 }

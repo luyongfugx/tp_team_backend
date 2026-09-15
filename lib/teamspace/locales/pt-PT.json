@@ -264,6 +264,7 @@
     "export": "Abrangência da exportação",
     "dateError": "A data final não pode ser anterior à data inicial.",
     "photoFailed": "Imagem indisponível",
-    "language": "Idioma"
+    "language": "Idioma",
+    "filters": "Filtros"
   }
 }

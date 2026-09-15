@@ -264,6 +264,7 @@
     "export": "Eksportutval",
     "dateError": "Sluttdatoen kan ikkje vere før startdatoen.",
     "photoFailed": "Biletet er utilgjengeleg",
-    "language": "Språk"
+    "language": "Språk",
+    "filters": "Filter"
   }
 }

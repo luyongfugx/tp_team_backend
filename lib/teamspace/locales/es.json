@@ -264,6 +264,7 @@
     "export": "Alcance de exportación",
     "dateError": "La fecha de fin no puede ser anterior a la fecha de inicio.",
     "photoFailed": "Imagen no disponible",
-    "language": "Idioma"
+    "language": "Idioma",
+    "filters": "Filtros"
   }
 }

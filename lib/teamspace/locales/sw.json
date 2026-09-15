@@ -264,6 +264,7 @@
     "export": "Wigo wa uhamishaji",
     "dateError": "Tarehe ya mwisho lazima iwe tarehe ya kuanza au baada yake.",
     "photoFailed": "Picha haipatikani",
-    "language": "Lugha"
+    "language": "Lugha",
+    "filters": "Vichujio"
   }
 }

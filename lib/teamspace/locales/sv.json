@@ -264,6 +264,7 @@
     "export": "Exporturval",
     "dateError": "Slutdatum får inte vara före startdatum.",
     "photoFailed": "Bild saknas",
-    "language": "Språk"
+    "language": "Språk",
+    "filters": "Filter"
   }
 }

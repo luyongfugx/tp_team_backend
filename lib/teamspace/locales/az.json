@@ -264,6 +264,7 @@
     "export": "İxrac əhatəsi",
     "dateError": "Bitmə tarixi başlanğıc tarixi ilə eyni və ya ondan sonra olmalıdır.",
     "photoFailed": "Şəkil əlçatan deyil",
-    "language": "Dil"
+    "language": "Dil",
+    "filters": "Filtrlər"
   }
 }

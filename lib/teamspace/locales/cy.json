@@ -264,6 +264,7 @@
     "export": "Cwmpas allforio",
     "dateError": "Rhaid i'r dyddiad gorffen fod ar neu ar ôl y dyddiad dechrau.",
     "photoFailed": "Delwedd ddim ar gael",
-    "language": "Iaith"
+    "language": "Iaith",
+    "filters": "Hidlyddion"
   }
 }

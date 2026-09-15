@@ -23,7 +23,7 @@ import {
   MapPin,
   SlidersHorizontal,
 } from "lucide-react";
-import { PhotoPreview } from "@/components/workspace/photo-preview";
+import { SharedPhotoPreview } from "./mobile-photo-preview";
 import { WorkspaceDialog } from "@/components/workspace/dialog";
 import { ZipDownloadPanel, type ZipDownloadHandle } from "@/components/workspace/download-panel";
 import { workspaceCopy } from "@/lib/workspace/i18n";
@@ -177,7 +177,8 @@ export function WebPhotoGallery({
     [allSelected, setAllSelected] = useState(false),
     [excluded, setExcluded] = useState<Set<string>>(new Set()),
     [activeID, setActiveID] = useState<string | null>(null),
-    [dateOpen, setDateOpen] = useState(false);
+    [dateOpen, setDateOpen] = useState(false),
+    [filtersOpen, setFiltersOpen] = useState(false);
   const selectionEpoch = useRef(0),
     dayRequests = useRef(new Map<string, number>()),
     selectionMode = useRef(allSelected);
@@ -628,6 +629,7 @@ export function WebPhotoGallery({
           </div>
           <p className="share-meta">{header.meta}</p>
         </section>
+        <div className="share-controls" data-filters-open={filtersOpen}>
         <div className="share-actions">
           <button
             className="share-primary"
@@ -686,6 +688,18 @@ export function WebPhotoGallery({
               </button>
             ))}
           </div>
+          <button
+            className={`share-filter-toggle ${hasFilters ? "is-filtered" : ""}`}
+            aria-label={t("filters")}
+            title={t("filters")}
+            aria-expanded={filtersOpen}
+            aria-controls="share-filter-controls"
+            onClick={() => setFiltersOpen(value => !value)}
+          >
+            <SlidersHorizontal size={19} />
+            {hasFilters && <span className="share-filter-dot" />}
+          </button>
+          <div id="share-filter-controls" className="share-filter-controls">
           <div className="share-filters">
             <select
               aria-label={t("project")}
@@ -738,6 +752,7 @@ export function WebPhotoGallery({
               onChange={(e) => changeFilter("q", e.target.value)}
             />
           </label>
+          </div>
         </div>
         {dateOpen && (
           <div className="share-dates">
@@ -770,6 +785,7 @@ export function WebPhotoGallery({
             )}
           </div>
         )}
+        </div>
         <div className="share-result-bar">
           <div>
             <Checkbox
@@ -1068,7 +1084,7 @@ export function WebPhotoGallery({
         </div>
       )}
       {active && (
-        <PhotoPreview
+        <SharedPhotoPreview
           photo={{ ...active, photoCode: null }}
           photos={previewPhotos}
           onChoose={openPhoto}

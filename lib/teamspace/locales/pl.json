@@ -264,6 +264,7 @@
     "export": "Zakres eksportu",
     "dateError": "Data końcowa nie może być wcześniejsza niż początkowa.",
     "photoFailed": "Obraz niedostępny",
-    "language": "Język"
+    "language": "Język",
+    "filters": "Filtry"
   }
 }

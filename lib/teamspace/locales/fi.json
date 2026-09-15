@@ -264,6 +264,7 @@
     "export": "Vietävät kohteet",
     "dateError": "Loppupäivä ei voi olla ennen alkupäivää.",
     "photoFailed": "Kuva ei ole saatavilla",
-    "language": "Kieli"
+    "language": "Kieli",
+    "filters": "Suodattimet"
   }
 }

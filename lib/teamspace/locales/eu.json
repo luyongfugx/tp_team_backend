@@ -264,6 +264,7 @@
     "export": "Esportazioaren esparrua",
     "dateError": "Amaiera-data hasiera-data bera edo geroagokoa izan behar da.",
     "photoFailed": "Irudia ez dago erabilgarri",
-    "language": "Hizkuntza"
+    "language": "Hizkuntza",
+    "filters": "Iragazkiak"
   }
 }

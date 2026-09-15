@@ -264,6 +264,7 @@
     "export": "Rozsah exportu",
     "dateError": "Koncový dátum nesmie byť pred počiatočným.",
     "photoFailed": "Obrázok nie je dostupný",
-    "language": "Jazyk"
+    "language": "Jazyk",
+    "filters": "Filtre"
   }
 }

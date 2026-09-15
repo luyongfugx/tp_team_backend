@@ -264,6 +264,7 @@
     "export": "Phạm vi xuất",
     "dateError": "Ngày kết thúc không được trước ngày bắt đầu.",
     "photoFailed": "Không tải được ảnh",
-    "language": "Ngôn ngữ"
+    "language": "Ngôn ngữ",
+    "filters": "Bộ lọc"
   }
 }

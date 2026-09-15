@@ -264,6 +264,7 @@
     "export": "Abast de l'exportació",
     "dateError": "La data de fi ha de ser igual o posterior a la data d'inici.",
     "photoFailed": "Imatge no disponible",
-    "language": "Llengua"
+    "language": "Llengua",
+    "filters": "Filtres"
   }
 }

@@ -264,6 +264,7 @@
     "export": "Contenuti da esportare",
     "dateError": "La data finale non può precedere quella iniziale.",
     "photoFailed": "Immagine non disponibile",
-    "language": "Lingua"
+    "language": "Lingua",
+    "filters": "Filtri"
   }
 }

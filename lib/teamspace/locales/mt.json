@@ -264,6 +264,7 @@
     "export": "Firxa tal-esportazzjoni",
     "dateError": "Id-data tat-tmiem trid tkun fid-data tal-bidu jew warajha.",
     "photoFailed": "L-immaġni mhix disponibbli",
-    "language": "Lingwa"
+    "language": "Lingwa",
+    "filters": "Filtri"
   }
 }

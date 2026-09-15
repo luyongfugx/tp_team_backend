@@ -264,6 +264,7 @@
     "export": "Ekspordi ulatus",
     "dateError": "Lõppkuupäev peab olema alguskuupäeval või hiljem.",
     "photoFailed": "Pilt pole saadaval",
-    "language": "Keel"
+    "language": "Keel",
+    "filters": "Filtrid"
   }
 }

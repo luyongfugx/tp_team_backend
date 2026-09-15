@@ -264,6 +264,7 @@
     "export": "Izinto eziza kuthunyelwa ngaphandle",
     "dateError": "Umhla wokugqibela kufuneka ube ngumhla wokuqala okanye emva kwawo.",
     "photoFailed": "Umfanekiso awufumaneki",
-    "language": "Ulwimi"
+    "language": "Ulwimi",
+    "filters": "Izihluzi"
   }
 }

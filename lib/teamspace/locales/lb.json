@@ -264,6 +264,7 @@
     "export": "Exportëmfang",
     "dateError": "Den Enndatum muss um oder nom Ufanksdatum leien.",
     "photoFailed": "Bild net verfügbar",
-    "language": "Sprooch"
+    "language": "Sprooch",
+    "filters": "Filteren"
   }
 }

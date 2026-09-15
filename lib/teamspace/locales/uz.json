@@ -264,6 +264,7 @@
     "export": "Eksport doirasi",
     "dateError": "Tugash sanasi boshlanish sanasi bilan bir xil yoki undan keyin bo‘lishi kerak.",
     "photoFailed": "Rasm mavjud emas",
-    "language": "Til"
+    "language": "Til",
+    "filters": "Filtrlar"
   }
 }

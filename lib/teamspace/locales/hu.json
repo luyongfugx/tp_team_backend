@@ -264,6 +264,7 @@
     "export": "Exportálandó elemek",
     "dateError": "A záró dátum nem lehet korábbi a kezdő dátumnál.",
     "photoFailed": "A kép nem érhető el",
-    "language": "Nyelv"
+    "language": "Nyelv",
+    "filters": "Szűrők"
   }
 }

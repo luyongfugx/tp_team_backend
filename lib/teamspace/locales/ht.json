@@ -264,6 +264,7 @@
     "export": "Dimansyon ekspòtasyon",
     "dateError": "Dat fen an dwe menm jou ak dat kòmansman an oswa apre li.",
     "photoFailed": "Imaj pa disponib",
-    "language": "Lang"
+    "language": "Lang",
+    "filters": "Filtè"
   }
 }

@@ -264,6 +264,7 @@
     "export": "Raspon izvoza",
     "dateError": "Završni datum ne može biti prije početnog.",
     "photoFailed": "Slika nije dostupna",
-    "language": "Jezik"
+    "language": "Jezik",
+    "filters": "Filtri"
   }
 }

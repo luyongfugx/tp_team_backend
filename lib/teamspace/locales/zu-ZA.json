@@ -264,6 +264,7 @@
     "export": "Okuzothunyelwa ngaphandle",
     "dateError": "Usuku lokugcina kufanele lube ngosuku lokuqala noma ngemva kwalo.",
     "photoFailed": "Isithombe asitholakali",
-    "language": "Ulimi"
+    "language": "Ulimi",
+    "filters": "Izihlungi"
   }
 }

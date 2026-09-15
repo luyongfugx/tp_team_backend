@@ -264,6 +264,7 @@
     "export": "Eksporto apimtis",
     "dateError": "Pabaigos data turi sutapti su pradžios data arba būti vėlesnė.",
     "photoFailed": "Vaizdas nepasiekiamas",
-    "language": "Kalba"
+    "language": "Kalba",
+    "filters": "Filtrai"
   }
 }

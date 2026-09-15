@@ -264,6 +264,7 @@
     "export": "Eksporta tvērums",
     "dateError": "Beigu datumam jābūt sākuma datumā vai vēlāk.",
     "photoFailed": "Attēls nav pieejams",
-    "language": "Valoda"
+    "language": "Valoda",
+    "filters": "Filtri"
   }
 }

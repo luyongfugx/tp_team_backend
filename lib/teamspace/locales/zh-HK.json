@@ -264,6 +264,7 @@
     "loading": "正在載入…",
     "photoFailed": "圖片未能載入",
     "language": "語言",
-    "close": "關閉"
+    "close": "關閉",
+    "filters": "篩選"
   }
 }

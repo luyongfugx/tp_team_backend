@@ -264,6 +264,7 @@
     "export": "Eksportudvalg",
     "dateError": "Slutdatoen må ikke være før startdatoen.",
     "photoFailed": "Billede ikke tilgængeligt",
-    "language": "Sprog"
+    "language": "Sprog",
+    "filters": "Filtre"
   }
 }

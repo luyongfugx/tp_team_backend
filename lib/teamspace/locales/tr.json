@@ -264,6 +264,7 @@
     "export": "Dışa aktarma kapsamı",
     "dateError": "Bitiş tarihi başlangıç tarihinden önce olamaz.",
     "photoFailed": "Görsel kullanılamıyor",
-    "language": "Dil"
+    "language": "Dil",
+    "filters": "Filtreler"
   }
 }

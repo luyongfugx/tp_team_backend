@@ -264,6 +264,7 @@
     "export": "Umfang útflutnings",
     "dateError": "Lokadagur verður að vera á eða eftir upphafsdegi.",
     "photoFailed": "Mynd ekki tiltæk",
-    "language": "Tungumál"
+    "language": "Tungumál",
+    "filters": "Síur"
   }
 }
