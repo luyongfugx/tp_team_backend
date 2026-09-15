@@ -1199,3 +1199,31 @@
   .share-page .share-result-bar[data-active="false"] { display: none; }
   .share-page .share-controls .share-actions { padding: 8px 0; }
 }
+
+@media (max-width: 760px) {
+  .share-page .share-shell { padding-inline: 16px; }
+  .share-page .share-brand label { gap: 0; max-width: none; }
+  .share-page .share-brand label > svg { display: none; }
+  .share-page .share-brand .tp-language-select { min-inline-size: 0; }
+  .share-page .share-brand .tp-language-select > span,
+  .share-page .share-brand .tp-language-select > select {
+    padding-inline: 0 24px;
+  }
+  .share-page .share-brand .tp-language-select > select {
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: end;
+  }
+  .share-page .share-brand .tp-language-select::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m5 6 3-3 3 3M5 10l3 3 3-3' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
