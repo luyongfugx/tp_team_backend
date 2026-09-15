@@ -261,7 +261,7 @@
     "saved": "Súbor je pripravený. Spúšťa sa sťahovanie.",
     "printHint": "Ukážka tlače používa váš rozsah exportu. Zvoľte „Uložiť ako PDF“.",
     "print": "Otvoriť ukážku tlače",
-    "export": "Rozsah exportu",
+    "export": "Exportovať",
     "dateError": "Koncový dátum nesmie byť pred počiatočným.",
     "photoFailed": "Obrázok nie je dostupný",
     "language": "Jazyk",

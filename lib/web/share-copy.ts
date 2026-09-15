@@ -135,7 +135,7 @@ export const shareBaseCopy = {
     "列印預覽會包含目前匯出範圍，可選擇「儲存為 PDF」。",
   ],
   print: ["打开打印预览", "Open print preview", "開啟列印預覽"],
-  export: ["导出范围", "Export scope", "匯出範圍"],
+  export: ["导出", "Export", "匯出"],
   dateError: [
     "结束日期不能早于开始日期。",
     "End date must be on or after the start date.",

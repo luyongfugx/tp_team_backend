@@ -261,7 +261,7 @@
     "saved": "Filen er klar. Nedlastingen starter.",
     "printHint": "Forhåndsvisningen bruker eksportutvalget ditt. Velg «Lagre som PDF».",
     "print": "Åpne forhåndsvisning av utskrift",
-    "export": "Eksportutvalg",
+    "export": "Eksporter",
     "dateError": "Sluttdatoen kan ikke være før startdatoen.",
     "photoFailed": "Bildet er utilgjengelig",
     "language": "Språk",

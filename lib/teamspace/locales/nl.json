@@ -261,7 +261,7 @@
     "saved": "Bestand gereed. Download wordt gestart.",
     "printHint": "Het afdrukvoorbeeld gebruikt je exportselectie. Kies ‘Opslaan als PDF’.",
     "print": "Afdrukvoorbeeld openen",
-    "export": "Exportselectie",
+    "export": "exporteren",
     "dateError": "De einddatum mag niet vóór de begindatum liggen.",
     "photoFailed": "Afbeelding niet beschikbaar",
     "language": "Taal",

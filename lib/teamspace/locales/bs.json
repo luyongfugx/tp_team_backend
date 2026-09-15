@@ -261,7 +261,7 @@
     "saved": "Datoteka je spremna. Preuzimanje započinje.",
     "printHint": "Pregled štampe koristi vaš raspon izvoza. Odaberite „Sačuvaj kao PDF”.",
     "print": "Otvori pregled štampe",
-    "export": "Raspon izvoza",
+    "export": "Izvezi",
     "dateError": "Završni datum ne može biti prije početnog.",
     "photoFailed": "Slika nije dostupna",
     "language": "Jezik",

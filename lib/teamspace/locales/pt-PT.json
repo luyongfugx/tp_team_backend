@@ -261,7 +261,7 @@
     "saved": "Ficheiro pronto. A iniciar a transferência.",
     "printHint": "A pré-visualização de impressão usa a abrangência de exportação escolhida. Selecione “Guardar como PDF”.",
     "print": "Abrir pré-visualização de impressão",
-    "export": "Abrangência da exportação",
+    "export": "Exportar",
     "dateError": "A data final não pode ser anterior à data inicial.",
     "photoFailed": "Imagem indisponível",
     "language": "Idioma",

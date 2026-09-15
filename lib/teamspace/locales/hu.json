@@ -261,7 +261,7 @@
     "saved": "A fájl kész. A letöltés indul.",
     "printHint": "A nyomtatási előnézet az exportálási kijelölést használja. Válassza a „Mentés PDF-ként” lehetőséget.",
     "print": "Nyomtatási előnézet megnyitása",
-    "export": "Exportálandó elemek",
+    "export": "exportálása",
     "dateError": "A záró dátum nem lehet korábbi a kezdő dátumnál.",
     "photoFailed": "A kép nem érhető el",
     "language": "Nyelv",

@@ -261,7 +261,7 @@
     "saved": "File pronto. Avvio del download.",
     "printHint": "L’anteprima di stampa usa i contenuti scelti per l’esportazione. Scegli “Salva come PDF”.",
     "print": "Apri anteprima di stampa",
-    "export": "Contenuti da esportare",
+    "export": "Esporta",
     "dateError": "La data finale non può precedere quella iniziale.",
     "photoFailed": "Immagine non disponibile",
     "language": "Lingua",

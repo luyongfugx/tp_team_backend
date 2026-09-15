@@ -261,7 +261,7 @@
     "saved": "Filen är klar. Nedladdningen startar.",
     "printHint": "Förhandsgranskningen använder ditt exporturval. Välj ”Spara som PDF”.",
     "print": "Öppna förhandsgranskning",
-    "export": "Exporturval",
+    "export": "Exportera",
     "dateError": "Slutdatum får inte vara före startdatum.",
     "photoFailed": "Bild saknas",
     "language": "Språk",

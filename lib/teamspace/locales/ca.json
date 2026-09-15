@@ -261,7 +261,7 @@
     "saved": "Fitxer preparat. Comença la baixada.",
     "printHint": "La previsualització d'impressió fa servir l'abast de l'exportació. Tria «Desa com a PDF».",
     "print": "Obre la previsualització d'impressió",
-    "export": "Abast de l'exportació",
+    "export": "Exporta",
     "dateError": "La data de fi ha de ser igual o posterior a la data d'inici.",
     "photoFailed": "Imatge no disponible",
     "language": "Llengua",

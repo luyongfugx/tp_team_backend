@@ -261,7 +261,7 @@
     "saved": "Fichier prêt. Le téléchargement commence.",
     "printHint": "L’aperçu avant impression utilise le périmètre d’exportation choisi. Sélectionnez « Enregistrer au format PDF ».",
     "print": "Ouvrir l’aperçu avant impression",
-    "export": "Périmètre de l’exportation",
+    "export": "Exporter",
     "dateError": "La date de fin ne peut pas précéder la date de début.",
     "photoFailed": "Image indisponible",
     "language": "Langue",

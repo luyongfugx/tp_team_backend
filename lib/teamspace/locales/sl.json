@@ -261,7 +261,7 @@
     "saved": "Datoteka je pripravljena. Prenos se začenja.",
     "printHint": "Predogled tiskanja uporablja vaš obseg izvoza. Izberite »Shrani kot PDF«.",
     "print": "Odpri predogled tiskanja",
-    "export": "Obseg izvoza",
+    "export": "Izvozi",
     "dateError": "Končni datum ne sme biti pred začetnim.",
     "photoFailed": "Slika ni na voljo",
     "language": "Jezik",

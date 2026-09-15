@@ -261,7 +261,7 @@
     "saved": "Datei bereit. Download startet.",
     "printHint": "Die Druckvorschau verwendet deinen Exportumfang. Wähle „Als PDF speichern“.",
     "print": "Druckvorschau öffnen",
-    "export": "Exportumfang",
+    "export": "exportieren",
     "dateError": "Das Enddatum darf nicht vor dem Anfangsdatum liegen.",
     "photoFailed": "Bild nicht verfügbar",
     "language": "Sprache",

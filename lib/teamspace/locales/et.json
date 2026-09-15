@@ -261,7 +261,7 @@
     "saved": "Fail on valmis. Allalaadimine algab.",
     "printHint": "Prindi eelvaade kasutab sinu ekspordi ulatust. Vali „Salvesta PDF-ina“.",
     "print": "Ava prindi eelvaade",
-    "export": "Ekspordi ulatus",
+    "export": "Ekspordi",
     "dateError": "Lõppkuupäev peab olema alguskuupäeval või hiljem.",
     "photoFailed": "Pilt pole saadaval",
     "language": "Keel",

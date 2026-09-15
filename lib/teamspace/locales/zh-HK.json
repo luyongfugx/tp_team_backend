@@ -259,7 +259,7 @@
     "saved": "檔案已準備好，正在下載。",
     "printHint": "列印預覽會包含目前匯出範圍，可選擇「儲存為 PDF」。",
     "print": "開啟列印預覽",
-    "export": "匯出範圍",
+    "export": "匯出",
     "dateError": "結束日期不能早於開始日期。",
     "loading": "正在載入…",
     "photoFailed": "圖片未能載入",

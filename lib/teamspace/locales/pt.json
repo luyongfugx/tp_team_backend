@@ -261,7 +261,7 @@
     "saved": "Arquivo pronto. Iniciando download.",
     "printHint": "A prévia de impressão usa a abrangência de exportação escolhida. Selecione “Salvar como PDF”.",
     "print": "Abrir prévia de impressão",
-    "export": "Abrangência da exportação",
+    "export": "Exportar",
     "dateError": "A data final não pode ser anterior à data inicial.",
     "photoFailed": "Imagem indisponível",
     "language": "Idioma",
