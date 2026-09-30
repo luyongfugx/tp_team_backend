@@ -26,7 +26,9 @@ export async function fetchTrustedPhotoRecord(photoCode: string) {
     : null
 }
 
-export async function enrichCaptureTeamInfo(rawResult: Record<string, unknown>, userID: string) {
+export async function enrichCaptureTeamInfo(rawResult: Record<string, unknown>, userID: string | null | undefined) {
+  // Guest verification has no account whose team photos can be queried.
+  if (!userID?.trim()) return rawResult
   const captureValue = rawResult.captureRecord
   if (!captureValue || typeof captureValue !== "object" || Array.isArray(captureValue)) return rawResult
   const captureRecord = { ...(captureValue as Record<string, unknown>) }

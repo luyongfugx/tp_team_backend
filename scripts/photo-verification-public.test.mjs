@@ -96,3 +96,63 @@ test("public verification still rejects unsafe image sources", () => {
     assert.equal(validateVerificationImageURL(url),null,url)
   }
 })
+
+function photoRecordEnricher(prisma) {
+  const source = readFileSync(new URL('../lib/photoRecord.ts', import.meta.url), 'utf8')
+    .replace(/^import .*$/gm, '')
+    .replace(/export\s+(?=async function)/g, '')
+  return new Function('prisma', stripTypeScriptTypes(source) + '\nreturn enrichCaptureTeamInfo;')(prisma)
+}
+
+test('guest enrichment preserves OCR results without querying account photos', async () => {
+  const enrich = photoRecordEnricher({ photo: {
+    findFirst: () => assert.fail('Guest must not query photos'),
+    findMany: () => assert.fail('Guest must not query photos'),
+  } })
+  const result = { photoCode: { recognized: '9ZIOXF9IMYZN' }, captureRecord: { mediaID: 'media', timestamp: 1790750000000 } }
+  for (const owner of [null, undefined, '', '  ']) {
+    assert.equal(await enrich(result, owner), result)
+  }
+})
+
+test('signed-in enrichment retains the account filter', async () => {
+  const enrich = photoRecordEnricher({ photo: {
+    findFirst: async ({where}) => {
+      assert.deepEqual(where, { userID: 'user-123', antiFakeCode: '9ZIOXF9IMYZN', deletedAt: null })
+      return {groupID:'group', projectID:'project', projectName:'Project', team:{groupName:'Team'}}
+    },
+  } })
+  const result = await enrich({photoCode:'9ZIOXF9IMYZN', captureRecord:{}}, 'user-123')
+  assert.equal(result.captureRecord.groupName, 'Team')
+  assert.equal(result.captureRecord.projectName, 'Project')
+})
+
+test('guest success callbacks persist both passing and non-passing OCR results', async () => {
+  for (const verified of [true, false]) {
+    let update
+    const prisma = {
+      photo: { findFirst: () => assert.fail('Guest must not query account photos') },
+      photoVerificationTask: {
+        findUnique: async () => ({taskID:'task', userID:null, status:'PROCESSING'}),
+        updateMany: async query => { update = query; return {count:1} },
+      },
+    }
+    const POST = handler('photoCode/verify/task/callback', {
+      prisma,
+      callbackSecretMatches: value => value === 'test-secret',
+      enrichCaptureTeamInfo: photoRecordEnricher(prisma),
+      completedVerificationProgress: () => ({complete:true}),
+      normalizeVerificationErrorCode: value => String(value),
+    })
+    const result = {verified, photoCode:{recognized:'9ZIOXF9IMYZN'}, captureRecord:{timestamp:1790750000000}}
+    if (!verified) result.errorCode = '409'
+    const req = request({taskId:'task', status:'SUCCEEDED', result})
+    req.headers.set('x-callback-secret', 'test-secret')
+    assert.equal((await POST(req)).status, 200)
+    assert.equal(update.data.status, 'SUCCEEDED')
+    assert.equal(update.data.verified, verified)
+    assert.deepEqual(update.data.result, result)
+    assert.equal(update.data.errorCode, verified ? null : '409')
+    assert.equal((await POST(request({taskId:'task', status:'SUCCEEDED', result}))).status, 401)
+  }
+})
