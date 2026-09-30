@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Search,
   Settings,
+  ShieldCheck,
   Smartphone,
   Trash2,
   UserPlus,
@@ -34,6 +35,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 import { authenticatedFetch } from "@/lib/client-auth"
 import { PhotoCodePhotos } from "@/components/admin/photo-code-photos"
+import { PhotoVerificationRecords } from "@/components/admin/photo-verification-records"
 import { getPhotoShareCopy } from "@/lib/photoShareI18n"
 
 interface DashboardProps {
@@ -48,7 +50,7 @@ const TEAM_PAGE_SIZE = 30
 const PHOTO_DAY_PAGE_SIZE = 10
 const DELETE_REQUEST_PAGE_SIZE = 30
 const ADMIN_USER_PAGE_SIZE = 30
-type MainMenu = "teams" | "photoCodePhotos" | "settings" | "deleteRequests" | "adminUsers"
+type MainMenu = "teams" | "photoCodePhotos" | "photoVerifications" | "settings" | "deleteRequests" | "adminUsers"
 type DetailView =
   | { type: "teams" }
   | { type: "team"; teamID: string; tab: "projects" | "members" }
@@ -617,6 +619,7 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
   const [selectedAdminUserID, setSelectedAdminUserID] = useState<string | null>(null)
   const [adminUserDetailLoading, setAdminUserDetailLoading] = useState(false)
   const [photoCodePhotosRefreshKey, setPhotoCodePhotosRefreshKey] = useState(0)
+  const [photoVerificationsRefreshKey, setPhotoVerificationsRefreshKey] = useState(0)
   const photoPreviewRef = useRef<HTMLDivElement>(null)
 
   const isSuperAdmin = overview?.role === "SUPER_ADMIN"
@@ -1081,6 +1084,11 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     setView({ type: "teams" })
   }
 
+  function openPhotoVerifications() {
+    setActiveMenu("photoVerifications")
+    setView({ type: "teams" })
+  }
+
   function refreshCurrentView() {
     if (activeMenu === "adminUsers") {
       if (selectedAdminUserID) {
@@ -1098,6 +1106,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
       setPhotoCodePhotosRefreshKey((value) => value + 1)
       return
     }
+    if (activeMenu === "photoVerifications") {
+      setPhotoVerificationsRefreshKey((value) => value + 1)
+      return
+    }
     loadOverview()
   }
 
@@ -1107,9 +1119,16 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
     : resolveLocale(locale) === "zh-Hant"
       ? "照片碼照片"
       : `${photoRecordCopy.photoCode} · ${t(locale, "dashboard.photos")}`
+  const photoVerificationsTitle = resolveLocale(locale) === "zh-Hans"
+    ? "验真记录"
+    : resolveLocale(locale) === "zh-Hant"
+      ? "驗真記錄"
+      : "Verification records"
   const title =
     activeMenu === "photoCodePhotos"
       ? photoCodePhotosTitle
+      : activeMenu === "photoVerifications"
+      ? photoVerificationsTitle
       : activeMenu === "adminUsers"
       ? selectedAdminUserID
         ? t(locale, "dashboard.userDetail")
@@ -1170,6 +1189,15 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
                 {!collapsed && <span>{photoCodePhotosTitle}</span>}
               </button>
               <CollapsedTooltip collapsed={collapsed} label={photoCodePhotosTitle} />
+            </div>
+          )}
+          {isSuperAdmin && (
+            <div className="group relative">
+              <button type="button" className={menuButtonClass(activeMenu === "photoVerifications", collapsed)} onClick={openPhotoVerifications} title={photoVerificationsTitle}>
+                <ShieldCheck className="size-4" />
+                {!collapsed && <span>{photoVerificationsTitle}</span>}
+              </button>
+              <CollapsedTooltip collapsed={collapsed} label={photoVerificationsTitle} />
             </div>
           )}
           {isSuperAdmin && (
@@ -1311,6 +1339,10 @@ export function Dashboard({ token, user, onLogout }: DashboardProps) {
 
           {!loading && overview && activeMenu === "photoCodePhotos" && isSuperAdmin && (
             <PhotoCodePhotos token={token} locale={locale} refreshKey={photoCodePhotosRefreshKey} />
+          )}
+
+          {!loading && overview && activeMenu === "photoVerifications" && isSuperAdmin && (
+            <PhotoVerificationRecords token={token} locale={locale} refreshKey={photoVerificationsRefreshKey} />
           )}
 
           {!loading && overview && activeMenu === "teams" && view.type === "team" && selectedTeam && (
