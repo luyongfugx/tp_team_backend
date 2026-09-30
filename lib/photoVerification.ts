@@ -113,7 +113,7 @@ export function verificationImageBucket(): VerificationImageBucket {
   return { bucket, region }
 }
 
-export function validateVerificationImageURL(rawURL: unknown, userID: string) {
+export function validateVerificationImageURL(rawURL: unknown, userID: string | null) {
   if (typeof rawURL !== "string" || rawURL.length > 2048) return null
   let url: URL
   try {
@@ -133,8 +133,10 @@ export function validateVerificationImageURL(rawURL: unknown, userID: string) {
   } catch {
     return null
   }
-  const prefix = `verify/${cleanUserPathID(userID)}/`
-  if (!objectKey.startsWith(prefix) || objectKey.includes("\\") || objectKey.split("/").some((part) => !part || part === "." || part === "..")) return null
+  const validOwnerPath = userID
+    ? objectKey.startsWith(`verify/${cleanUserPathID(userID)}/`)
+    : /^verify\/guest-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f-]+\.jpg$/i.test(objectKey)
+  if (!validOwnerPath || objectKey.includes("\\") || objectKey.split("/").some((part) => !part || part === "." || part === "..")) return null
   if (!/\.(?:jpe?g)$/i.test(objectKey)) return null
   return { imageUrl: url.toString(), objectKey }
 }

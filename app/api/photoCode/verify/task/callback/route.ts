@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       const rawResult = body.result && typeof body.result === "object" && !Array.isArray(body.result)
         ? body.result as Record<string, unknown>
         : {}
-      const result = await enrichCaptureTeamInfo(rawResult, existing.userID)
+      const result = existing.userID ? await enrichCaptureTeamInfo(rawResult, existing.userID) : rawResult
       const verificationPassed = (result as Record<string, unknown>).verified === true
       const rawResultErrorCode = (result as Record<string, unknown>).errorCode
       const resultErrorCode = rawResultErrorCode == null

@@ -78,3 +78,16 @@ X-Callback-Secret: <TP_OCR_CALLBACK_SECRET>
 5. 确认成功任务保存 `resultObjectKey`，对应 COS 中存在 `code_verify.json`。
 6. 确认其他账户查询该 `taskID` 返回任务不存在或无权限。
 7. 打开 `/s/<照片码>`，确认私有桶图片、位置地图和元数据可见，导航按钮能打开对应坐标的 Google 地图。
+
+## 访客验真（2026-09-30）
+
+先执行 `20260930010000_guest_photo_verification` 数据库迁移，再发布服务端，最后发布移动端。
+
+- iOS/Android 不再要求登录即可选图验真、查询照片码。已登录请求保持原账户归属。
+- 未登录客户端为验真服务生成 UUID v4 `guestToken`，在创建任务、轮询和标记超时的请求体中携带；服务端只保存 SHA-256 `guestKey`，并始终以 `userID IS NULL AND guestKey = ...` 限定访客任务。凭证不出现在响应和日志中。
+- 访客图片只接受配置的验真 COS 桶下 `verify/guest-<UUID>/<UUID>.jpg`；与访客任务凭证独立，URL 不可用于读取其他任务。
+- 照片码查询沿用照片码本身作为查找依据；访客不执行账户下的团队/项目资料补全，OCR 回调同样跳过账户补全。
+- `PhotoVerificationTask.userID` 改为可空，新增可空 `guestKey`；已有任务和账户关系保留，管理页兼容访客。
+- 网页验真的登录交互与上传接口保持现状；本次范围为移动端。
+
+验证：`node --import tsx --test scripts/photo-verification-guest.test.ts`。

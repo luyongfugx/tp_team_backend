@@ -1,3 +1,4 @@
+import { verificationOwner } from "@/lib/photoVerificationGuest"
 import { NextResponse } from "next/server"
 import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
 import { prisma } from "@/lib/prisma"
@@ -8,11 +9,12 @@ const verificationTasks = (prisma as unknown as { photoVerificationTask: any }).
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
-    if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
+    const owner = verificationOwner(user?.id ?? null, body.guestToken)
+    if (!owner) return bad("参数不正确")
     const taskID = typeof body.taskID === "string" ? body.taskID.trim() : ""
     if (!taskID || taskID.length > 100) return bad("参数不正确")
-    const task = await verificationTasks.findFirst({ where: { taskID, userID: user.id } })
+    const task = await verificationTasks.findFirst({ where: { taskID, ...owner } })
     if (!task) return bad("任务不存在", 404)
     return ok(publicVerificationTask(task))
   } catch (error) {

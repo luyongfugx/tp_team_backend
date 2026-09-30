@@ -1,0 +1,3 @@
+ALTER TABLE `PhotoVerificationTask`
+MODIFY COLUMN `userID` VARCHAR(191) NULL,
+ADD COLUMN `guestKey` VARCHAR(64) NULL;

@@ -10,7 +10,7 @@ type Outcome = "all" | "success" | "failure"
 
 type Task = {
   taskID: string
-  userID: string
+  userID: string | null
   status: "PENDING" | "PROCESSING" | "SUCCEEDED" | "FAILED"
   photoCode: string | null
   verified: boolean | null
@@ -19,7 +19,7 @@ type Task = {
   verificationProgress: unknown
   createdAt: string
   completedAt: string | null
-  user: { id: string; email: string; userName: string | null; shortName: string | null }
+  user: { id: string; email: string; userName: string | null; shortName: string | null } | null
 }
 
 type JSONDocument = { objectKey: string | null; document: Record<string, unknown> | null; error: string | null }
@@ -178,7 +178,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                       const failed = task.status === "FAILED" || task.verified === false
                       return <tr key={task.taskID} className="hover:bg-muted/40">
                         <td className="px-4 py-3 text-muted-foreground">{new Date(task.createdAt).toLocaleString()}</td>
-                        <td className="px-4 py-3"><div className="font-medium">{task.user.userName || task.user.shortName || task.user.email}</div><div className="text-xs text-muted-foreground">{task.user.email}</div></td>
+                        <td className="px-4 py-3"><div className="font-medium">{task.user?.userName || task.user?.shortName || task.user?.email || (chinese ? "访客" : "Guest")}</div><div className="text-xs text-muted-foreground">{task.user?.email || "-"}</div></td>
                         <td className="px-4 py-3 font-mono">{task.photoCode || "-"}</td>
                         <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${passed ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : failed ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>{passed ? <CheckCircle2 className="size-3.5" /> : failed ? <XCircle className="size-3.5" /> : <Loader2 className="size-3.5 animate-spin" />}{statusLabel(task, chinese)}</span></td>
                         <td className="max-w-[280px] truncate px-4 py-3 text-muted-foreground">{[task.errorCode, task.errorMessage].filter(Boolean).join(" · ") || "-"}</td>
@@ -211,7 +211,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
             <div className="overflow-auto p-4 md:p-6">
               {tab === "analysis" && <div className="space-y-4">
                 <div className={`rounded-xl border p-4 ${detail.analysis.passed ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"}`}><div className="flex items-center gap-2 font-semibold">{detail.analysis.passed ? <CheckCircle2 className="size-5" /> : <AlertTriangle className="size-5" />}{detail.analysis.summary}</div>{detail.analysis.errorCode && <div className="mt-2 text-sm">{detail.analysis.errorCode} · {detail.analysis.errorMessage}</div>}</div>
-                <div className="grid gap-3 md:grid-cols-3"><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">PhotoCode</div><div className="mt-1 font-mono">{detail.task.photoCode || "-"}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "用户" : "User"}</div><div className="mt-1">{detail.task.user.email}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "失败阶段" : "Failed stages"}</div><div className="mt-1">{detail.analysis.failedStages.join(", ") || "-"}</div></div></div>
+                <div className="grid gap-3 md:grid-cols-3"><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">PhotoCode</div><div className="mt-1 font-mono">{detail.task.photoCode || "-"}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "用户" : "User"}</div><div className="mt-1">{detail.task.user?.email || (chinese ? "访客" : "Guest")}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "失败阶段" : "Failed stages"}</div><div className="mt-1">{detail.analysis.failedStages.join(", ") || "-"}</div></div></div>
                 {detail.analysis.mismatches.map((item) => <div key={item.field} className="rounded-lg border border-red-200 p-4 dark:border-red-900"><div className="font-medium text-red-700 dark:text-red-300">{item.field}</div><div className="mt-1 text-sm text-muted-foreground">{item.reason}</div>{item.detail != null && <details className="mt-3"><summary className="cursor-pointer text-sm">{chinese ? "查看诊断数据" : "Diagnostic data"}</summary><pre className="mt-2 max-h-72 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(item.detail, null, 2)}</pre></details>}</div>)}
               </div>}
               {tab === "trace" && <div className="space-y-4">

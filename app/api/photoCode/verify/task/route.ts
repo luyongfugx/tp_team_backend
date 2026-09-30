@@ -1,3 +1,4 @@
+import { verificationOwner } from "@/lib/photoVerificationGuest"
 import { randomUUID } from "node:crypto"
 import { NextResponse } from "next/server"
 import { bad, ok, readBody, requireUser } from "@/app/api/_utils/api"
@@ -14,16 +15,17 @@ const verificationTasks = (prisma as unknown as { photoVerificationTask: any }).
 export async function POST(req: Request) {
   try {
     const user = await requireUser(req)
-    if (!user) return bad("未授权或登录已过期", 401)
     const body = await readBody(req)
-    const image = validateVerificationImageURL(body.imageUrl ?? body.imageURL, user.id)
+    const owner = verificationOwner(user?.id ?? null, body.guestToken)
+    if (!owner) return bad("参数不正确")
+    const image = validateVerificationImageURL(body.imageUrl ?? body.imageURL, user?.id ?? null)
     if (!image) return bad("参数不正确")
 
     const taskID = randomUUID()
     let task = await verificationTasks.create({
       data: {
         taskID,
-        userID: user.id,
+        ...owner,
         imageUrl: image.imageUrl,
         imageObjectKey: image.objectKey,
         status: "PENDING",
