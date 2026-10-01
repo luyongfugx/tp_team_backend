@@ -81,6 +81,31 @@ function JSONViewer({ value, error }: { value: Record<string, unknown> | null; e
   return <pre className="max-h-[62vh] overflow-auto rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-100">{JSON.stringify(value, null, 2)}</pre>
 }
 
+function TimingBreakdown({ value, chinese }: { value: unknown; chinese: boolean }) {
+  const timing = value && typeof value === "object" ? value as Record<string, unknown> : null
+  const steps = Array.isArray(timing?.steps) ? timing.steps.filter((v): v is Record<string, unknown> => !!v && typeof v === "object") : []
+  const labels: Record<string, string> = {
+    "image.download": "下载验真图片", "cos.image_download": "COS 图片下载", "cos.json_download": "COS 原始 JSON 下载",
+    "cos.result_upload": "COS 结果 JSON 上传", "verify.total": "验真处理总计", "ocr.photo_code": "照片码识别",
+    "ocr.photo_code_region": "照片码区域识别", "ocr.region": "局部文字识别", "ocr.clock": "时钟识别",
+    "ocr.model_load": "加载识别模型", "verify.section": "字段核验", "verify.local_region": "本地识别比对",
+    "verify.vision_region": "视觉模型识别比对", "vision.recognize": "视觉模型请求", "text.normalize_time": "时间格式解析",
+    "verify.content": "照片内容比对", "verify.blind_watermark": "盲水印检查", "callback.progress": "进度回调等待",
+  }
+  const ms = (v: unknown) => typeof v === "number" && Number.isFinite(v) ? `${(v / 1000).toFixed(3)} s` : "—"
+  return <section className="rounded-xl border p-4">
+    <h3 className="font-semibold">{chinese ? "步骤耗时" : "Step timings"}</h3>
+    {!steps.length ? <p className="mt-2 text-sm text-muted-foreground">{chinese ? "该记录暂无耗时数据，部署后新任务会自动记录。" : "No timing data. New tasks will record timings after deployment."}</p> : <>
+      <p className="my-2 text-sm text-muted-foreground">{chinese ? "服务端总耗时（最终结果回调前）" : "Server elapsed time before final callback"}: {ms(timing?.totalMs)} · {chinese ? "父步骤包含子步骤，请勿重复相加。" : "Parent timings include child steps; do not sum overlapping rows."}</p>
+      <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b"><th className="p-2">{chinese ? "步骤 / 文件 / 区域" : "Step / file / region"}</th><th className="p-2">{chinese ? "开始" : "Start"}</th><th className="p-2">{chinese ? "耗时" : "Duration"}</th><th className="p-2">{chinese ? "大小" : "Size"}</th><th className="p-2">{chinese ? "状态" : "Status"}</th></tr></thead><tbody>{steps.map((step, index) => <tr key={index} className="border-b align-top">
+        <td className="p-2"><div>{step.parentId != null ? "↳ " : ""}{chinese ? labels[String(step.name)] || String(step.name) : String(step.name)}</div><div className="mt-1 break-all text-muted-foreground">{[step.section_name, step.scope, step.bucket, step.object_path].filter(v => typeof v === "string").join(" · ")}</div><div className="text-muted-foreground">#{String(step.id ?? index + 1)}{step.parentId != null ? ` ← #${String(step.parentId)}` : ""}</div></td>
+        <td className="whitespace-nowrap p-2">{ms(step.startMs)}</td><td className="whitespace-nowrap p-2 font-semibold">{ms(step.durationMs)}</td><td className="whitespace-nowrap p-2">{typeof step.bytes === "number" ? `${(step.bytes / 1024).toFixed(1)} KiB` : "—"}</td><td className={`p-2 ${step.status === "error" ? "text-red-600" : "text-emerald-600"}`}>{step.status === "error" ? (chinese ? "执行失败" : "Error") : (chinese ? "已执行" : "Executed")} {typeof step.errorType === "string" ? step.errorType : ""}</td>
+      </tr>)}</tbody></table></div>
+      {typeof timing?.droppedSteps === "number" && timing.droppedSteps > 0 && <p className="mt-2 text-xs text-muted-foreground">{chinese ? "达到记录上限，部分步骤未展示：" : "Trace limit reached; omitted steps: "}{timing.droppedSteps}</p>}
+    </>}
+  </section>
+}
+
 export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { token: string; locale: string; refreshKey?: number }) {
   const chinese = isChinese(locale)
   const [outcome, setOutcome] = useState<Outcome>("all")
@@ -215,6 +240,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                 {detail.analysis.mismatches.map((item) => <div key={item.field} className="rounded-lg border border-red-200 p-4 dark:border-red-900"><div className="font-medium text-red-700 dark:text-red-300">{item.field}</div><div className="mt-1 text-sm text-muted-foreground">{item.reason}</div>{item.detail != null && <details className="mt-3"><summary className="cursor-pointer text-sm">{chinese ? "查看诊断数据" : "Diagnostic data"}</summary><pre className="mt-2 max-h-72 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(item.detail, null, 2)}</pre></details>}</div>)}
               </div>}
               {tab === "trace" && <div className="space-y-4">
+                <TimingBreakdown value={detail.task.result?.timings} chinese={chinese} />
                 {detail.analysis.recognitionTraces.map((trace) => <div key={trace.field} className="rounded-xl border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="font-semibold">{chinese ? trace.label : trace.field === "photoCode" ? "Photo code" : trace.field === "time" ? "Capture time" : "Capture location"}</div>
