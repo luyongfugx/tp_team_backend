@@ -12,6 +12,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { ArrowLeft, Loader2, Mail, QrCode, RefreshCw } from "lucide-react"
+import styles from "@/app/login.module.css"
 import { clientLocale, localeDateCode, LOCALE_CHANGE_EVENT, resolveLocale, t } from "@/lib/i18n"
 
 type Step = "email" | "code" | "qrCode"
@@ -130,7 +131,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
       locale: localeDateCode(resolveLocale(locale)),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [googleClientID, googleScriptReady, locale])
+  }, [googleClientID, googleScriptReady, locale, step])
 
   useEffect(() => {
     if (step !== "qrCode") return
@@ -289,16 +290,27 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
   }
 
   return (
-    <Card className={`w-full max-w-sm border-orange-100 bg-white/90 text-slate-950 shadow-2xl shadow-orange-900/10 backdrop-blur-xl ring-orange-50 ${className}`}>
-      <CardHeader className="space-y-2">
-        <CardTitle className="text-3xl font-semibold text-slate-950">
-          {step === "email" ? t(locale, "login.freeStart") : step === "qrCode" ? t(locale, "login.qrTitle") : t(locale, "login.titleCode")}
+    <Card className={`${styles.card} ${className}`}>
+      <CardHeader className="space-y-3 px-0">
+        <CardTitle role="heading" aria-level={2} className="text-3xl font-semibold leading-tight tracking-tight text-slate-950">
+          {t(locale, step === "code" ? "login.titleCode" : "login.freeStart")}
         </CardTitle>
         {step === "code" && <CardDescription className="text-slate-500">{t(locale, "login.descCode", { email })}</CardDescription>}
         {step === "qrCode" && <CardDescription className="text-slate-500">{t(locale, "login.qrDescription")}</CardDescription>}
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      {step !== "code" && (
+        <div className={styles.methods} role="group" aria-label={t(locale, "login.titleEmail")}>
+          <button type="button" aria-pressed={step === "qrCode"} onClick={() => { if (step !== "qrCode") { setStep("qrCode"); setError("") } }}>
+            <QrCode size={17} aria-hidden="true" /> {t(locale, "login.qrButton")}
+          </button>
+          <button type="button" aria-pressed={step === "email"} onClick={() => { if (step !== "email") { setStep("email"); setQrLogin(null); setQrImage(""); setError("") } }}>
+            <Mail size={17} aria-hidden="true" /> {t(locale, "login.emailLogin")}
+          </button>
+        </div>
+      )}
+
+      <CardContent className="space-y-6 px-0">
         {step === "email" && (
           <div className="space-y-4">
             <div className="relative min-h-11">
@@ -331,7 +343,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
               className="space-y-4"
             >
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-700">{t(locale, "login.emailLabel")}：</Label>
+                <Label htmlFor="email" className="text-slate-700">{t(locale, "login.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -339,37 +351,25 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   required
-                  className="h-11 border-slate-200 bg-white px-3 text-slate-950 placeholder:text-slate-400 focus-visible:border-orange-400 focus-visible:ring-orange-200/60"
+                  className="h-11 border-slate-200 bg-white px-3 text-slate-950 placeholder:text-slate-400 focus-visible:border-blue-500 focus-visible:ring-blue-100"
                 />
               </div>
-              {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="h-11 w-full bg-[#ea580c] text-white shadow-lg shadow-orange-200/70 hover:bg-[#f97316]" disabled={loading || !email}>
+              {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
+              <Button type="submit" className="min-h-12 h-auto w-full whitespace-normal bg-[#006eff] py-3 text-white shadow-none hover:bg-[#005ddd]" disabled={loading || !email}>
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 {loading ? t(locale, "login.sendingEmailCode") : t(locale, "login.emailLogin")}
               </Button>
             </form>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full border-orange-200 bg-white text-[#ea580c] hover:bg-orange-50 hover:text-[#c2410c]"
-              onClick={() => {
-                setStep("qrCode")
-                setError("")
-              }}
-            >
-              <QrCode className="size-4" /> {t(locale, "login.qrButton")}
-            </Button>
           </div>
         )}
 
         {step === "qrCode" && (
           <div className="space-y-4">
-            <div className="mx-auto flex aspect-square w-[240px] items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-2">
+            <div className="mx-auto flex aspect-square w-[240px] max-w-full items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
               {qrImage ? (
                 <img src={qrImage} alt={t(locale, "login.qrTitle")} className="size-full" />
               ) : (
-                <Loader2 className="size-7 animate-spin text-[#ea580c]" />
+                <Loader2 className="size-7 animate-spin text-[#006eff]" />
               )}
             </div>
             {qrConfirmed && (
@@ -377,22 +377,9 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 <Loader2 className="size-4 animate-spin" /> {t(locale, "login.qrConfirmed")}
               </p>
             )}
-            {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
-            <Button type="button" variant="outline" className="h-10 w-full border-orange-200 text-[#ea580c] hover:bg-orange-50" onClick={() => setQrRefreshKey((value) => value + 1)}>
+            {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
+            <Button type="button" variant="ghost" className="mx-auto flex min-h-10 h-auto max-w-full whitespace-normal text-slate-500 hover:bg-slate-50 hover:text-[#006eff]" onClick={() => setQrRefreshKey((value) => value + 1)}>
               <RefreshCw className="size-4" /> {t(locale, "login.qrRefresh")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setStep("email")
-                setQrLogin(null)
-                setQrImage("")
-                setError("")
-              }}
-              className="h-11 w-full border-orange-200 bg-white text-[#ea580c] hover:bg-orange-50 hover:text-[#c2410c]"
-            >
-              <Mail className="size-4" /> {t(locale, "login.emailLogin")}
             </Button>
           </div>
         )}
@@ -401,6 +388,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
           <div className="space-y-4">
             <div className="flex flex-col items-center gap-3">
               <InputOTP
+                aria-label={t(locale, "login.titleCode")}
                 maxLength={6}
                 value={code}
                 onChange={(v) => {
@@ -410,15 +398,15 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 disabled={loading}
               >
                 <InputOTPGroup className="gap-2">
-                  <InputOTPSlot index={0} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={1} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={2} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={3} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={4} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
-                  <InputOTPSlot index={5} className="rounded-lg border border-orange-100 bg-[#fff7ed]/70 text-slate-950 data-[active=true]:border-orange-400 data-[active=true]:ring-orange-200/60" />
+                  <InputOTPSlot index={0} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
+                  <InputOTPSlot index={1} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
+                  <InputOTPSlot index={2} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
+                  <InputOTPSlot index={3} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
+                  <InputOTPSlot index={4} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
+                  <InputOTPSlot index={5} className="rounded-lg border border-slate-200 bg-white text-slate-950 data-[active=true]:border-blue-500 data-[active=true]:ring-blue-100" />
                 </InputOTPGroup>
               </InputOTP>
-              {error && <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
+              {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">{error}</p>}
               {loading && (
                 <p className="flex items-center gap-2 text-sm text-slate-500">
                   <Loader2 className="size-4 animate-spin" /> {t(locale, "login.verifying")}
@@ -426,7 +414,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
               )}
             </div>
 
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
               <button
                 type="button"
                 onClick={() => {
@@ -442,7 +430,7 @@ export function LoginCard({ onSuccess, className = "" }: LoginCardProps) {
                 type="button"
                 onClick={sendCode}
                 disabled={countdown > 0 || loading}
-                className="text-[#ea580c] disabled:cursor-not-allowed disabled:text-slate-400"
+                className="text-[#006eff] disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 {countdown > 0 ? t(locale, "login.resendAfter", { seconds: countdown }) : t(locale, "login.resend")}
               </button>
