@@ -90,7 +90,7 @@ export default function Page() {
             <h1>{t(locale, "home.feature.team.title")}</h1>
             <p>{t(locale, "home.feature.team.desc")}</p>
           </div>
-          <LoginIllustration />
+          <LoginIllustration locale={locale} />
           <div className={styles.caption}>
             <span>{t(locale, "home.feature.gps.title")}</span>
             <p>{t(locale, "home.feature.gps.desc")}</p>

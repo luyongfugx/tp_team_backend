@@ -1,0 +1,102 @@
+{
+  "baseURL": "https://wm-1330977225.cos.ap-singapore.myqcloud.com/timeprint-teamspace-login-20261001",
+  "screenshotLocales": [
+    "en",
+    "vi",
+    "th",
+    "id"
+  ],
+  "fallbackLocale": "en",
+  "assets": [
+    {
+      "file": "construction-trench.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 105745,
+      "bytes": 105490,
+      "pixelsIdentical": true,
+      "sha256": "539599c3ee45b72e1df6e08155432f7442e92f678120abe21d54ba53906afade"
+    },
+    {
+      "file": "facility-cleaning.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 72048,
+      "bytes": 71554,
+      "pixelsIdentical": true,
+      "sha256": "34bf033ce6150164fd1e7fa5a45b08ab9c22cb31f4ed60d3d92fd6ddeb157fcd"
+    },
+    {
+      "file": "loading-dock.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 84742,
+      "bytes": 84234,
+      "pixelsIdentical": true,
+      "sha256": "904ebad0cc578df4d0a6bed4478278d00d94ac1a858af00806f08887b3573afd"
+    },
+    {
+      "file": "rebar-crew.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 94393,
+      "bytes": 94145,
+      "pixelsIdentical": true,
+      "sha256": "2754ddf31e66e35667ce8eaf781d1ec9b26959ad92d58922ff0c99d9a0f2589e"
+    },
+    {
+      "file": "security-patrol.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 90557,
+      "bytes": 90034,
+      "pixelsIdentical": true,
+      "sha256": "73317318c3d82a174721a68d5323219146e183d7019c8b3684d35c65c48ff701"
+    },
+    {
+      "file": "warehouse-pallet.jpg",
+      "width": 600,
+      "height": 800,
+      "sourceBytes": 82719,
+      "bytes": 82003,
+      "pixelsIdentical": true,
+      "sha256": "f86a1a7459d59afef624d4ed82f65fe1e30c661db53504651f9e70e105b6b718"
+    },
+    {
+      "file": "ios-team-home-en.webp",
+      "width": 1206,
+      "height": 2622,
+      "sourceBytes": 854914,
+      "bytes": 429152,
+      "pixelsIdentical": true,
+      "sha256": "973d386c08e71166f82afd913629eee9423948d1b6d2f7e396b21e5c7809b15b"
+    },
+    {
+      "file": "ios-team-home-vi.webp",
+      "width": 1206,
+      "height": 2622,
+      "sourceBytes": 864389,
+      "bytes": 432852,
+      "pixelsIdentical": true,
+      "sha256": "e622fd48eeef1210132db158a9e46cc9fc955a7a46aab88d00187b945fb6cb42"
+    },
+    {
+      "file": "ios-team-home-th.webp",
+      "width": 1206,
+      "height": 2622,
+      "sourceBytes": 864008,
+      "bytes": 433620,
+      "pixelsIdentical": true,
+      "sha256": "dc7814704a119ebc9ebc06bb1bbc3157a4fa966b922bfb5c4f6b858c8141e849"
+    },
+    {
+      "file": "ios-team-home-id.webp",
+      "width": 1206,
+      "height": 2622,
+      "sourceBytes": 852713,
+      "bytes": 429088,
+      "pixelsIdentical": true,
+      "sha256": "fbc564efb77c3f8634e091cf5702501636cbd1a81c7748561cf7b813e58707ec"
+    }
+  ]
+}
