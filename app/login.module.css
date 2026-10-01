@@ -1,0 +1,69 @@
+.page {
+  --login-blue: #006eff;
+  background: #fff;
+  color: #172b43;
+  min-height: 100svh;
+}
+
+.header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 40px;
+}
+
+.brand { display: inline-flex; align-items: center; gap: 11px; color: #182331; font-size: 25px; font-weight: 700; letter-spacing: -.8px; }
+.brand img { border-radius: 10px; }
+.main { display: grid; grid-template-columns: 1fr 1fr; min-height: max(760px, 100svh); }
+.story { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 108px 44px 40px; background: #eef4fc; }
+.intro { max-width: 480px; text-align: center; }
+.intro h1 { font-size: clamp(30px, 3vw, 44px); font-weight: 650; line-height: 1.18; letter-spacing: -.035em; text-wrap: balance; }
+.intro p { margin-top: 20px; color: #63748a; font-size: 16px; line-height: 1.8; text-wrap: pretty; }
+.caption { max-width: 400px; text-align: center; }
+.caption span { font-size: 14px; font-weight: 600; }
+.caption p { margin-top: 8px; font-size: 13px; line-height: 1.7; color: #63748a; }
+.signIn { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 36px; min-width: 0; padding: 120px 40px 64px; }
+.card { width: 100%; max-width: 380px; gap: 28px; padding: 0; overflow: visible; background: white; color: #172b43; border: 0; border-radius: 0; box-shadow: none; }
+.card [data-slot="card-description"] { line-height: 1.7; overflow-wrap: anywhere; }
+.methods { display: flex; padding: 4px; gap: 4px; border-radius: 10px; background: #f2f5f9; }
+.methods button { display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 0; min-height: 42px; padding: 8px; border-radius: 7px; color: #67758a; font-size: 14px; line-height: 1.4; cursor: pointer; overflow-wrap: anywhere; }
+.methods button svg { flex-shrink: 0; }
+.methods button[aria-pressed="true"] { color: var(--login-blue); background: white; box-shadow: 0 1px 4px #24375412; }
+.methods button:focus-visible { outline: 2px solid var(--login-blue); outline-offset: 2px; }
+.downloadLink { display: inline-flex; justify-content: center; align-items: center; gap: 8px; color: #6b788a; font-size: 13px; text-align: center; }
+.downloadLink svg, .apk svg, .store svg { flex-shrink: 0; }
+.downloadLink:hover, .apk:hover { color: var(--login-blue); }
+.download { display: flex; justify-content: center; align-items: center; gap: clamp(48px, 8vw, 160px); padding: 48px 40px; border-top: 1px solid #edf0f4; scroll-margin-top: 24px; }
+.downloadIntro { max-width: 360px; }
+.downloadIntro h2 { font-size: 22px; line-height: 1.4; font-weight: 600; }
+.downloadIntro p, .stores > p { color: #758196; font-size: 14px; line-height: 1.7; margin-top: 10px; }
+.apk { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 22px; color: #64748b; }
+.stores > p { margin: 0 0 16px; text-align: center; }
+.storeOptions { display: flex; gap: 32px; }
+.store { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 180px; }
+.store > img { border: 1px solid #e8edf4; padding: 6px; border-radius: 8px; }
+.store a { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #dce3ec; border-radius: 8px; padding: 10px 14px; font-size: 13px; text-align: center; }
+.store a:hover { border-color: #006eff; color: #006eff; }
+
+@media (max-width: 1023px) {
+  .header { position: relative; padding: 22px 24px; }
+  .main { display: block; min-height: 0; }
+  .story { display: none; }
+  .signIn { padding: 40px 24px 48px; min-height: calc(100svh - 80px); }
+  .download { gap: 40px; }
+}
+
+@media (max-width: 600px) {
+  .header { padding: 20px; }
+  .brand { font-size: 22px; gap: 9px; }
+  .brand img { width: 32px; height: 32px; }
+  .signIn { justify-content: flex-start; padding: 32px 24px 40px; min-height: calc(100svh - 76px); }
+  .card { gap: 24px; }
+  .card [data-slot="card-title"] { font-size: 28px; }
+  .download { flex-direction: column; padding: 36px 24px; text-align: center; }
+  .storeOptions { gap: 20px; }
+}
