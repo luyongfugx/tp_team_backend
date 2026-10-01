@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { AlertTriangle, CheckCircle2, Cloud, Cpu, FileJson, Image as ImageIcon, Loader2, Route, ShieldCheck, XCircle, X } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Clock3, Cloud, Cpu, FileJson, Image as ImageIcon, Loader2, Route, ShieldCheck, XCircle, X } from "lucide-react"
 import { authenticatedFetch } from "@/lib/client-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -115,7 +115,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
   const [error, setError] = useState("")
   const [detail, setDetail] = useState<Detail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [tab, setTab] = useState<"analysis" | "trace" | "image" | "source" | "verify">("analysis")
+  const [tab, setTab] = useState<"analysis" | "trace" | "timings" | "image" | "source" | "verify">("trace")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -141,7 +141,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
   async function openDetail(taskID: string) {
     setDetailLoading(true)
     setError("")
-    setTab("analysis")
+    setTab("trace")
     try {
       const response = await authenticatedFetch(`/api/admin/photo-verifications/${encodeURIComponent(taskID)}`, token, {
         headers: { "x-locale": locale },
@@ -228,6 +228,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
               {([
                 ["analysis", chinese ? "失败分析" : "Analysis", AlertTriangle],
                 ["trace", chinese ? "识别过程" : "Recognition trace", Route],
+                ["timings", chinese ? "步骤耗时" : "Step timings", Clock3],
                 ["image", chinese ? "验真图片" : "Image", ImageIcon],
                 ["source", "photocode.json", FileJson],
                 ["verify", "verify.json", FileJson],
@@ -239,8 +240,8 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                 <div className="grid gap-3 md:grid-cols-3"><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">PhotoCode</div><div className="mt-1 font-mono">{detail.task.photoCode || "-"}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "用户" : "User"}</div><div className="mt-1">{detail.task.user?.email || (chinese ? "游客" : "Guest")}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{chinese ? "失败阶段" : "Failed stages"}</div><div className="mt-1">{detail.analysis.failedStages.join(", ") || "-"}</div></div></div>
                 {detail.analysis.mismatches.map((item) => <div key={item.field} className="rounded-lg border border-red-200 p-4 dark:border-red-900"><div className="font-medium text-red-700 dark:text-red-300">{item.field}</div><div className="mt-1 text-sm text-muted-foreground">{item.reason}</div>{item.detail != null && <details className="mt-3"><summary className="cursor-pointer text-sm">{chinese ? "查看诊断数据" : "Diagnostic data"}</summary><pre className="mt-2 max-h-72 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(item.detail, null, 2)}</pre></details>}</div>)}
               </div>}
+              {tab === "timings" && <TimingBreakdown value={detail.task.result?.timings} chinese={chinese} />}
               {tab === "trace" && <div className="space-y-4">
-                <TimingBreakdown value={detail.task.result?.timings} chinese={chinese} />
                 {detail.analysis.recognitionTraces.map((trace) => <div key={trace.field} className="rounded-xl border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="font-semibold">{chinese ? trace.label : trace.field === "photoCode" ? "Photo code" : trace.field === "time" ? "Capture time" : "Capture location"}</div>
