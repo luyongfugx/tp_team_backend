@@ -31,7 +31,7 @@ Configuration:
 - `PHOTO_CODE_MAX_BATCH_SIZE`: default `100`, hard-capped at `1000`.
 - `PHOTO_CODE_VALIDITY_MONTHS`: default `3`, hard-capped at `120`.
 
-New codes contain exactly 12 characters from `9ABEFIJKMNOPRSTUWXYZ`.
+New codes contain exactly 12 characters from `9ABFIJKMNOPRSTUWXYZ`.
 OCR canonical groups are `0/Q/C/D→O`, `1/L→I`, `2/7→Z`, `5/3→S`,
 `8→B`, `6/G→9`, `H/4→A`, and `V→Y`. Only canonical glyphs are issued. Existing
 issued codes and their stored identifiers are not rewritten. Codes use this uppercase-letter/digit alphabet and are persisted with a
