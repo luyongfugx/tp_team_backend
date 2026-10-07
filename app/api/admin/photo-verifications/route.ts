@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { badFor, jsonSafe, ok, requireUser } from "@/app/api/_utils/api"
 import { isSuperAdmin } from "@/app/api/_utils/admin"
+import { recognitionTotalMs } from "@/lib/photo-verification-timing"
 import { prisma } from "@/lib/prisma"
 import { localeFromRequest, t } from "@/lib/i18n"
 
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
           errorCode: true,
           errorMessage: true,
           verificationProgress: true,
+          result: true,
           createdAt: true,
           startedAt: true,
           completedAt: true,
@@ -53,7 +55,9 @@ export async function GET(req: Request) {
     ])
 
     return ok(jsonSafe({
-      tasks,
+      tasks: tasks.map(({ result, ...task }: { result: unknown; [key: string]: unknown }) => ({
+        ...task, recognitionTotalMs: recognitionTotalMs(result),
+      })),
       outcome,
       pagination: {
         page,

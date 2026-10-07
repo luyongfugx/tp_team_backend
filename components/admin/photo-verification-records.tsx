@@ -6,6 +6,8 @@ import { authenticatedFetch } from "@/lib/client-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+import { recognitionTotalMs, formatRecognitionTime } from "@/lib/photo-verification-timing"
+
 type Outcome = "all" | "success" | "failure"
 
 type Task = {
@@ -18,6 +20,7 @@ type Task = {
   errorMessage: string | null
   verificationProgress: unknown
   createdAt: string
+  recognitionTotalMs?: number | null
   completedAt: string | null
   user: { id: string; email: string; userName: string | null; shortName: string | null } | null
 }
@@ -88,8 +91,11 @@ function TimingBreakdown({ value, chinese }: { value: unknown; chinese: boolean 
     "image.download": "下载验真图片", "cos.image_download": "COS 图片下载", "cos.json_download": "COS 原始 JSON 下载",
     "cos.result_upload": "COS 结果 JSON 上传", "verify.total": "验真处理总计", "ocr.photo_code": "照片码识别",
     "ocr.photo_code_region": "照片码区域识别", "ocr.region": "局部文字识别", "ocr.clock": "时钟识别",
-    "ocr.model_load": "加载识别模型", "verify.section": "字段核验", "verify.local_region": "本地识别比对",
-    "verify.vision_region": "视觉模型识别比对", "vision.recognize": "视觉模型请求", "text.normalize_time": "时间格式解析",
+    "verify.clock_recovery": "本地大号时钟补识别", "verify.digital_recovery": "本地数码时钟补识别",
+    "verify.meridiem_recovery": "本地上午/下午标记补识别",
+    "ocr.model_load": "加载识别模型", "verify.section": "字段核验", "verify.local_region": "本地优先识别与兜底",
+    "verify.vision_region": "视觉模型识别比对", "vision.recognize": "视觉模型请求", "vision.request": "DeepSeek 视觉 HTTP 请求", "text.normalize_time": "DeepSeek 文字时间解析（含重试）",
+    "text.normalize_time.attempt": "DeepSeek 文字调用", "text.normalize_time.http": "DeepSeek 文字 HTTP 请求",
     "verify.content": "照片内容比对", "verify.blind_watermark": "盲水印检查", "callback.progress": "进度回调等待",
   }
   const ms = (v: unknown) => typeof v === "number" && Number.isFinite(v) ? `${(v / 1000).toFixed(3)} s` : "—"
@@ -98,8 +104,11 @@ function TimingBreakdown({ value, chinese }: { value: unknown; chinese: boolean 
     {!steps.length ? <p className="mt-2 text-sm text-muted-foreground">{chinese ? "该记录暂无耗时数据，部署后新任务会自动记录。" : "No timing data. New tasks will record timings after deployment."}</p> : <>
       <p className="my-2 text-sm text-muted-foreground">{chinese ? "服务端总耗时（最终结果回调前）" : "Server elapsed time before final callback"}: {ms(timing?.totalMs)} · {chinese ? "父步骤包含子步骤，请勿重复相加。" : "Parent timings include child steps; do not sum overlapping rows."}</p>
       <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr className="border-b"><th className="p-2">{chinese ? "步骤 / 文件 / 区域" : "Step / file / region"}</th><th className="p-2">{chinese ? "开始" : "Start"}</th><th className="p-2">{chinese ? "耗时" : "Duration"}</th><th className="p-2">{chinese ? "大小" : "Size"}</th><th className="p-2">{chinese ? "状态" : "Status"}</th></tr></thead><tbody>{steps.map((step, index) => <tr key={index} className="border-b align-top">
-        <td className="p-2"><div>{step.parentId != null ? "↳ " : ""}{chinese ? labels[String(step.name)] || String(step.name) : String(step.name)}</div><div className="mt-1 break-all text-muted-foreground">{[step.section_name, step.scope, step.bucket, step.object_path].filter(v => typeof v === "string").join(" · ")}</div><div className="text-muted-foreground">#{String(step.id ?? index + 1)}{step.parentId != null ? ` ← #${String(step.parentId)}` : ""}</div></td>
-        <td className="whitespace-nowrap p-2">{ms(step.startMs)}</td><td className="whitespace-nowrap p-2 font-semibold">{ms(step.durationMs)}</td><td className="whitespace-nowrap p-2">{typeof step.bytes === "number" ? `${(step.bytes / 1024).toFixed(1)} KiB` : "—"}</td><td className={`p-2 ${step.status === "error" ? "text-red-600" : "text-emerald-600"}`}>{step.status === "error" ? (chinese ? "执行失败" : "Error") : (chinese ? "已执行" : "Executed")} {typeof step.errorType === "string" ? step.errorType : ""}</td>
+        <td className="p-2"><div>{step.parentId != null ? "↳ " : ""}{chinese ? labels[String(step.name)] || String(step.name) : String(step.name)}</div><div className="mt-1 break-all text-muted-foreground">{[step.section_name, step.scope, step.bucket, step.object_path, step.provider, step.model,
+          step.imageSource === "url" ? (chinese ? "公开图片 URL" : "Public image URL") : step.imageSource === "base64" ? "Base64" : null,
+          typeof step.attempt === "number" ? (chinese ? `第 ${step.attempt} 次调用` : `Attempt ${step.attempt}`) : null,
+          typeof step.httpStatus === "number" ? `HTTP ${step.httpStatus}` : null].filter(v => typeof v === "string").join(" · ")}</div><div className="text-muted-foreground">#{String(step.id ?? index + 1)}{step.parentId != null ? ` ← #${String(step.parentId)}` : ""}</div></td>
+        <td className="whitespace-nowrap p-2">{ms(step.startMs)}</td><td className="whitespace-nowrap p-2 font-semibold">{ms(step.durationMs)}</td><td className="whitespace-nowrap p-2">{typeof step.bytes === "number" ? `${(step.bytes / 1024).toFixed(1)} KiB` : "—"}</td><td className={`p-2 ${(step.status === "error" || step.outcome === "failed") ? "text-red-600" : "text-emerald-600"}`}>{(step.status === "error" || step.outcome === "failed") ? (chinese ? "执行失败" : "Error") : (chinese ? "已执行" : "Executed")} {typeof step.errorType === "string" ? step.errorType : ""}</td>
       </tr>)}</tbody></table></div>
       {typeof timing?.droppedSteps === "number" && timing.droppedSteps > 0 && <p className="mt-2 text-xs text-muted-foreground">{chinese ? "达到记录上限，部分步骤未展示：" : "Trace limit reached; omitted steps: "}{timing.droppedSteps}</p>}
     </>}
@@ -194,6 +203,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                     <th className="px-4 py-3">{chinese ? "用户" : "User"}</th>
                     <th className="px-4 py-3">PhotoCode</th>
                     <th className="px-4 py-3">{chinese ? "状态" : "Status"}</th>
+                    <th className="px-4 py-3" title={chinese ? "服务端识别总耗时（最终结果回调前，不含客户端上传与轮询）" : "Server elapsed time before final callback; excludes client upload and polling"}>{chinese ? "识别总耗时" : "Recognition total"}</th>
                     <th className="px-4 py-3">{chinese ? "错误" : "Error"}</th>
                     <th className="px-4 py-3">{chinese ? "操作" : "Action"}</th>
                   </tr></thead>
@@ -206,6 +216,7 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
                         <td className="px-4 py-3"><div className="font-medium">{task.user?.userName || task.user?.shortName || task.user?.email || (chinese ? "游客" : "Guest")}</div><div className="text-xs text-muted-foreground">{task.user?.email || ""}</div></td>
                         <td className="px-4 py-3 font-mono">{task.photoCode || "-"}</td>
                         <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${passed ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : failed ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>{passed ? <CheckCircle2 className="size-3.5" /> : failed ? <XCircle className="size-3.5" /> : <Loader2 className="size-3.5 animate-spin" />}{statusLabel(task, chinese)}</span></td>
+                        <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatRecognitionTime(task.recognitionTotalMs)}</td>
                         <td className="max-w-[280px] truncate px-4 py-3 text-muted-foreground">{[task.errorCode, task.errorMessage].filter(Boolean).join(" · ") || "-"}</td>
                         <td className="px-4 py-3"><Button size="sm" variant="outline" disabled={detailLoading} onClick={() => openDetail(task.taskID)}>{chinese ? "查看详情" : "Details"}</Button></td>
                       </tr>
@@ -224,6 +235,9 @@ export function PhotoVerificationRecords({ token, locale, refreshKey = 0 }: { to
         <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
           <div className="flex items-start justify-between gap-4 border-b p-4 md:p-5"><div><h2 className="text-lg font-semibold">{chinese ? "验真记录详情" : "Verification detail"}</h2><p className="mt-1 font-mono text-xs text-muted-foreground">{detail?.task.taskID}</p></div><Button size="icon" variant="ghost" onClick={() => setDetail(null)} disabled={detailLoading}><X className="size-5" /></Button></div>
           {detailLoading ? <div className="flex min-h-80 items-center justify-center"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div> : detail && <>
+            <div className="border-b px-4 py-3 text-sm" title={chinese ? "最终结果回调前的服务端总耗时，不含客户端上传与轮询；并行步骤不累加。" : "Server wall time before final callback, excluding client upload and polling."}>
+              {chinese ? "识别总耗时" : "Recognition total"}: <strong className="tabular-nums">{formatRecognitionTime(recognitionTotalMs(detail.task.result))}</strong>
+            </div>
             <div className="flex flex-wrap gap-2 border-b p-3">
               {([
                 ["analysis", chinese ? "失败分析" : "Analysis", AlertTriangle],
