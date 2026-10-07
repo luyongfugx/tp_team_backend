@@ -32,19 +32,14 @@ export async function POST(req: Request) {
 
     try {
       await submitPhotoVerificationTask(taskID, image.imageUrl)
-      await verificationTasks.updateMany({
-        where: { taskID, status: "PENDING" },
-        data: {
-          status: "PROCESSING",
-          startedAt: new Date(),
-          verificationProgress: initialVerificationProgress(),
-        },
-      })
-      task = await verificationTasks.findUnique({ where: { taskID } })
+      // OCR acknowledges only after accepting the background task. Its progress
+      // callback owns PROCESSING/startedAt; return the persisted initial snapshot
+      // without an extra update + read on the creation critical path.
     } catch (error) {
       const message = error instanceof Error ? error.message.slice(0, 1000) : "OCR task submission failed"
-      task = await verificationTasks.update({
-        where: { taskID },
+      await verificationTasks.updateMany({
+        // An acknowledgement can fail after OCR already called back successfully.
+        where: { taskID, status: "PENDING" },
         data: {
           status: "FAILED",
           errorCode: "502",
@@ -62,6 +57,7 @@ export async function POST(req: Request) {
           completedAt: new Date(),
         },
       })
+      task = await verificationTasks.findUnique({ where: { taskID } })
     }
 
     return ok(publicVerificationTask(task))

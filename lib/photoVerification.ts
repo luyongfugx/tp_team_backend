@@ -52,12 +52,12 @@ export function mergeVerificationProgress(
     const row = item as Record<string, unknown>
     if (isStageKey(row.key) && isStageStatus(row.status)) prior.set(row.key, row.status)
   }
-  const targetIndex = VERIFICATION_STAGE_KEYS.indexOf(stageValue)
   return {
     currentStage: stageValue,
     stages: base.stages.map(({ key }, index) => {
       let status = prior.get(key) ?? (index === 0 ? "RUNNING" : "PENDING")
-      if (index < targetIndex && status !== "FAILED") status = "COMPLETED"
+      // Stages run concurrently; another stage starting/finishing does not
+      // imply that earlier stages have completed.
       if (key === stageValue) status = statusValue
       return { key, status }
     }),
@@ -158,6 +158,8 @@ export async function submitPhotoVerificationTask(taskID: string, imageUrl: stri
       const body = (await response.text()).slice(0, 500)
       throw new Error(`TP OCR rejected task (${response.status}): ${body}`)
     }
+    // Consume the small acknowledgement body so fetch can reuse its connection.
+    await response.arrayBuffer()
   } finally {
     clearTimeout(timeout)
   }

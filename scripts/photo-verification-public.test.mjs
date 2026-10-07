@@ -49,6 +49,47 @@ test("anonymous creation stores a nullable owner and submits OCR", async () => {
   assert.match(task.taskID, /^[0-9a-f-]{36}$/)
 })
 
+test("creation waits for OCR acceptance but performs no redundant DB round trips", async () => {
+  let accept
+  let submitted = false
+  const acknowledgement = new Promise(resolve => { accept = resolve })
+  const POST = handler("photoCode/verify/task", {
+    prisma: {photoVerificationTask: {
+      create: async ({data}) => data,
+      updateMany: async () => { throw new Error("Unexpected database update") },
+      findUnique: async () => { throw new Error("Unexpected database read") },
+    }},
+    submitPhotoVerificationTask: async () => { submitted = true; await acknowledgement },
+  })
+  let completed = false
+  const response = POST(request({imageUrl})).then(value => { completed = true; return value })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.ok(submitted)
+  assert.equal(completed, false)
+  accept()
+  assert.equal((await response).body.status, "PENDING")
+})
+
+test("submission failure cannot overwrite a task already advanced by OCR callback", async () => {
+  for (const status of ["PENDING", "PROCESSING", "SUCCEEDED"]) {
+    let task
+    const POST = handler("photoCode/verify/task", {
+      prisma: {photoVerificationTask: {
+        create: async ({data}) => { task = {...data}; return {...data} },
+        updateMany: async ({where, data}) => {
+          assert.equal(where.status, "PENDING")
+          if (task.status !== where.status) return {count: 0}
+          task = {...task, ...data}; return {count: 1}
+        },
+        findUnique: async () => task,
+      }},
+      submitPhotoVerificationTask: async () => { task.status = status; throw new Error("acknowledgement lost") },
+    })
+    const result = await POST(request({imageUrl}))
+    assert.equal(result.body.status, status === "PENDING" ? "FAILED" : status)
+  }
+})
+
 test("status and timeout work without a session, scoped to the supplied task ID", async () => {
   for (const endpoint of ["status", "timeout"]) {
     const taskID = randomUUID()
