@@ -3,7 +3,7 @@ import { test } from "node:test"
 import { readFileSync } from "node:fs"
 import { stripTypeScriptTypes } from "node:module"
 import { randomUUID } from "node:crypto"
-import { validateVerificationImageURL } from "../lib/photoVerification.ts"
+import { validateVerificationImageURL, submitPhotoVerificationTask } from "../lib/photoVerification.ts"
 
 // Execute the route handlers with isolated DB/OCR dependencies; no network or database.
 function handler(path, dependencies = {}) {
@@ -31,6 +31,40 @@ function handler(path, dependencies = {}) {
 const request = body => new Request("https://example.com/api", { method: "POST", body: JSON.stringify(body) })
 process.env.TENCENT_COS_BUCKETS_JSON = JSON.stringify({verify_images:{bucket:"test-123",region:"ap-singapore"}})
 const imageUrl = "https://test-123.cos.ap-singapore.myqcloud.com/verify/guest-123/image.jpg"
+
+test("creation forwards existing Android Accept-Language to OCR", async () => {
+  let language
+  const POST = handler("photoCode/verify/task", {
+    prisma: {photoVerificationTask: {create: async ({data}) => data}},
+    submitPhotoVerificationTask: async (_id, _url, value) => { language = value },
+  })
+  const req = new Request("https://example.com/api", {method: "POST", headers: {"Accept-Language": "ar-SA, en;q=0.8"}, body: JSON.stringify({imageUrl})})
+  assert.equal((await POST(req)).status, 200)
+  assert.equal(language, "ar-SA, en;q=0.8")
+})
+
+test("OCR submission normalizes the language hint and omits malformed values", async () => {
+  const originalFetch = globalThis.fetch
+  const beforeBase = process.env.TP_OCR_BASE_URL
+  const beforeKey = process.env.TP_OCR_API_KEY
+  process.env.TP_OCR_BASE_URL = "https://ocr.example"
+  process.env.TP_OCR_API_KEY = "test-only"
+  const bodies = []
+  globalThis.fetch = async (_url, options) => {
+    bodies.push(JSON.parse(options.body))
+    return new Response("{}", {status: 202})
+  }
+  try {
+    for (const language of ["ar_SA, en;q=0.8", "zh-CN", "bad!", undefined]) {
+      await submitPhotoVerificationTask("task", imageUrl, language)
+    }
+    assert.deepEqual(bodies.map(body => body.appLanguage), ["ar-SA", "zh-CN", undefined, undefined])
+  } finally {
+    globalThis.fetch = originalFetch
+    if (beforeBase === undefined) delete process.env.TP_OCR_BASE_URL; else process.env.TP_OCR_BASE_URL = beforeBase
+    if (beforeKey === undefined) delete process.env.TP_OCR_API_KEY; else process.env.TP_OCR_API_KEY = beforeKey
+  }
+})
 
 test("anonymous creation stores a nullable owner and submits OCR", async () => {
   let task; let submitted = false

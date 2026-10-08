@@ -139,7 +139,9 @@ export function validateVerificationImageURL(rawURL: unknown, userID?: string) {
   return { imageUrl: url.toString(), objectKey }
 }
 
-export async function submitPhotoVerificationTask(taskID: string, imageUrl: string) {
+export async function submitPhotoVerificationTask(taskID: string, imageUrl: string, language?: unknown) {
+  const languageTag = typeof language === "string" ? language.split(",")[0].split(";")[0].trim().replaceAll("_", "-") : ""
+  const appLanguage = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(languageTag) && languageTag.length <= 64 ? languageTag : undefined
   const baseURL = process.env.TP_OCR_BASE_URL?.trim()
   const apiKey = process.env.TP_OCR_API_KEY?.trim()
   if (!baseURL || !apiKey) throw new Error("TP OCR task service is not configured")
@@ -150,7 +152,7 @@ export async function submitPhotoVerificationTask(taskID: string, imageUrl: stri
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
-      body: JSON.stringify({ taskId: taskID, url: imageUrl }),
+      body: JSON.stringify({ taskId: taskID, url: imageUrl, appLanguage }),
       signal: controller.signal,
       cache: "no-store",
     })

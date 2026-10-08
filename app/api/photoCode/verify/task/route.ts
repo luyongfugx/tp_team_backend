@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     })
 
     try {
-      await submitPhotoVerificationTask(taskID, image.imageUrl)
+      const language = body.appLanguage ?? body.appLan ?? req.headers.get("accept-language")
+      await submitPhotoVerificationTask(taskID, image.imageUrl, language)
       // OCR acknowledges only after accepting the background task. Its progress
       // callback owns PROCESSING/startedAt; return the persisted initial snapshot
       // without an extra update + read on the creation critical path.
