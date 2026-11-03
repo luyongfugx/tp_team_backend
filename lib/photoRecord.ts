@@ -15,6 +15,7 @@ export async function fetchTrustedPhotoRecord(photoCode: string) {
     headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
     body: JSON.stringify({ photoCode }),
     cache: "no-store",
+    signal: AbortSignal.timeout(15000),
   })
   if (response.status === 404) return null
   if (!response.ok) {

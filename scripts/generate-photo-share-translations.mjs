@@ -7,10 +7,52 @@ const output = process.argv[3]
   || path.resolve("lib/photoShareTranslations.generated.json")
 
 const fields = {
+  reportTitle: "tp_photo_verification_report_compact_title",
+  resultLabel: "tp_photo_verification_report_result_label",
+  originalInfo: "tp_photo_verification_report_original_info",
+  language: "i_swith_language",
+  passedTitle: "tp_photo_verification_report_authentic",
+  passedBody: "tp_photo_verification_passed_body",
+  warningTitle: "tp_photo_verification_report_unable_compact",
+  warningBody: "tp_photo_verification_warning_body",
+  unableTitle: "tp_photo_verification_report_unable_compact",
+  clearPhotoHint: "tp_photo_verification_report_clear_photo_hint",
+  unavailable: "tp_photo_verification_unavailable",
+  partialTitle: "tp_photo_verification_report_unable_compact",
+  partialBody: "tp_photo_verification_report_partial_body",
+  unreadable: "tp_photo_verification_report_unreadable",
+  referenceMissing: "tp_photo_verification_report_reference_missing",
+  notChecked: "tp_photo_verification_report_not_checked",
+  serviceError: "tp_photo_verification_report_service_error",
+  otherCamera: "tp_photo_verification_report_other_camera",
+  reportNotFound: "tp_photo_verification_report_not_found",
+  legacyNotice: "tp_photo_verification_report_legacy_notice",
+  imageUnavailable: "tp_photo_verification_report_image_unavailable",
+  appVersion: "tp_photo_verification_report_app_version",
+  completedAt: "tp_photo_verification_report_completed_at",
+  recordOnly: "tp_photo_verification_report_record_only",
+  share: "i_share",
+  shareResult: "tp_photo_verification_share_result",
+  close: "tp_photo_verification_close",
+  retry: "tp_share_retry",
+  uploadToVerify: "tp_photo_verification_upload_to_verify",
+  recordLookupTip: "tp_photo_verification_record_lookup_tip",
+  comparisonRecord: "tp_photo_verification_comparison_record_label",
+  comparisonImage: "tp_photo_verification_comparison_image_label",
+  tapLargeImage: "tp_photo_verification_tap_large_image",
+  sampleLabel: "tp_photo_verification_simulated",
+  sampleNotice: "tp_photo_verification_report_sample_notice",
+  trustTitle: "tp_photo_verification_trust_title",
+  trust1Title: "tp_photo_verification_trust_1_title",
+  trust1Body: "tp_photo_verification_trust_1_body",
+  trust2Title: "tp_photo_verification_trust_2_title",
+  trust2Body: "tp_photo_verification_trust_2_body",
+  trust3Title: "tp_photo_verification_trust_3_title",
+  trust3Body: "tp_photo_verification_trust_3_body",
   menuTitle: "tp_photo_verification_menu_title",
   menuDetail: "tp_photo_verification_menu_detail",
   trustQuestion: "tp_photo_verification_trust_question",
-  trustSubtitle: "tp_photo_verification_trust_subtitle",
+  trustSubtitle: "tp_photo_verification_report_intro",
   selectPhoto: "tp_photo_verification_select_photo",
   changePhoto: "tp_photo_verification_change_photo",
   loading: "tp_photo_verification_loading",
@@ -64,10 +106,10 @@ const fields = {
   deviceSource: "tp_photo_verification_record_device",
   compressedTip: "tp_photo_verification_compressed_tip",
   verifyTitle: "tp_photo_verification_design_title",
-  verifyBody: "tp_photo_verification_trust_subtitle",
+  verifyBody: "tp_photo_verification_report_intro",
   openApp: "k_download",
   downloadTitle: "tp_photo_verification_design_title",
-  downloadBody: "tp_photo_verification_trust_subtitle",
+  downloadBody: "tp_photo_verification_report_intro",
   privacy: "tp_photo_verification_record_lookup_tip",
 }
 
@@ -106,7 +148,7 @@ const translations = {}
 for (const [locale, source] of Object.entries(sourceByLocale)) {
   translations[locale] = Object.fromEntries(Object.entries(fields).map(([field, sourceKey]) => [
     field,
-    source[sourceKey] || english[sourceKey] || field,
+    source[sourceKey] || (() => { throw new Error(`Missing translation: ${locale}/${sourceKey}`) })(),
   ]))
 }
 
@@ -115,4 +157,12 @@ Object.assign(translations["zh-Hans"] || {}, { photographer: "拍摄者" })
 Object.assign(translations["zh-Hant"] || {}, { photographer: "拍攝者" })
 
 fs.writeFileSync(output, `${JSON.stringify(translations, null, 2)}\n`)
+// Use the same complete locale inventory as the app, including regional variants.
+// Resolve autonyms during generation to avoid browser/server ICU differences.
+const nativeNames = { arz: "عربى مصرى", dv: "ދިވެހި", ht: "Kreyòl ayisyen", ny: "Chichewa" }
+const catalog = Object.keys(translations).map(locale => ({
+  locale,
+  name: nativeNames[locale] || new Intl.DisplayNames([locale], { type: "language" }).of(locale),
+}))
+fs.writeFileSync(path.join(path.dirname(output), "photoShareLocales.generated.json"), `${JSON.stringify(catalog, null, 2)}\n`)
 console.log(`Generated ${Object.keys(translations).length} H5 locales at ${output}`)

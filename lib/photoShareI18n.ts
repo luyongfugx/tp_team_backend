@@ -9,11 +9,14 @@ const localeMap = new Map(
 const legacyAliases: Record<string, string> = {
   in: "id",
   iw: "he",
+  ji: "yi",
   no: "nb",
   tl: "fil",
 }
+const baseLocales: Record<string, string> = { zh: "zh-Hans", kk: "kk-KZ", km: "km-KH", lo: "lo-LA" }
 
-const rtlLanguages = new Set(["ar", "arz", "dv", "fa", "he", "ku", "ps", "ur", "yi"])
+// The app's Kurdish locale uses Latin script (Kurmancî).
+const rtlLanguages = new Set(["ar", "arz", "dv", "fa", "he", "ps", "ur", "yi"])
 
 function canonicalCandidates(languageTag: string) {
   const normalized = languageTag.trim().replaceAll("_", "-").toLowerCase()
@@ -27,11 +30,12 @@ function canonicalCandidates(languageTag: string) {
   const aliased = legacyAliases[normalized] || aliasedByBase
   const candidates = [aliased]
   if (aliased.startsWith("zh-")) {
-    if (/^zh-(tw|mo)/.test(aliased)) candidates.push("zh-hant")
+    if (/^zh-(hant|tw|mo|hk)/.test(aliased)) candidates.push("zh-hant")
     else if (aliased !== "zh-hk") candidates.push("zh-hans")
   }
   const base = aliased.split("-")[0]
   if (base && base !== aliased) candidates.push(base)
+  if (baseLocales[base]) candidates.push(baseLocales[base].toLowerCase())
   return [...new Set(candidates)]
 }
 

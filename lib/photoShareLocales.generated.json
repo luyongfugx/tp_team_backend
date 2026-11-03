@@ -1,0 +1,450 @@
+[
+  {
+    "locale": "af",
+    "name": "Afrikaans"
+  },
+  {
+    "locale": "ak",
+    "name": "Akan"
+  },
+  {
+    "locale": "am",
+    "name": "አማርኛ"
+  },
+  {
+    "locale": "ar",
+    "name": "العربية"
+  },
+  {
+    "locale": "arz",
+    "name": "عربى مصرى"
+  },
+  {
+    "locale": "as",
+    "name": "অসমীয়া"
+  },
+  {
+    "locale": "az",
+    "name": "azərbaycan"
+  },
+  {
+    "locale": "be",
+    "name": "беларуская"
+  },
+  {
+    "locale": "bg",
+    "name": "български"
+  },
+  {
+    "locale": "bn",
+    "name": "বাংলা"
+  },
+  {
+    "locale": "bs",
+    "name": "bosanski"
+  },
+  {
+    "locale": "ca",
+    "name": "català"
+  },
+  {
+    "locale": "ceb",
+    "name": "Cebuano"
+  },
+  {
+    "locale": "cs",
+    "name": "čeština"
+  },
+  {
+    "locale": "cy",
+    "name": "Cymraeg"
+  },
+  {
+    "locale": "da",
+    "name": "dansk"
+  },
+  {
+    "locale": "de",
+    "name": "Deutsch"
+  },
+  {
+    "locale": "dv",
+    "name": "ދިވެހި"
+  },
+  {
+    "locale": "el",
+    "name": "Ελληνικά"
+  },
+  {
+    "locale": "en",
+    "name": "English"
+  },
+  {
+    "locale": "es-ES",
+    "name": "español de España"
+  },
+  {
+    "locale": "es",
+    "name": "español"
+  },
+  {
+    "locale": "et",
+    "name": "eesti"
+  },
+  {
+    "locale": "eu",
+    "name": "euskara"
+  },
+  {
+    "locale": "fa",
+    "name": "فارسی"
+  },
+  {
+    "locale": "fi",
+    "name": "suomi"
+  },
+  {
+    "locale": "fil-PH",
+    "name": "Filipino (Pilipinas)"
+  },
+  {
+    "locale": "fil",
+    "name": "Filipino"
+  },
+  {
+    "locale": "fr",
+    "name": "français"
+  },
+  {
+    "locale": "ga",
+    "name": "Gaeilge"
+  },
+  {
+    "locale": "gd",
+    "name": "Gàidhlig"
+  },
+  {
+    "locale": "gl",
+    "name": "galego"
+  },
+  {
+    "locale": "gu",
+    "name": "ગુજરાતી"
+  },
+  {
+    "locale": "ha",
+    "name": "Hausa"
+  },
+  {
+    "locale": "he",
+    "name": "עברית"
+  },
+  {
+    "locale": "hi",
+    "name": "हिन्दी"
+  },
+  {
+    "locale": "hr",
+    "name": "hrvatski"
+  },
+  {
+    "locale": "ht",
+    "name": "Kreyòl ayisyen"
+  },
+  {
+    "locale": "hu",
+    "name": "magyar"
+  },
+  {
+    "locale": "hy",
+    "name": "հայերեն"
+  },
+  {
+    "locale": "id",
+    "name": "Indonesia"
+  },
+  {
+    "locale": "ig",
+    "name": "Igbo"
+  },
+  {
+    "locale": "is",
+    "name": "íslenska"
+  },
+  {
+    "locale": "it",
+    "name": "italiano"
+  },
+  {
+    "locale": "ja",
+    "name": "日本語"
+  },
+  {
+    "locale": "jv",
+    "name": "Jawa"
+  },
+  {
+    "locale": "ka",
+    "name": "ქართული"
+  },
+  {
+    "locale": "kk-KZ",
+    "name": "қазақ тілі (Қазақстан)"
+  },
+  {
+    "locale": "km-KH",
+    "name": "ខ្មែរ (កម្ពុជា)"
+  },
+  {
+    "locale": "kn",
+    "name": "ಕನ್ನಡ"
+  },
+  {
+    "locale": "ko",
+    "name": "한국어"
+  },
+  {
+    "locale": "ku",
+    "name": "kurdî (kurmancî)"
+  },
+  {
+    "locale": "ky",
+    "name": "кыргызча"
+  },
+  {
+    "locale": "lb",
+    "name": "Lëtzebuergesch"
+  },
+  {
+    "locale": "lo-LA",
+    "name": "ລາວ (ລາວ)"
+  },
+  {
+    "locale": "lt",
+    "name": "lietuvių"
+  },
+  {
+    "locale": "lv",
+    "name": "latviešu"
+  },
+  {
+    "locale": "mg",
+    "name": "Malagasy"
+  },
+  {
+    "locale": "mi",
+    "name": "Māori"
+  },
+  {
+    "locale": "mk",
+    "name": "македонски"
+  },
+  {
+    "locale": "ml",
+    "name": "മലയാളം"
+  },
+  {
+    "locale": "mn",
+    "name": "монгол"
+  },
+  {
+    "locale": "mr",
+    "name": "मराठी"
+  },
+  {
+    "locale": "ms",
+    "name": "Melayu"
+  },
+  {
+    "locale": "mt",
+    "name": "Malti"
+  },
+  {
+    "locale": "my",
+    "name": "မြန်မာ"
+  },
+  {
+    "locale": "nb",
+    "name": "norsk bokmål"
+  },
+  {
+    "locale": "ne",
+    "name": "नेपाली"
+  },
+  {
+    "locale": "nl",
+    "name": "Nederlands"
+  },
+  {
+    "locale": "nn",
+    "name": "norsk nynorsk"
+  },
+  {
+    "locale": "ny",
+    "name": "Chichewa"
+  },
+  {
+    "locale": "om",
+    "name": "Oromoo"
+  },
+  {
+    "locale": "or",
+    "name": "ଓଡ଼ିଆ"
+  },
+  {
+    "locale": "pa",
+    "name": "ਪੰਜਾਬੀ"
+  },
+  {
+    "locale": "pl-PL",
+    "name": "polski (Polska)"
+  },
+  {
+    "locale": "pl",
+    "name": "polski"
+  },
+  {
+    "locale": "ps",
+    "name": "پښتو"
+  },
+  {
+    "locale": "pt-PT",
+    "name": "português europeu"
+  },
+  {
+    "locale": "pt",
+    "name": "português"
+  },
+  {
+    "locale": "ro",
+    "name": "română"
+  },
+  {
+    "locale": "ru",
+    "name": "русский"
+  },
+  {
+    "locale": "rw",
+    "name": "Ikinyarwanda"
+  },
+  {
+    "locale": "si",
+    "name": "සිංහල"
+  },
+  {
+    "locale": "sk",
+    "name": "slovenčina"
+  },
+  {
+    "locale": "sl",
+    "name": "slovenščina"
+  },
+  {
+    "locale": "sn",
+    "name": "chiShona"
+  },
+  {
+    "locale": "so",
+    "name": "Soomaali"
+  },
+  {
+    "locale": "sq",
+    "name": "shqip"
+  },
+  {
+    "locale": "sr",
+    "name": "српски"
+  },
+  {
+    "locale": "st",
+    "name": "Sesotho"
+  },
+  {
+    "locale": "sv-SE",
+    "name": "svenska (Sverige)"
+  },
+  {
+    "locale": "sv",
+    "name": "svenska"
+  },
+  {
+    "locale": "sw",
+    "name": "Kiswahili"
+  },
+  {
+    "locale": "ta",
+    "name": "தமிழ்"
+  },
+  {
+    "locale": "te",
+    "name": "తెలుగు"
+  },
+  {
+    "locale": "tg",
+    "name": "тоҷикӣ"
+  },
+  {
+    "locale": "th",
+    "name": "ไทย"
+  },
+  {
+    "locale": "ti",
+    "name": "ትግርኛ"
+  },
+  {
+    "locale": "tk",
+    "name": "türkmen dili"
+  },
+  {
+    "locale": "tr",
+    "name": "Türkçe"
+  },
+  {
+    "locale": "uk",
+    "name": "українська"
+  },
+  {
+    "locale": "ur",
+    "name": "اردو"
+  },
+  {
+    "locale": "uz",
+    "name": "o‘zbek"
+  },
+  {
+    "locale": "vi",
+    "name": "Tiếng Việt"
+  },
+  {
+    "locale": "xh",
+    "name": "IsiXhosa"
+  },
+  {
+    "locale": "yi",
+    "name": "ייִדיש"
+  },
+  {
+    "locale": "yo",
+    "name": "Èdè Yorùbá"
+  },
+  {
+    "locale": "zh-Hans",
+    "name": "简体中文"
+  },
+  {
+    "locale": "zh-Hant",
+    "name": "繁體中文"
+  },
+  {
+    "locale": "zh-HK",
+    "name": "中文（中國香港特別行政區）"
+  },
+  {
+    "locale": "zu-ZA",
+    "name": "isiZulu (iNingizimu Afrika)"
+  },
+  {
+    "locale": "zu",
+    "name": "isiZulu"
+  }
+]
