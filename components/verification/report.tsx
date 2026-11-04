@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Check, ChevronDown, ChevronRight, Copy, FileCheck2, ImageIcon, Info, LoaderCircle, MapPin, RotateCcw, Share2, ShieldQuestion, TriangleAlert, X } from "lucide-react"
+import { Check, ChevronDown, ChevronRight, Copy, ImageIcon, Info, LoaderCircle, MapPin, RotateCcw, Share2, ShieldQuestion, TriangleAlert, X } from "lucide-react"
 import type { PhotoShareCopy } from "@/lib/photoShareI18n"
 import type { VerificationReport, VerificationCheck } from "@/lib/verificationReport"
 import styles from "./report.module.css"
 
-type Props = { report: VerificationReport; copy: PhotoShareCopy; locale: string; direction: "ltr" | "rtl"; embedded: boolean; theme: string; captureTime: string; completedTime: string; sample?: boolean; legacy?: boolean }
+type Props = { report: VerificationReport; copy: PhotoShareCopy; locale: string; direction: "ltr" | "rtl"; embedded: boolean; theme: string; captureTime: string; captureDate: string; captureClock: string; completedTime: string; sample?: boolean; legacy?: boolean }
 
 function nativeAction(action: string, value?: string) {
   const bridge = (window as unknown as { webkit?: { messageHandlers?: { timeprintVerification?: { postMessage: (value: unknown) => void } } } }).webkit?.messageHandlers?.timeprintVerification
@@ -14,7 +14,7 @@ function nativeAction(action: string, value?: string) {
   bridge.postMessage({ action, value }); return true
 }
 
-export default function VerificationReportPage({ report, copy: c, locale, direction, embedded, theme, captureTime, completedTime, sample = false, legacy = false }: Props) {
+export default function VerificationReportPage({ report, copy: c, locale, direction, embedded, theme, captureTime, captureDate, captureClock, completedTime, sample = false, legacy = false }: Props) {
   const [zoom, setZoom] = useState(false)
   const [copied, setCopied] = useState(false)
   const [shareFallback, setShareFallback] = useState<string | null>(null)
@@ -22,19 +22,20 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
   const [nativePreview, setNativePreview] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const r = report, record = r.mode === "record", capture = r.capture
+  const authenticRecord = record && r.state === "record" && capture !== null
   const imageURL = nativePreview || r.imageUrl
   const retry = r.state === "error" || r.state === "processing"
   const ready = !["not_found", "error", "processing"].includes(r.state)
   const showClearPhotoHint = !record && ["mismatch", "partial", "unavailable", "unsupported"].includes(r.state)
   const shareable = r.taskID !== null || (record && capture !== null) || (sample && ready)
   const title = ({ passed: c.passedTitle, mismatch: c.warningTitle, partial: c.partialTitle, unavailable: c.unableTitle,
-    unsupported: c.unableTitle, processing: c.checkingTitle, error: c.unableTitle, record: c.recordFoundTitle,
+    unsupported: c.unableTitle, processing: c.checkingTitle, error: c.unableTitle, record: c.passedTitle,
     not_found: record ? c.recordNotFound : c.reportNotFound })[r.state]
   const description = ({ passed: c.passedBody, mismatch: c.warningBody, partial: c.partialBody,
     unavailable: r.reason === "reference_missing" ? c.referenceMissing : c.unreadable,
-    unsupported: c.otherCamera, processing: c.loading, error: c.serviceError, record: c.recordFoundBody, not_found: "" })[r.state]
-  const HeroIcon = r.state === "record" ? FileCheck2 : r.state === "passed" ? Check : r.state === "mismatch" ? TriangleAlert : r.state === "processing" ? LoaderCircle : ShieldQuestion
-  const tone = r.state === "record" ? "record" : r.state === "passed" ? "passed" : r.state === "mismatch" ? "mismatch" : "neutral"
+    unsupported: c.otherCamera, processing: c.loading, error: c.serviceError, record: "", not_found: "" })[r.state]
+  const HeroIcon = authenticRecord || r.state === "passed" ? Check : r.state === "mismatch" ? TriangleAlert : r.state === "processing" ? LoaderCircle : ShieldQuestion
+  const tone = authenticRecord || r.state === "passed" ? "passed" : r.state === "mismatch" ? "mismatch" : "neutral"
   const labels = { code: c.photoCode, time: c.captureTime, address: c.captureLocation, content: c.photoContent }
   // The verified code is already displayed beneath the photo. Keep any code
   // failure visible, but avoid a duplicate success row in the compact overview.
@@ -44,9 +45,9 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
 
   useEffect(() => {
     if (!embedded) return
-    nativeAction("appearance", JSON.stringify({ locale, direction, title: record ? c.captureRecord : c.reportTitle }))
+    nativeAction("appearance", JSON.stringify({ locale, direction, title: c.reportTitle }))
     nativeAction("ready")
-  }, [embedded, locale, direction, record, c.captureRecord, c.reportTitle])
+  }, [embedded, locale, direction, c.reportTitle])
   useEffect(() => {
     if (zoom) dialogRef.current?.showModal(); else dialogRef.current?.close()
   }, [zoom])
@@ -74,7 +75,7 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
   async function share() {
     if (embedded && nativeAction("share")) return
     try {
-      if (navigator.share) { await navigator.share({ title: record ? c.captureRecord : c.reportTitle, url: canonicalURL() }); return }
+      if (navigator.share) { await navigator.share({ title: c.reportTitle, url: canonicalURL() }); return }
       if (navigator.clipboard) { await navigator.clipboard.writeText(canonicalURL()); setCopied(true); return }
     } catch (error) { if (error instanceof DOMException && error.name === "AbortError") return }
     setShareFallback(canonicalURL())
@@ -87,9 +88,16 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
     if (embedded && nativeAction("copy", r.photoCode)) { setCopied(true); setTimeout(() => setCopied(false), 1800); return }
     try { await navigator.clipboard.writeText(r.photoCode); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { setShareFallback(r.photoCode) }
   }
-  const metadata = capture ? [
+  const gps = capture?.latitude !== null && capture?.latitude !== undefined && capture.longitude !== null
+    ? `${capture.latitude.toFixed(6)}, ${capture.longitude.toFixed(6)}` : ""
+  const metadata = capture ? record ? [
+    [c.captureSource, capture.source], [c.deviceModel, capture.deviceModel || "—"],
+    [c.time, captureClock], [c.date, captureDate], [c.timezone, capture.timezone],
+    [c.gps, gps || "—"], [c.captureLocation, capture.address || "—"],
+    [c.appVersion, capture.appVersion], [c.systemVersion, capture.os],
+  ].filter(([, value]) => value) : [
     [c.captureTime, captureTime], [c.timezone, capture.timezone], [c.captureLocation, capture.address],
-    [c.gps, capture.latitude !== null && capture.longitude !== null ? `${capture.latitude.toFixed(6)}, ${capture.longitude.toFixed(6)}` : ""],
+    [c.gps, gps],
     [c.accuracy, capture.accuracy !== null && capture.accuracy >= 0 ? `±${Math.round(capture.accuracy)} m` : ""],
     [c.captureSource, capture.source], [c.appVersion, capture.appVersion], [c.deviceModel, capture.deviceModel], [c.systemVersion, capture.os],
   ].filter(([, value]) => value) : []
@@ -104,16 +112,15 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
       {sample && <aside className={styles.notice} role="note"><strong dir="auto">{c.sampleLabel}</strong><span dir="auto">{c.sampleNotice}</span></aside>}
       {legacy && <p className={styles.notice} dir="auto">{c.legacyNotice}</p>}
       <main>
-        <div className={styles.reportCard} data-tone={tone}>
+        <div className={styles.reportCard} data-tone={tone} data-record-result={authenticRecord}>
         <section className={`${styles.hero} ${styles[tone]}`} aria-labelledby="report-title">
           <div className={styles.heroIcon}><HeroIcon size={34} strokeWidth={2.2} className={r.state === "processing" ? styles.spinning : ""} /></div>
-          <div className={styles.heroCopy}><p className={styles.eyebrow} dir="auto">{record ? c.captureRecord : c.resultLabel}</p><h1 id="report-title" dir="auto">{title}</h1></div>
+          <div className={styles.heroCopy}><p className={styles.eyebrow} dir="auto">{c.resultLabel}</p><h1 id="report-title" dir="auto">{title}</h1></div>
           {shareable && <button className={styles.iconButton} onClick={share} aria-label={record ? c.share : c.shareResult}><Share2 size={24} /></button>}
         </section>
         <div className={styles.resultSummary}>
           {showClearPhotoHint && <p className={styles.recoveryHint} dir="auto">{c.clearPhotoHint}</p>}
           {description && r.state !== "passed" && !(r.state === "unavailable" && r.reason !== "reference_missing") && <p dir="auto">{description}</p>}
-          {record && capture && <div className={styles.scope}><Info size={16} /><span dir="auto">{c.recordOnly}</span></div>}
         </div>
 
         {!record && r.checks.length > 0 && !["processing", "unsupported"].includes(r.state) && <section className={styles.checks} aria-label={c.verificationDetails}>
@@ -138,17 +145,16 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
           {r.photoCode && <button className={styles.codeBar} onClick={copyCode} aria-label={`${c.photoCode}: ${r.photoCode}`}><span>{c.photoCode}</span><strong dir="ltr">{r.photoCode}</strong>{copied ? <Check size={17} /> : <Copy size={17} />}</button>}
         </section>}
 
-        {capture && <section className={styles.recordCard} data-original-info><h2>{c.originalInfo}</h2><dl className={styles.metadata}>
+        {capture && <section className={styles.recordCard} data-original-info><h2 className={record ? styles.visuallyHidden : undefined}>{c.originalInfo}</h2><dl className={styles.metadata}>
           {metadata.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><bdi dir={[c.gps, c.accuracy, c.appVersion].includes(label) ? "ltr" : "auto"}>{value}</bdi></dd></div>)}
         </dl>{mapURL && <a className={styles.mapLink} href={mapURL} target="_blank" rel="noreferrer"><MapPin size={19}/><span>{c.navigate}</span><ChevronRight size={18}/></a>}</section>}
         </div>
 
-        {record && capture && <p className={styles.explanation}><Info size={17}/><span dir="auto">{c.recordLookupTip}</span></p>}
         {completedTime && <p className={styles.timestamp}>{c.completedAt} · <bdi>{completedTime}</bdi></p>}
-        <div className={styles.actions}>
+        {!authenticRecord && <div className={styles.actions}>
           {retry ? <button className={styles.primary} onClick={() => location.reload()}><RotateCcw size={18}/>{c.retry}</button> : <button className={styles.primary} onClick={selectPhoto}><ImageIcon size={18}/>{record ? c.uploadToVerify : c.changePhoto}</button>}
           {shareable && <button className={styles.secondary} onClick={share}><Share2 size={18}/>{record ? c.share : c.shareResult}{copied && <Check size={16}/>}</button>}
-        </div>
+        </div>}
         {shareFallback && <input className={styles.shareLink} aria-label={c.share} dir="ltr" readOnly value={shareFallback} onFocus={e => e.target.select()} />}
         </div>
         {ready && <section className={styles.about} aria-labelledby="trust-title">
@@ -161,7 +167,7 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
           )}</div>
         </section>}
       </main>
-      <footer className={styles.footer}>Timeprint <span>·</span> {record ? c.captureRecord : c.reportTitle}</footer>
+      <footer className={styles.footer}>Timeprint <span>·</span> {c.reportTitle}</footer>
     </div>
     <dialog ref={dialogRef} className={styles.imageDialog} aria-label={c.uploadedPhoto} onClose={() => setZoom(false)} onClick={e => { if (e.target === e.currentTarget) setZoom(false) }}><button onClick={() => setZoom(false)} aria-label={c.close}><X size={26}/></button>{imageURL && <img src={imageURL} alt={c.uploadedPhoto}/>}</dialog>
   </div>

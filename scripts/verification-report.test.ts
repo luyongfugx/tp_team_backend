@@ -89,3 +89,13 @@ test("database/network failure is not presented as a missing or forged photo", a
   assert.equal((await service.getVerificationReport("12345678-1234-4123-8123-123456789abc")).state,"error")
   assert.equal((await service.getCaptureRecordReport("AB12CD34EF56")).state,"error")
 })
+
+test("record date/time preserves the capture timezone and does not invent missing values", async () => {
+  const { captureDateAndTime } = await import("../lib/verificationReportTime")
+  const record = captureRecord({ captureTime: "2026-09-30 15:34:35", timestamp: 1790753675515, timezoneID: "Asia/Shanghai" })
+  assert.deepEqual(captureDateAndTime(record, "en-US"), { date: "2026-09-30", time: "15:34:35" })
+  const utc = captureRecord({ timestamp: Date.UTC(2026, 10, 4, 0, 0, 0), timezoneID: "Asia/Shanghai" })
+  assert.equal(captureDateAndTime(utc, "en-GB").time, "08:00:00")
+  assert.deepEqual(captureDateAndTime(captureRecord({timestamp: 1790753675515}), "en"), { date: "—", time: "—" })
+  assert.deepEqual(captureDateAndTime(null, "en"), { date: "—", time: "—" })
+})

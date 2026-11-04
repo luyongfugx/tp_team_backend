@@ -88,6 +88,8 @@ const fields = {
   none: "tp_photo_verification_none",
   photoCode: "tp_photo_verification_record_code",
   captureTime: "tp_photo_verification_record_time",
+  time: "k_time",
+  date: "fix_pdf_date",
   captureLocation: "tp_photo_verification_record_location",
   photoContent: "tp_photo_verification_photo_content",
   contentMatched: "tp_photo_verification_content_match",

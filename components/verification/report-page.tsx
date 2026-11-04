@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { getPhotoShareCopy } from "@/lib/photoShareI18n"
 import type { VerificationReport } from "@/lib/verificationReport"
 import VerificationReportPage from "./report"
+import { captureDateAndTime } from "@/lib/verificationReportTime"
 
 export type ReportSearch = Record<string, string | string[] | undefined>
 export async function reportCopy(search: ReportSearch) {
@@ -21,15 +22,19 @@ export async function ReportPage({ report, search, sample = false }: { report: V
   const captureTime = capture?.captureTime || (capture?.timestamp
     ? formatTime(capture.timestamp, capture.timezoneID || "UTC") + (capture.timezoneID ? "" : " UTC") : "—")
   const completedTime = report.completedAt ? formatTime(report.completedAt, "UTC", true) + " UTC" : ""
+  const { date: captureDate, time: captureClock } = captureDateAndTime(capture, locale)
   return <VerificationReportPage report={report} copy={copy} locale={locale} direction={direction}
-    captureTime={captureTime} completedTime={completedTime}
+    captureTime={captureTime} captureDate={captureDate} captureClock={captureClock} completedTime={completedTime}
     embedded={search.embed === "1"} theme="light"
     sample={sample} legacy={search.legacy === "1"} />
 }
 export async function reportMetadata(report: VerificationReport, search: ReportSearch): Promise<Metadata> {
   const { copy } = await reportCopy(search)
-  const title = report.mode === "record" ? copy.captureRecord : copy.reportTitle
-  const description = report.mode === "record" ? copy.recordLookupTip : report.state === "passed" ? `${copy.resultLabel}: ${copy.passedTitle}` : report.state === "mismatch" ? copy.warningBody : copy.partialBody
+  const title = copy.reportTitle
+  const description = report.state === "passed" || (report.state === "record" && report.capture)
+    ? `${copy.resultLabel}: ${copy.passedTitle}`
+    : report.mode === "record" ? (report.state === "error" ? copy.serviceError : copy.recordNotFound)
+    : report.state === "mismatch" ? copy.warningBody : copy.partialBody
   return { title: `${title} | Timeprint`, description, robots: { index: false, follow: false, nocache: true },
     openGraph: { title, description, type: "website", images: report.imageUrl ? [{ url: report.imageUrl }] : [] }, referrer: "no-referrer" }
 }

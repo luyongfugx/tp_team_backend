@@ -75,6 +75,8 @@
 .metadata>div{display:grid;grid-template-columns:28% minmax(0,1fr);gap:14px;padding:7px 0}
 .metadata dt{font-size:14px;color:#666}
 .metadata dd{margin:0;font-size:15px;white-space:pre-line;text-align:start;unicode-bidi:plaintext;color:#111}
+.reportCard[data-record-result=true] .captureGrid{gap:20px;padding-block:22px 24px}
+.reportCard[data-record-result=true] .metadata>div{grid-template-columns:minmax(90px,35%) minmax(0,1fr);gap:12px;padding-block:8px}
 .mapLink{display:flex;align-items:center;gap:10px;color:#1d5789;margin-top:14px;padding:12px 0;font-weight:700;font-size:14px;text-decoration:none}
 .mapLink span{flex:1}
 .page[dir=rtl] .mapLink>svg:last-child{transform:scaleX(-1)}
