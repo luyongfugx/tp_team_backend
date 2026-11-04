@@ -58,6 +58,34 @@ test("invalid coordinates are not replaced by Null Island; valid zero coordinate
   assert.equal(captureRecord({latlng:"0,0"})?.latitude, 0)
   assert.equal(captureRecord({latlng:"22.67,114.11"})?.longitude, 114.11)
 })
+test("capture release versions take precedence over internal build numbers", () => {
+  assert.equal(captureRecord({ appVersion: "4.2.8", versionCode: "52", os: "iOS 26" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ versionName: "4.2.8", versionCode: 4281, os: "Android 15" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ appVersion: "4281", versionName: "4.2.8", os: "Android" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ versionCode: "4.2.9", os: "iOS" })?.appVersion, "4.2.9")
+  assert.equal(captureRecord({ appVersion: "4.12.10", versionCode: "9000" })?.appVersion, "4.12.10")
+})
+test("historical Android and iOS captures resolve their own release versions", () => {
+  assert.equal(captureRecord({ versionCode: "4212", os: "Android" })?.appVersion, "4.2.1")
+  assert.equal(captureRecord({ versionCode: 4281, os: "Android 15" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ appVersion: "4281", os: "Android" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ versionCode: "52", os: "iOS 26.1" })?.appVersion, "4.2.8")
+  assert.equal(captureRecord({ versionCode: "51", os: "iOS" })?.appVersion, "4.2.7")
+  assert.equal(captureRecord({ versionCode: "4237", os: "Android" })?.appVersion, "4.2.3")
+})
+test("ambiguous or unknown build numbers are not invented release versions", () => {
+  for (const record of [
+    { versionCode: "42", os: "iOS" }, { versionCode: "9999", os: "Android" },
+    { versionCode: "4281", os: "iOS" }, { versionCode: "52", os: "Android" },
+    { versionCode: "4281" }, { versionCode: null }, { appVersion: "invalid" },
+  ]) assert.equal(captureRecord(record)?.appVersion, "")
+})
+test("record and photo verification reports share version formatting without mutating raw records", () => {
+  const record = { versionCode: "4212", os: "Android" }
+  assert.equal(photoRecordReport({ captureRecord: record }, "AB12CD34EF56").capture?.appVersion, "4.2.1")
+  assert.equal(verificationReport({ status: "SUCCEEDED", result: { captureRecord: record } }).capture?.appVersion, "4.2.1")
+  assert.deepEqual(record, { versionCode: "4212", os: "Android" })
+})
 test("public report identifiers are UUIDv4 task capabilities and record codes are strict", () => {
   assert.equal(normalizeTaskID("12345678-1234-4123-8123-123456789ABC"), "12345678-1234-4123-8123-123456789abc")
   for (const id of ["1", "AB12CD34EF56", "../../etc", "12345678-1234-1123-8123-123456789abc"]) assert.equal(normalizeTaskID(id), null)

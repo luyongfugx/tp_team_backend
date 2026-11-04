@@ -1,4 +1,5 @@
 import { normalizeVerificationErrorCode } from "./verificationErrorCodes"
+import { captureAppVersion } from "./verificationAppVersion"
 
 export type CheckState = "passed" | "mismatch" | "unavailable" | "not_checked"
 export type ReportState = "passed" | "mismatch" | "partial" | "unavailable" | "unsupported" | "processing" | "error" | "record" | "not_found"
@@ -48,7 +49,7 @@ export function captureRecord(value: unknown, photoCode = ""): CaptureRecord | n
     captureTime: text(c.captureTime), timestamp: timestamp !== null && timestamp > 0 ? timestamp : null,
     address: text(c.address), latitude: valid ? lat : null, longitude: valid ? lng : null,
     timezone: text(c.timezoneAbbreviation) || text(c.timezoneID), timezoneID: text(c.timezoneID),
-    deviceModel: text(c.deviceModel), os: text(c.os), appVersion: text(c.appVersion) || text(c.versionCode),
+    deviceModel: text(c.deviceModel), os: text(c.os), appVersion: captureAppVersion(c),
     source: text(c.captureSource) || "Timeprint", accuracy: finite(c.locationAccuracyMeters),
     countryCode: text(c.countryCode).toUpperCase(), coordinateSystem: text(c.coordinateSystem).toUpperCase(),
   }
