@@ -1,5 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
+import { verificationCopyOverrides } from "../lib/verificationCopyOverrides.mjs"
 
 const sourceRoot = process.argv[2]
   || path.resolve("../gps_map_camera/iOSTimeGPS/Resource/Language")
@@ -13,7 +14,7 @@ const fields = {
   language: "i_swith_language",
   passedTitle: "tp_photo_verification_report_authentic",
   passedBody: "tp_photo_verification_passed_body",
-  warningTitle: "tp_photo_verification_report_unable_compact",
+  warningTitle: "tp_photo_verification_mismatch",
   warningBody: "tp_photo_verification_warning_body",
   unableTitle: "tp_photo_verification_report_unable_compact",
   clearPhotoHint: "tp_photo_verification_report_clear_photo_hint",
@@ -113,6 +114,11 @@ const fields = {
   downloadTitle: "tp_photo_verification_design_title",
   downloadBody: "tp_photo_verification_report_intro",
   privacy: "tp_photo_verification_record_lookup_tip",
+  copyLink: "kk_copy_link_btn",
+  copied: "kk_copied",
+  cancel: "kk_cancel",
+  invalidDimensions: "tp_photo_verification_precheck_dimensions",
+  missingBrand: "tp_photo_verification_precheck_brand_missing",
 }
 
 function decodeStringsValue(value) {
@@ -147,16 +153,20 @@ const english = sourceByLocale.en
 if (!english) throw new Error("English localization is required")
 
 const translations = {}
+// The checked-in H5 catalog can be newer than a developer's native checkout.
+// Explicit extension mode preserves its reviewed strings, never falls back to English.
+const previous = process.argv.includes("--extend-existing") ? JSON.parse(fs.readFileSync(output, "utf8")) : {}
 for (const [locale, source] of Object.entries(sourceByLocale)) {
   translations[locale] = Object.fromEntries(Object.entries(fields).map(([field, sourceKey]) => [
     field,
-    source[sourceKey] || (() => { throw new Error(`Missing translation: ${locale}/${sourceKey}`) })(),
+    (field === "warningTitle" ? source[sourceKey] : previous[locale]?.[field]) || source[sourceKey] || (() => { throw new Error(`Missing translation: ${locale}/${sourceKey}`) })(),
   ]))
 }
 
 Object.assign(translations.en, { photographer: "Photographer" })
 Object.assign(translations["zh-Hans"] || {}, { photographer: "拍摄者" })
 Object.assign(translations["zh-Hant"] || {}, { photographer: "拍攝者" })
+for (const [locale, copy] of Object.entries(verificationCopyOverrides)) Object.assign(translations[locale], copy)
 
 fs.writeFileSync(output, `${JSON.stringify(translations, null, 2)}\n`)
 // Use the same complete locale inventory as the app, including regional variants.

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { signedVerificationImageURL } from "@/lib/cosSignedUrl"
 import { fetchTrustedPhotoRecord } from "@/lib/photoRecord"
 import { normalizePhotoCode, normalizeTaskID, verificationReport, photoRecordReport, unavailableReport, text } from "./verificationReport"
+import { livePreviewImage } from "./verificationPreviewImage"
 
 // Read-only development adapter: lets the Fang preview use existing public API results
 // without copying production database/COS credentials to a developer machine.
@@ -25,7 +26,11 @@ export async function getVerificationReport(value: unknown) {
     if (preview !== undefined) {
       if (!preview) return unavailableReport("verification", "not_found")
       const report = verificationReport(preview)
-      report.imageUnavailable = true
+      // Resolve the signed image independently in the browser. Reading the live
+      // H5 preview must never hold up the verification result or its HTML.
+      report.imageUrl = typeof preview.imageUrl === "string" && preview.imageUrl
+        ? `/api/photoCode/verify/task/${taskID}/preview` : null
+      report.imageUnavailable = !report.imageUrl
       return report
     }
     const task = await prisma.photoVerificationTask.findUnique({ where: { taskID }, select: {
@@ -40,6 +45,16 @@ export async function getVerificationReport(value: unknown) {
     }
     return report
   } catch { return unavailableReport("verification", "error") }
+}
+
+export async function getVerificationPreviewImage(value: unknown) {
+  if (process.env.NODE_ENV !== "development" || !process.env.TP_VERIFICATION_READ_API_BASE) return null
+  const taskID = normalizeTaskID(value)
+  if (!taskID) return null
+  try {
+    const task = await previewRead("photoCode/verify/task/status", { taskID })
+    return task ? await livePreviewImage(taskID, task.imageUrl) : null
+  } catch { return null }
 }
 
 export async function getCaptureRecordReport(value: unknown) {

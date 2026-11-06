@@ -54,7 +54,7 @@ For development preview only, set `TP_VERIFICATION_PREVIEW=1` and open
 The page is visibly labeled simulated, and is unavailable in production. Optional
 `TP_VERIFICATION_SAMPLE_PATH` points to a local JPEG for the fixture preview. Optional
 `TP_VERIFICATION_READ_API_BASE` reads existing public task/record API results in development
-without production DB/COS credentials; image signing remains a production integration check.
+without production DB/COS credentials. The report streams a loading shell and displays the verification data without waiting for a photo. In this mode, the browser separately requests `/api/photoCode/verify/task/<taskID>/preview`, which redirects to the matching signed image from the official report configured by `TP_VERIFICATION_READ_REPORT_ORIGIN` (default `https://h5.timeprint.net`); only the exact image host and path returned for that task are accepted. This read-only adapter is disabled outside development (the image route returns 404). Production continues to sign its own image directly.
 For a phone on the local network, set `TP_VERIFICATION_PREVIEW_HOST` to the Mac's LAN
 hostname/IP and run `next dev --webpack --hostname 0.0.0.0`. The explicit development
 origin allowlist permits Next's client resources without relaxing production access.

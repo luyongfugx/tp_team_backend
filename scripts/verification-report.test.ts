@@ -97,8 +97,41 @@ function loader(dependencies: Record<string, unknown>) {
   const source = readFileSync(new URL("../lib/publicVerificationReport.ts", import.meta.url), "utf8")
     .replace(/^import .*$/gm, "").replace(/export\s+(?=async function)/g, "")
   const deps = { normalizePhotoCode, normalizeTaskID, verificationReport, photoRecordReport, unavailableReport, text, ...dependencies }
-  return new Function(...Object.keys(deps), stripTypeScriptTypes(source) + "\nreturn { getVerificationReport, getCaptureRecordReport };")(...Object.values(deps))
+  return new Function(...Object.keys(deps), stripTypeScriptTypes(source) + "\nreturn { getVerificationReport, getCaptureRecordReport, getVerificationPreviewImage };")(...Object.values(deps))
 }
+test("live reports return their verdict without waiting for the signed preview", async () => {
+  const taskID = "12345678-1234-4123-8123-123456789abc"
+  const service = loader({
+    process: {env:{NODE_ENV:"development",TP_VERIFICATION_READ_API_BASE:"https://api.example/api"}},
+    fetch: async () => Response.json({data:{taskID,status:"SUCCEEDED",result:{},imageUrl:"https://image.example/verify/guest/photo.jpg"}}),
+    livePreviewImage: () => assert.fail("Loading a photo must not delay the report"),
+  })
+  const result = await service.getVerificationReport(taskID)
+  assert.equal(result.taskID,taskID)
+  assert.equal(result.imageUrl,`/api/photoCode/verify/task/${taskID}/preview`)
+  assert.equal(result.imageUnavailable,false)
+})
+test("preview resolution is separate, task-specific, and disabled in production", async () => {
+  const taskID = "12345678-1234-4123-8123-123456789abc"
+  const expected = "https://image.example/verify/guest/photo.jpg"
+  const env = {NODE_ENV:"production",TP_VERIFICATION_READ_API_BASE:"https://api.example/api"}
+  let requests = 0
+  const service = loader({process:{env},fetch:async (_url: URL, init: RequestInit)=>{
+    requests++;assert.deepEqual(JSON.parse(init.body as string),{taskID})
+    return Response.json({data:{imageUrl:expected}})
+  },livePreviewImage:async (id: string,image: string)=>{assert.equal(id,taskID);assert.equal(image,expected);return `${image}?signed=1`}})
+  assert.equal(await service.getVerificationPreviewImage(taskID),null)
+  assert.equal(requests,0)
+  env.NODE_ENV="development"
+  assert.equal(await service.getVerificationPreviewImage("invalid"),null)
+  assert.equal(requests,0)
+  assert.equal(await service.getVerificationPreviewImage(taskID),`${expected}?signed=1`)
+  assert.equal(requests,1)
+})
+test("preview network failure only makes the image unavailable", async () => {
+  const service=loader({process:{env:{NODE_ENV:"development",TP_VERIFICATION_READ_API_BASE:"https://api.example/api"}},fetch:async()=>{throw Error("offline")}})
+  assert.equal(await service.getVerificationPreviewImage("12345678-1234-4123-8123-123456789abc"),null)
+})
 test("reports load the exact requested task even when a photo code has later results", async () => {
   const taskID = "12345678-1234-4123-8123-123456789abc"
   const service = loader({prisma:{photoVerificationTask:{

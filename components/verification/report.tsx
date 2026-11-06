@@ -6,7 +6,7 @@ import type { PhotoShareCopy } from "@/lib/photoShareI18n"
 import type { VerificationReport, VerificationCheck } from "@/lib/verificationReport"
 import styles from "./report.module.css"
 
-type Props = { report: VerificationReport; copy: PhotoShareCopy; locale: string; direction: "ltr" | "rtl"; embedded: boolean; theme: string; captureTime: string; captureDate: string; captureClock: string; completedTime: string; sample?: boolean; legacy?: boolean }
+type Props = { report: VerificationReport; copy: PhotoShareCopy; locale: string; direction: "ltr" | "rtl"; embedded: boolean; theme: string; captureTime: string; captureDate: string; captureClock: string; completedTime: string; sample?: boolean; legacy?: boolean; websiteOrigin?: string }
 
 function nativeAction(action: string, value?: string) {
   const bridge = (window as unknown as { webkit?: { messageHandlers?: { timeprintVerification?: { postMessage: (value: unknown) => void } } } }).webkit?.messageHandlers?.timeprintVerification
@@ -14,35 +14,42 @@ function nativeAction(action: string, value?: string) {
   bridge.postMessage({ action, value }); return true
 }
 
-export default function VerificationReportPage({ report, copy: c, locale, direction, embedded, theme, captureTime, captureDate, captureClock, completedTime, sample = false, legacy = false }: Props) {
+export default function VerificationReportPage({ report, copy: c, locale, direction, embedded, theme, captureTime, captureDate, captureClock, completedTime, sample = false, legacy = false, websiteOrigin = "https://www.timeprint.net" }: Props) {
   const [zoom, setZoom] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [canShare, setCanShare] = useState(false)
   const [shareFallback, setShareFallback] = useState<string | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
+  const [loadedImage, setLoadedImage] = useState<string | null>(null)
   const [nativePreview, setNativePreview] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const r = report, record = r.mode === "record", capture = r.capture
   const authenticRecord = record && r.state === "record" && capture !== null
   const imageURL = nativePreview || r.imageUrl
   const retry = r.state === "error" || r.state === "processing"
   const ready = !["not_found", "error", "processing"].includes(r.state)
-  const showClearPhotoHint = !record && ["mismatch", "partial", "unavailable", "unsupported"].includes(r.state)
+  const showClearPhotoHint = !record && ["partial", "unavailable", "unsupported"].includes(r.state)
   const shareable = r.taskID !== null || (record && capture !== null) || (sample && ready)
   const title = ({ passed: c.passedTitle, mismatch: c.warningTitle, partial: c.partialTitle, unavailable: c.unableTitle,
-    unsupported: c.unableTitle, processing: c.checkingTitle, error: c.unableTitle, record: c.passedTitle,
+    unsupported: c.unableTitle, processing: c.checkingTitle, error: c.unableTitle, record: c.recordFoundTitle,
     not_found: record ? c.recordNotFound : c.reportNotFound })[r.state]
   const description = ({ passed: c.passedBody, mismatch: c.warningBody, partial: c.partialBody,
     unavailable: r.reason === "reference_missing" ? c.referenceMissing : c.unreadable,
-    unsupported: c.otherCamera, processing: c.loading, error: c.serviceError, record: "", not_found: "" })[r.state]
-  const HeroIcon = authenticRecord || r.state === "passed" ? Check : r.state === "mismatch" ? TriangleAlert : r.state === "processing" ? LoaderCircle : ShieldQuestion
-  const tone = authenticRecord || r.state === "passed" ? "passed" : r.state === "mismatch" ? "mismatch" : "neutral"
+    unsupported: c.otherCamera, processing: c.loading, error: c.serviceError, record: c.recordLookupTip, not_found: "" })[r.state]
+  const HeroIcon = r.state === "passed" ? Check : authenticRecord ? Info : r.state === "mismatch" ? TriangleAlert : r.state === "processing" ? LoaderCircle : ShieldQuestion
+  const tone = r.state === "passed" ? "passed" : r.state === "mismatch" ? "mismatch" : "neutral"
   const labels = { code: c.photoCode, time: c.captureTime, address: c.captureLocation, content: c.photoContent }
-  // The verified code is already displayed beneath the photo. Keep any code
-  // failure visible, but avoid a duplicate success row in the compact overview.
-  const visibleChecks = r.checks.filter(item => item.key !== "code" || item.state !== "passed")
+  const visibleChecks = r.checks
   const checkLabel = (item: VerificationCheck) => ({ passed: c.match, mismatch: c.mismatch, unavailable: c.unavailable, not_checked: c.notChecked })[item.state]
   const reasonLabel = (item: VerificationCheck) => ({ match: c.match, difference: c.mismatch, unreadable: c.unreadable, reference_missing: c.referenceMissing, not_checked: c.notChecked })[item.reason]
 
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: coarse)")
+    const update = () => setCanShare(typeof navigator.share === "function" && query.matches)
+    update(); query.addEventListener("change", update)
+    return () => query.removeEventListener("change", update)
+  }, [])
   useEffect(() => {
     if (!embedded) return
     nativeAction("appearance", JSON.stringify({ locale, direction, title: c.reportTitle }))
@@ -51,6 +58,13 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
   useEffect(() => {
     if (zoom) dialogRef.current?.showModal(); else dialogRef.current?.close()
   }, [zoom])
+  useEffect(() => {
+    // A cached image can finish before hydration attaches its load handlers.
+    const image = imageRef.current
+    if (!image?.complete) return
+    if (image.naturalWidth) setLoadedImage(imageURL)
+    else setImageFailed(true)
+  }, [imageURL])
   useEffect(() => {
     if (!embedded || record) return
     const apply = (value: unknown) => {
@@ -75,14 +89,14 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
   async function share() {
     if (embedded && nativeAction("share")) return
     try {
-      if (navigator.share) { await navigator.share({ title: c.reportTitle, url: canonicalURL() }); return }
-      if (navigator.clipboard) { await navigator.clipboard.writeText(canonicalURL()); setCopied(true); return }
+      if (navigator.share && window.matchMedia("(pointer: coarse)").matches) { await navigator.share({ title: c.reportTitle, url: canonicalURL() }); return }
+      if (navigator.clipboard) { await navigator.clipboard.writeText(canonicalURL()); setCopied(true); setTimeout(() => setCopied(false), 1800); return }
     } catch (error) { if (error instanceof DOMException && error.name === "AbortError") return }
     setShareFallback(canonicalURL())
   }
   function selectPhoto() {
     if (embedded && nativeAction("select")) return
-    window.location.href = "timeprint://photo-verification"
+    window.location.href = `${websiteOrigin}/${locale}/photo-verification`
   }
   async function copyCode() {
     if (embedded && nativeAction("copy", r.photoCode)) { setCopied(true); setTimeout(() => setCopied(false), 1800); return }
@@ -123,12 +137,17 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
           {description && r.state !== "passed" && !(r.state === "unavailable" && r.reason !== "reference_missing") && <p dir="auto">{description}</p>}
         </div>
 
+        <div className={`${styles.actions} ${styles.desktopActions}`}>
+          {retry ? <button className={styles.primary} onClick={() => location.reload()}><RotateCcw size={18}/>{c.retry}</button> : <button className={styles.primary} onClick={selectPhoto}><ImageIcon size={18}/>{record ? c.uploadToVerify : c.changePhoto}</button>}
+          {shareable && <button className={styles.secondary} onClick={share}><Share2 size={18}/>{(embedded || canShare) ? c.shareResult : c.copyLink}{copied && <Check size={16}/>}</button>}
+        </div>
+        <div className={styles.workspace}>
         {!record && r.checks.length > 0 && !["processing", "unsupported"].includes(r.state) && <section className={styles.checks} aria-label={c.verificationDetails}>
-          <h2 className={styles.visuallyHidden}>{c.verificationDetails}</h2>
+          <h2>{c.verificationDetails}</h2>
           <div className={styles.checkList}>{visibleChecks.map(item => {
             const Icon = item.state === "passed" ? Check : item.state === "mismatch" ? TriangleAlert : Info
             return <details key={item.key} className={styles.check} open={item.state === "mismatch"}>
-              <summary><span className={`${styles.fieldIcon} ${styles[item.state]}`}><Icon size={15} /></span><span className={styles.checkTitle}>{labels[item.key]}</span><span className={item.state === "passed" ? styles.visuallyHidden : `${styles.badge} ${styles[item.state]}`}>{checkLabel(item)}</span><ChevronDown size={15} className={styles.chevron} /></summary>
+              <summary><span className={`${styles.fieldIcon} ${styles[item.state]}`}><Icon size={15} /></span><span className={styles.checkTitle}>{labels[item.key]}</span><span className={`${styles.badge} ${styles[item.state]}`}>{checkLabel(item)}</span><ChevronDown size={15} className={styles.chevron} /></summary>
               <div className={styles.checkDetails}>
                 {item.expected && <div><span>{c.comparisonRecord}</span><p dir="auto">{item.expected}</p></div>}
                 {item.recognized && <div><span>{c.comparisonImage}</span><p dir="auto">{item.recognized}</p></div>}
@@ -140,21 +159,27 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
 
         <div className={styles.captureGrid} data-paired={Boolean((imageURL || r.imageUnavailable) && capture)}>
         {(imageURL || r.photoCode || r.imageUnavailable) && <section className={styles.photoCard}>
-          {imageURL && !imageFailed && <button className={styles.photoButton} onClick={() => setZoom(true)} aria-label={c.tapLargeImage}><img src={imageURL} alt={c.uploadedPhoto} onError={() => setImageFailed(true)} /><span><ImageIcon size={14} />{c.tapLargeImage}</span></button>}
+          {imageURL && !imageFailed && <button className={styles.photoButton} onClick={() => setZoom(true)} aria-label={c.tapLargeImage} aria-busy={loadedImage !== imageURL}>
+            <img ref={imageRef} src={imageURL} alt={c.uploadedPhoto} decoding="async" onLoad={() => setLoadedImage(imageURL)} onError={() => setImageFailed(true)} />
+            {loadedImage !== imageURL && <i className={styles.imageLoading} aria-hidden="true"><LoaderCircle size={28} className={styles.spinning} /></i>}
+            <span><ImageIcon size={14} />{c.tapLargeImage}</span>
+          </button>}
           {(imageFailed || (r.imageUnavailable && !nativePreview)) && <p className={styles.imageError}><ImageIcon size={24} />{c.imageUnavailable}</p>}
           {r.photoCode && <button className={styles.codeBar} onClick={copyCode} aria-label={`${c.photoCode}: ${r.photoCode}`}><span>{c.photoCode}</span><strong dir="ltr">{r.photoCode}</strong>{copied ? <Check size={17} /> : <Copy size={17} />}</button>}
         </section>}
 
-        {capture && <section className={styles.recordCard} data-original-info><h2 className={record ? styles.visuallyHidden : undefined}>{c.originalInfo}</h2><dl className={styles.metadata}>
-          {metadata.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><bdi dir={[c.gps, c.accuracy, c.appVersion].includes(label) ? "ltr" : "auto"}>{value}</bdi></dd></div>)}
-        </dl>{mapURL && <a className={styles.mapLink} href={mapURL} target="_blank" rel="noreferrer"><MapPin size={19}/><span>{c.navigate}</span><ChevronRight size={18}/></a>}</section>}
+        {capture && <section className={styles.recordCard} data-original-info><h2>{c.originalInfo}</h2><dl className={styles.metadata}>
+          {metadata.filter(([label]) => ![c.captureSource, c.appVersion, c.deviceModel, c.systemVersion].includes(label)).map(([label, value]) => <div key={label}><dt>{label}</dt><dd><bdi dir={[c.gps, c.accuracy, c.appVersion].includes(label) ? "ltr" : "auto"}>{value}</bdi></dd></div>)}
+        </dl><details className={styles.deviceDetails}><summary>{c.deviceSource}</summary><dl className={styles.metadata}>{metadata.filter(([label]) => [c.captureSource, c.appVersion, c.deviceModel, c.systemVersion].includes(label)).map(([label, value]) => <div key={label}><dt>{label}</dt><dd dir="auto">{value}</dd></div>)}</dl></details>{mapURL && <a className={styles.mapLink} href={mapURL} target="_blank" rel="noreferrer"><MapPin size={19}/><span>{c.navigate}</span><ChevronRight size={18}/></a>}</section>}
         </div>
 
+        </div>
         {completedTime && <p className={styles.timestamp}>{c.completedAt} · <bdi>{completedTime}</bdi></p>}
-        {!authenticRecord && <div className={styles.actions}>
+        <div className={`${styles.actions} ${styles.mobileActions}`}>
           {retry ? <button className={styles.primary} onClick={() => location.reload()}><RotateCcw size={18}/>{c.retry}</button> : <button className={styles.primary} onClick={selectPhoto}><ImageIcon size={18}/>{record ? c.uploadToVerify : c.changePhoto}</button>}
-          {shareable && <button className={styles.secondary} onClick={share}><Share2 size={18}/>{record ? c.share : c.shareResult}{copied && <Check size={16}/>}</button>}
-        </div>}
+          {shareable && <button className={styles.secondary} onClick={share}><Share2 size={18}/>{(embedded || canShare) ? c.shareResult : c.copyLink}{copied && <Check size={16}/>}</button>}
+        </div>
+        <span className={styles.visuallyHidden} role="status">{copied ? c.copied : ""}</span>
         {shareFallback && <input className={styles.shareLink} aria-label={c.share} dir="ltr" readOnly value={shareFallback} onFocus={e => e.target.select()} />}
         </div>
         {ready && <section className={styles.about} aria-labelledby="trust-title">
@@ -169,6 +194,6 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
       </main>
       <footer className={styles.footer}>Timeprint <span>·</span> {c.reportTitle}</footer>
     </div>
-    <dialog ref={dialogRef} className={styles.imageDialog} aria-label={c.uploadedPhoto} onClose={() => setZoom(false)} onClick={e => { if (e.target === e.currentTarget) setZoom(false) }}><button onClick={() => setZoom(false)} aria-label={c.close}><X size={26}/></button>{imageURL && <img src={imageURL} alt={c.uploadedPhoto}/>}</dialog>
+    <dialog ref={dialogRef} className={styles.imageDialog} aria-label={c.uploadedPhoto} onClose={() => setZoom(false)} onClick={e => { if (e.target === e.currentTarget) setZoom(false) }}><button onClick={() => setZoom(false)} aria-label={c.close}><X size={26}/></button>{zoom && imageURL && <img src={imageURL} alt={c.uploadedPhoto} decoding="async"/>}</dialog>
   </div>
 }
