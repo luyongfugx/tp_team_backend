@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+
+/* Report pages own the browser canvas too, including Safari's overscroll areas. */
+html:has([data-report-state]),
+body:has([data-report-state]) {
+  background: #1d5789;
+  color-scheme: light;
+}

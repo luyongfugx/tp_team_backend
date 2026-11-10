@@ -1,0 +1,15 @@
+{
+  "family": "Noto Sans Arabic",
+  "source": "https://fonts.google.com/specimen/Noto+Sans+Arabic",
+  "licenseSource": "https://github.com/google/fonts/blob/main/ofl/notosansarabic/OFL.txt",
+  "locales": [
+    "ar",
+    "arz",
+    "fa",
+    "ur",
+    "ps"
+  ],
+  "characters": "\n -./0128:BGKMPSTaegilmnoprst·،؟ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىئًٍُّٹټپځڅچڈډڑړږژښکګگںھہیۍېے۔۰۱۴۸‌…",
+  "weights": "100..900",
+  "size": 45156
+}
