@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronRight, Copy, ImageIcon, Info, LoaderCircle, 
 import type { PhotoShareCopy } from "@/lib/photoShareI18n"
 import type { VerificationReport, VerificationCheck } from "@/lib/verificationReport"
 import styles from "./report.module.css"
+import CaptureRecord from "./capture-record"
 
 type Props = { report: VerificationReport; copy: PhotoShareCopy; locale: string; direction: "ltr" | "rtl"; embedded: boolean; theme: string; captureTime: string; captureDate: string; captureClock: string; completedTime: string; sample?: boolean; legacy?: boolean; websiteOrigin?: string }
 
@@ -118,15 +119,20 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
   const mapURL = capture?.latitude !== null && capture?.latitude !== undefined && capture.longitude !== null
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${capture.latitude},${capture.longitude}`)}` : null
 
-  return <div className={styles.page} data-theme={theme} data-embedded={embedded} lang={locale} dir={direction} data-report-state={r.state}>
+  return <div className={styles.page} data-theme={theme} data-embedded={embedded} lang={locale} dir={direction} data-report-state={r.state} data-record-page={authenticRecord}>
     <div className={styles.container}>
       <header className={styles.brandBar}>
         <div className={styles.brand} dir="ltr"><img src="/logo.png" alt="" width="34" height="34" /><span>Timeprint</span></div>
+        {authenticRecord && <button className={styles.recordShare} onClick={share} aria-label={c.share}><Share2 size={18} /><span>{(embedded || canShare) ? c.share : c.copyLink}</span>{copied && <Check size={16} />}</button>}
       </header>
       {sample && <aside className={styles.notice} role="note"><strong dir="auto">{c.sampleLabel}</strong><span dir="auto">{c.sampleNotice}</span></aside>}
       {legacy && <p className={styles.notice} dir="auto">{c.legacyNotice}</p>}
       <main>
-        <div className={styles.reportCard} data-tone={tone} data-record-result={authenticRecord}>
+        {authenticRecord ? <>
+          <CaptureRecord capture={capture} photoCode={r.photoCode} copy={c} date={captureDate} time={captureClock} copied={copied} onCopy={copyCode} onVerify={selectPhoto} />
+          <span className={styles.visuallyHidden} role="status">{copied ? c.copied : ""}</span>
+          {shareFallback && <input className={styles.shareLink} aria-label={c.share} dir="ltr" readOnly value={shareFallback} onFocus={e => e.target.select()} />}
+        </> : <div className={styles.reportCard} data-tone={tone} data-record-result={authenticRecord}>
         <section className={`${styles.hero} ${styles[tone]}`} aria-labelledby="report-title">
           <div className={styles.heroIcon}><HeroIcon size={34} strokeWidth={2.2} className={r.state === "processing" ? styles.spinning : ""} /></div>
           <div className={styles.heroCopy}><p className={styles.eyebrow} dir="auto">{c.resultLabel}</p><h1 id="report-title" dir="auto">{title}</h1></div>
@@ -181,7 +187,7 @@ export default function VerificationReportPage({ report, copy: c, locale, direct
         </div>
         <span className={styles.visuallyHidden} role="status">{copied ? c.copied : ""}</span>
         {shareFallback && <input className={styles.shareLink} aria-label={c.share} dir="ltr" readOnly value={shareFallback} onFocus={e => e.target.select()} />}
-        </div>
+        </div>}
         {ready && <section className={styles.about} aria-labelledby="trust-title">
           <h2 id="trust-title" dir="auto">{c.trustTitle}</h2>
           <div className={styles.trustGrid}>{[[c.trust1Title, c.trust1Body], [c.trust2Title, c.trust2Body], [c.trust3Title, c.trust3Body]].map(([heading, body], index) =>

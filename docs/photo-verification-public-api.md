@@ -27,6 +27,11 @@ photo-code issuance authentication, and COS upload credential authorization are 
   migration is required for these pages.
 - `GET /record/<photoCode>` reads the original capture record directly. It requires no prior
   upload or verification task and never displays image-verification checkmarks.
+  Found records lead with an interactive capture-location map, address, GPS and navigation,
+  followed by the photo code and visible capture/device metadata. The upload-to-verify
+  action and authenticity explanations follow those records. Missing coordinates show an
+  unavailable state; map tile failures retain the address, GPS and external navigation.
+  The map uses the existing Leaflet/OpenStreetMap stack and does not request visitor location.
 - Legacy `GET /s/<photoCode>` resolves to the latest completed task with an explicit legacy
   notice. Sharing from that page uses the resolved task URL. If there is no task, it opens
   the capture record page.
@@ -82,7 +87,7 @@ Localizable.strings with `npm run i18n:photo-share`; do not edit the generated J
 
 The report stays in one column on phones/tablets. At 960px, photo and capture details
 use two columns when both are available; the three authenticity explanations use three
-columns. Code-only records retain a bounded single-column detail area. All widths are
+columns. Code-only records retain a bounded single-column, map-first layout. All widths are
 bounded so large desktop windows do not stretch paragraphs indefinitely.
 
 Direction follows the selected locale. Photo codes, coordinates and share URLs retain
