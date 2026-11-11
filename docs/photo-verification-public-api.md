@@ -31,7 +31,10 @@ photo-code issuance authentication, and COS upload credential authorization are 
   followed by the photo code and visible capture/device metadata. The upload-to-verify
   action and authenticity explanations follow those records. Missing coordinates show an
   unavailable state; map tile failures retain the address, GPS and external navigation.
-  The map uses the existing Leaflet/OpenStreetMap stack and does not request visitor location.
+  The record map uses MapLibre with free OpenFreeMap/OpenStreetMap vector data to draw
+  road/place labels at the device's pixel density (including 2x/3x phones). It retains
+  Leaflet/OpenStreetMap raster fallback when WebGL or vector loading is unavailable.
+  Neither renderer requests visitor location; the Team map is unchanged.
 - Legacy `GET /s/<photoCode>` resolves to the latest completed task with an explicit legacy
   notice. Sharing from that page uses the resolved task URL. If there is no task, it opens
   the capture record page.
