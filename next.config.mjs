@@ -4,6 +4,11 @@ const nextConfig = {
   // this allowlist in development; production remains on the public HTTPS host.
   allowedDevOrigins: ["127.0.0.1", ...(process.env.TP_VERIFICATION_PREVIEW_HOST ? [process.env.TP_VERIFICATION_PREVIEW_HOST] : [])],
   devIndicators: false,
+  async rewrites() {
+    return [
+      { source: "/r/:photoCode", destination: "/record/:photoCode" },
+    ]
+  },
   // Keep release builds within the memory budget of the shared app/OCR host.
   experimental: {
     cpus: 1,
