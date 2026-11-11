@@ -197,3 +197,22 @@
 @media(min-width:960px){.reportCard[data-record-result=true] .workspace{display:block;max-width:900px;margin-inline:auto}.reportCard[data-record-result=true] .photoCard{position:static;margin-bottom:24px}}
 
 @media(max-width:480px){.reportCard[data-record-result=true] .hero h1{font-size:22px;text-wrap:initial}}
+
+/* Photo-code lookup leads with the recorded location, then its metadata. */
+.page[data-record-page=true]{background:#f3f6f9}
+.page[data-record-page=true] .container{max-width:1000px}
+.page[data-record-page=true] .brandBar{color:#1b2c3b;padding-block:20px}
+.recordShare{display:flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;border:1px solid #d5e0e9;border-radius:8px;background:#fff;color:#1d5789;font-size:13px!important;font-weight:600!important;max-width:55%}
+.page[data-record-page=true] .about{margin-top:38px;color:#344e65}
+.page[data-record-page=true] .about h2{color:#223e55;font-size:21px}
+.page[data-record-page=true] .trustCard{background:#fff;border:1px solid #e1e7ed;border-radius:12px}
+.page[data-record-page=true] .trustCard h3{background:transparent;color:#254b6a;padding-bottom:0;font-size:16px}
+.page[data-record-page=true] .trustNumber{color:#7195b3}
+.page[data-record-page=true] .trustCard p{color:#6a7e8e;font-size:14px;line-height:1.8;padding-top:12px}
+.page[data-record-page=true] .footer{color:#788c9e}
+@media(max-width:600px){
+ .page[data-record-page=true] .container{padding-inline:max(14px,env(safe-area-inset-left))}
+ .page[data-record-page=true] .brandBar{padding-block:14px}
+ .page[data-record-page=true] .brand{font-size:19px;gap:8px}
+ .page[data-record-page=true] .about h2{font-size:19px}
+}
