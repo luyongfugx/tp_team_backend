@@ -1,6 +1,5 @@
 // Stop reading oversized public requests before allocating the whole body.
-export async function readPublicRequest(req: Request): Promise<Record<string, unknown>> {
-  const limit = 300000;
+export async function readPublicRequest(req: Request, limit = 300000): Promise<Record<string, unknown>> {
   if (Number(req.headers.get("content-length")) > limit || !req.body)
     throw Error("INVALID_REQUEST");
   const reader = req.body.getReader(), parts: Uint8Array[] = [];

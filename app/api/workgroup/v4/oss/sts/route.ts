@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import * as STS from "qcloud-cos-sts"
 import { prisma } from "@/lib/prisma"
-import { bad, readBody, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { bad, requireTeamMember, requireUser } from "@/app/api/_utils/api"
+import { inspectionSTSResponse } from "@/lib/inspection-sts"
+import { readPublicRequest } from "@/lib/web/request"
 
 const TEAM_PHOTO_PATTERN = /^teamspace\/[A-Z]{2}\/([^/]+)\/(team|\d+)\/\d{4}\/\d{2}\/\d{2}\/(?:ios|android)_[A-Za-z0-9._-]+\.jpg$/
 const AVATAR_PATTERN = /^teamspace\/avatar\/([^/]+)\/\d{4}\/\d{2}\/\d{2}\/(?:ios|android)_[A-Za-z0-9._-]+\.png$/
@@ -147,10 +149,15 @@ async function objectAllowed(config: COSBucketConfig, objectKey: string, userID:
 
 export async function POST(req: Request) {
   try {
+    let body: Record<string, unknown>
+    try { body = await readPublicRequest(req, 4096) }
+    catch { return bad() }
+    // This sole alias is login-independent and has a fixed, two-object write policy.
+    // All existing business buckets retain their original authentication checks.
+    if (body.bucketKey === "inspection") return inspectionSTSResponse(req, body)
     const user = await requireUser(req)
     if (!user) return bad("未授权或登录已过期", 401)
 
-    const body = await readBody(req)
     const bucketKey = typeof body.bucketKey === "string" ? body.bucketKey.trim() : "team"
     const objectKey = validObjectKey(body.objectKey ?? body.object_key)
     const access = requestedAccess(body.access)
