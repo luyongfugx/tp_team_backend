@@ -60,6 +60,11 @@ export default function CaptureMap({ latitude, longitude, label, unavailable }: 
       if (!response.ok) throw new Error("Map style unavailable")
       const style: StyleSpecification = await response.json()
       if (cancelled || fallbackStarted || !container.current) return
+      // Keep Arabic/Hebrew place names readable as well; load shaping only when needed.
+      if (M.getRTLTextPluginStatus() === "unavailable") {
+        void M.setRTLTextPlugin("https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js", true)
+          .catch(() => fallback().catch(() => { if (!cancelled) setFailed(true) }))
+      }
       // Draw readable local place/road labels at the actual display pixel density.
       // Raster retina mode sharpens imagery but halves the label's CSS font size.
       for (const layer of style.layers) {
