@@ -4,9 +4,11 @@
 .sectionHeading h1{font-size:20px;line-height:1.4;margin:0;font-weight:700}
 .mapFrame{position:relative;isolation:isolate;background:#e9eef0}
 .map{height:340px;width:100%;font-family:inherit}
-.marker{background:transparent;border:0}
+.marker{background:transparent;border:0;width:36px;height:46px}
 .marker span{display:block;width:34px;height:34px;border-radius:50% 50% 50% 0;background:#1d5789;border:3px solid #fff;box-shadow:0 3px 10px #133e6170;transform:rotate(-45deg)}
 .marker span:after{content:"";display:block;width:10px;height:10px;margin:9px;border-radius:50%;background:#fff}
+.map :global(.maplibregl-ctrl-group) button{width:38px;height:38px}
+.map :global(.maplibregl-ctrl-attrib){font-size:10px;line-height:16px;max-width:calc(100% - 10px);background:#ffffffed}
 .mapUnavailable{position:absolute;z-index:1000;top:12px;inset-inline:12px;display:flex;align-items:center;gap:8px;width:fit-content;max-width:calc(100% - 24px);padding:10px 14px;background:#fff;border:1px solid #dce5ed;border-radius:8px;font-size:13px;color:#52687a}
 .emptyMap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:180px;background:#edf2f6;color:#6b7d8c}
 .locationDetails{padding:22px 24px 24px}
