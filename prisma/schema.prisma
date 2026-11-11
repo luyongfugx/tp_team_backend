@@ -556,3 +556,32 @@ model WorkspaceExport {
   @@index([userID, groupID, createdAt])
   @@index([status, leaseUntil])
 }
+
+// Anonymous report publication. Ownership is a device capability, never a User relation.
+model AIReportShare {
+  id           String @id @default(cuid())
+  shareKey     String @unique @db.VarChar(48)
+  ownerHash    String @db.Char(64)
+  reportId     String @db.VarChar(120)
+  revision     Int
+  contentHash  String @db.Char(64)
+  title        String @db.VarChar(500)
+  language     String @db.VarChar(32)
+  document     Json
+  closedAt     DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  pages        AIReportSharePage[]
+  @@unique([ownerHash, reportId])
+}
+
+model AIReportSharePage {
+  id       String @id @default(cuid())
+  shareId  String
+  position Int
+  width    Int
+  height   Int
+  jpeg     Bytes @db.LongBlob
+  share    AIReportShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  @@unique([shareId, position])
+}

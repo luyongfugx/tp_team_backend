@@ -44,7 +44,7 @@ export function FirebaseAnalytics() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return
     // Report URLs contain bearer task identifiers; do not send them as analytics page URLs.
-    if (/^\/(verify|record|s|verification-preview)(\/|$)/.test(window.location.pathname)) return
+    if (/^\/(verify|record|r|s|verification-preview)(\/|$)/.test(window.location.pathname)) return
 
     let mounted = true
     async function initializeAnalytics() {
