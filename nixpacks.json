@@ -3,5 +3,12 @@
     "nixPkgs": [
       "nodejs-24_x"
     ]
+  },
+  "phases": {
+    "install": {
+      "cmds": [
+        "NODE_OPTIONS=--max-old-space-size=1536 npm ci --no-audit --no-fund --maxsockets=4"
+      ]
+    }
   }
 }
