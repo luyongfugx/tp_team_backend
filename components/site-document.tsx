@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { FirebaseAnalytics } from '@/components/firebase-analytics'
-import './globals.css'
+import '@/app/globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({
@@ -9,7 +8,7 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata: Metadata = {
+export const siteMetadata: Metadata = {
   title: 'timeprint.net',
   description: 'Timeprint TeamSpace',
   generator: 'timeprint.net',
@@ -20,16 +19,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export function SiteDocument({
   children,
+  analytics,
 }: Readonly<{
   children: React.ReactNode
+  analytics?: React.ReactNode
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased">
         {children}
-        <FirebaseAnalytics />
+        {analytics}
       </body>
     </html>
   )

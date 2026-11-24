@@ -1,0 +1,67 @@
+{
+  "method": "POST",
+  "url": "https://analyticsdata.googleapis.com/v1beta/properties/547150932:runRealtimeReport",
+  "auth": "Inject existing readonly OAuth Bearer token securely; never store credentials here.",
+  "request": {
+    "dimensions": [
+      {
+        "name": "streamId"
+      },
+      {
+        "name": "eventName"
+      },
+      {
+        "name": "unifiedScreenName"
+      }
+    ],
+    "metrics": [
+      {
+        "name": "eventCount"
+      }
+    ],
+    "dimensionFilter": {
+      "andGroup": {
+        "expressions": [
+          {
+            "filter": {
+              "fieldName": "streamId",
+              "stringFilter": {
+                "matchType": "EXACT",
+                "value": "16404160241"
+              }
+            }
+          },
+          {
+            "filter": {
+              "fieldName": "eventName",
+              "stringFilter": {
+                "matchType": "EXACT",
+                "value": "page_view"
+              }
+            }
+          },
+          {
+            "filter": {
+              "fieldName": "unifiedScreenName",
+              "inListFilter": {
+                "values": [
+                  "Timeprint Shared Photo Record",
+                  "Timeprint Photo Record",
+                  "Timeprint Verification Report"
+                ],
+                "caseSensitive": true
+              }
+            }
+          }
+        ]
+      }
+    },
+    "limit": 10000,
+    "returnPropertyQuota": true
+  },
+  "notes": [
+    "Realtime has no hostName/pagePath dimensions; use the dedicated stream and fixed titles.",
+    "eventCount/activeUsers is not daily UV.",
+    "Require a successful API response with matching rows to claim ingestion; HTTP 204 from collect alone is insufficient."
+  ]
+}

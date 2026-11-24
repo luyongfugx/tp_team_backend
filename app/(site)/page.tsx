@@ -13,7 +13,7 @@ import {
 } from "@/lib/client-auth"
 import { Apple, Download, Play } from "lucide-react"
 import { LoginIllustration } from "@/components/login-illustration"
-import styles from "./login.module.css"
+import styles from "@/app/login.module.css"
 
 interface Auth {
   token: string
